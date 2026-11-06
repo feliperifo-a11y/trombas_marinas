@@ -298,5 +298,5 @@ function crearTrombas(L, map, h) {
   }
 
   function actualizar() { cargar(); cargarProb(); cargarAvisos(); }
-  return { actualizar, pestana, get cargado() { return cargado; } };
+  return { actualizar, pestana, capas: { celdas: grupo, zona: grupoZona }, get cargado() { return cargado; } };
 }

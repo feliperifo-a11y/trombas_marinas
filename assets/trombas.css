@@ -1,5 +1,5 @@
 /* Trombas marinas: panel (pronóstico, avisos y ficha técnica); usa las clases .mar-* y .ev-* de sitio.css */
-.tr-etq{background:#eceff1;color:#263238;border-color:#90a4ae}
+.tr-etq{background:#12294a;color:#c9d9ea;border-color:#39618b}
 .tr-h{font-size:13.5px;margin:12px 0 6px}
 .tr-l{margin:0 0 4px;padding-left:18px;font-size:12.5px}.tr-l li{margin:3px 0}
 .tr-tabla td,.tr-tabla th{white-space:normal;vertical-align:top}
@@ -19,10 +19,10 @@
 .tr-p2{background:#ffd27a!important;color:#3d2c00!important}.tr-p3{background:#f28c00!important;color:#1b1200!important}.tr-p4{background:#c62828!important;color:#fff!important}
 .tr-pley i{border:1px solid var(--line)}
 .tr-6h{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}.tr-6h span{border-radius:5px;padding:3px 7px;font-size:12px;display:flex;gap:6px;align-items:baseline;border:1px solid var(--line)}
-.tr-ptabs button[aria-selected=true]{background:#37474f;border-color:#37474f;color:#fff}
+.tr-ptabs button[aria-selected=true]{background:#2f8cff;border-color:#5fb0ff;color:#fff}
 .tr-at td,.tr-at th{white-space:normal}.tr-at tbody th{font-weight:600;font-size:11.5px}.tr-at small{color:var(--muted)}
-.tr-at tr.tr-alto td,.tr-at tr.tr-alto th,span.tr-alto{background:#ffe2b8}.tr-at tr.tr-bajo td,.tr-at tr.tr-bajo th,span.tr-bajo{background:#d6e8fb}
-span.tr-alto,span.tr-bajo{padding:0 4px;border-radius:3px;color:#18212b}
-.tr-acab{font-size:12.5px;margin:4px 0}.tr-atabs button[aria-selected=true]{background:#37474f;border-color:#37474f;color:#fff}
+.tr-at tr.tr-alto td,.tr-at tr.tr-alto th,span.tr-alto{background:rgba(242,140,0,.24)}.tr-at tr.tr-bajo td,.tr-at tr.tr-bajo th,span.tr-bajo{background:rgba(47,140,255,.24)}
+span.tr-alto,span.tr-bajo{padding:0 4px;border-radius:3px;color:var(--ink)}
+.tr-acab{font-size:12.5px;margin:4px 0}.tr-atabs button[aria-selected=true]{background:#2f8cff;border-color:#5fb0ff;color:#fff}
 .tr-fte{font-size:10.5px;border:1px solid var(--line);border-radius:8px;padding:1px 6px;color:var(--muted)}
-.tr-obs{font-size:12px;margin:3px 0;color:#7a3e00}
+.tr-obs{font-size:12px;margin:3px 0;color:#f3b26b}

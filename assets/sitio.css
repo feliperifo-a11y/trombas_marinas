@@ -1,50 +1,55 @@
-/* Trombas marinas · MeteoIA — estructura de la página, tema y clases compartidas con MeteoIA (.mar-*, .ev-*) */
-:root{
-  --bg:#eef1f4; --panel:#ffffff; --ink:#18212b; --muted:#5b6673; --line:#d6dce3; --head:#0f2a44; --headInk:#f2f6fa;
-  --no:#b3261e; --chip:#f3f5f8; --acento:#37474f;
-}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#10161d; --panel:#18212b; --ink:#e4e9ef; --muted:#9aa6b2; --line:#2b3644; --head:#0b1b2c; --headInk:#e9f0f7;
-  --no:#ef6b62; --chip:#222d39; --acento:#56707d; } }
-:root[data-theme="dark"]{ --bg:#10161d; --panel:#18212b; --ink:#e4e9ef; --muted:#9aa6b2; --line:#2b3644; --head:#0b1b2c; --headInk:#e9f0f7;
-  --no:#ef6b62; --chip:#222d39; --acento:#56707d; }
+/* Trombas marinas · MeteoIA — misma línea visual que la portada de meteoia.cl (tema oscuro, tarjetas, mapa en tarjeta) */
+:root{--bg:#06121f;--bg2:#0a1a2c;--card:#0e2136;--line:#1d3a58;--ink:#e8f1fa;--muted:#8fa7bf;--acc:#2f8cff;--acc2:#5fb0ff;--am:#f2c230;--rj:#e53935;--no:#e5534b;--chip:#0b1d31}
 *{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column}
-a{color:#1f6fb2}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) a{color:#7fb6ea}}
-:root[data-theme="dark"] a{color:#7fb6ea}
+html,body{margin:0;background:radial-gradient(1200px 600px at 20% -10%,#123056 0%,var(--bg) 55%) fixed,var(--bg);color:var(--ink);font:14px/1.45 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+a{color:var(--acc2)}
 
 /* Cabecera */
-.cab{background:var(--head);color:var(--headInk);display:flex;align-items:center;gap:10px;padding:8px 16px;flex-wrap:wrap}
-.cab img{width:36px;height:36px;border-radius:8px;display:block}
-.cab h1{margin:0;font-size:17px;line-height:1.15;font-weight:700}
-.cab h1 small{display:block;font-size:11.5px;font-weight:500;opacity:.78}
-.cab .der{margin-left:auto;display:flex;gap:8px;align-items:center}
-.cab .der a,.cab .der button{color:var(--headInk);border:1px solid rgba(233,240,247,.35);background:transparent;border-radius:6px;padding:5px 10px;font:600 12px system-ui,sans-serif;text-decoration:none;cursor:pointer;min-height:32px;display:inline-flex;align-items:center}
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 22px 8px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
+.logo .mk{background:#fff;border-radius:10px;padding:3px 8px;display:flex}.logo img{height:50px;display:block}
+.logo b{display:block;font-size:24px;letter-spacing:.3px;line-height:1.05}
+.logo span.tx{font-size:14px;color:#c9d9ea}
+.reloj{text-align:right}.reloj .h{font-size:18px;font-weight:600;letter-spacing:.3px;display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.reloj .s{font-size:12px;color:var(--muted)}
 
-/* Cuerpo: panel a la izquierda y mapa a la derecha; en celular, mapa arriba y panel abajo */
-.cuerpo{flex:1;display:flex;min-height:0}
-.lado{width:min(600px,46%);overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);padding:12px 16px 24px}
-#mapWrap{flex:1;position:relative;min-width:0}
-#map{position:absolute;inset:0;background:#c9dbe6}
-@media (max-width:860px){
-  body{display:block;height:auto}
-  .cuerpo{display:flex;flex-direction:column}
-  #mapWrap{order:-1;flex:none;height:52vh;min-height:300px}
-  .lado{width:auto;border-right:0;border-top:1px solid var(--line);overflow:visible}
-  .tr-nav{top:0}
-  .cab{padding:8px 12px}.cab h1{font-size:16px}.cab .der a,.cab .der button{padding:4px 8px}
-}
+/* Accesos */
+.nav{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;padding:6px 22px 14px 22px}
+.nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-decoration:none;color:var(--ink);background:linear-gradient(180deg,#112a45,#0b1d31);border:1px solid var(--line);border-radius:12px;padding:12px 8px;font-weight:600;font-size:13.5px;text-align:center;line-height:1.2;transition:.15s}
+.nav a:hover{border-color:var(--acc);transform:translateY(-1px)}
+.nav a.on{background:linear-gradient(180deg,#16365a,#0e2540);border-color:#5fb0ff;box-shadow:0 0 0 1px rgba(95,176,255,.35),0 6px 18px rgba(47,140,255,.28)}
+.nav svg.ic{width:56px;height:56px;flex:none}
 
-/* Pestañas del panel */
-.tr-nav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 6px;position:sticky;top:-12px;background:var(--panel);padding:8px 0;z-index:2;border-bottom:1px solid var(--line)}
-.tr-nav button{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:6px;padding:7px 12px;font:600 13px system-ui,sans-serif;cursor:pointer;min-height:36px}
-.tr-nav button[aria-selected=true]{background:var(--acento);border-color:var(--acento);color:#fff}
-.tr-exp{font-size:12px;color:var(--muted);margin:6px 0 4px}
-.tr-panel>.tr-h:first-child{margin-top:8px}
+/* Mapa y columna */
+.wrap{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(380px,1fr);gap:14px;padding:0 22px 14px 22px;align-items:start}
+.mapCard{position:sticky;top:12px;border-radius:14px;overflow:hidden;border:1px solid var(--line);height:clamp(560px,calc(100vh - 24px),880px);background:#081626}
+#map{position:absolute;inset:0;background:#0b2033}
+.mapCard.full{position:fixed;inset:0;z-index:3000;border-radius:0;height:auto!important}
+.ctrls{position:absolute;right:14px;top:14px;z-index:800;display:flex;flex-direction:column;gap:8px}
+.ctrls button{width:42px;height:42px;border-radius:10px;border:0;background:#fff;color:#18212b;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.ctrls button.on{background:#2f8cff;color:#fff}
+.ctrls svg{width:22px;height:22px}
+#capasPop{position:absolute;right:66px;top:14px;z-index:850;background:rgba(10,26,44,.96);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:230px;display:none}
+#capasPop.on{display:block}
+#capasPop label{display:flex;gap:8px;align-items:center;padding:4px 0;font-size:13px;cursor:pointer}
+#capasPop .t{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:4px 0}
+.leyMapa{position:absolute;left:14px;bottom:14px;z-index:800;background:rgba(8,20,36,.85);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:11.5px;color:#c9d9ea;display:flex;flex-wrap:wrap;gap:4px 12px;max-width:calc(100% - 28px)}
+.leyMapa i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:linear-gradient(180deg,#0f243b,#0b1c30);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card h2{margin:0 0 10px;font-size:14px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card h2 a{font-size:12px;text-transform:none;letter-spacing:0;font-weight:500;text-decoration:none}
 
-/* Clases compartidas con MeteoIA */
+/* Pestañas del panel (como .tabs de la portada) */
+.tr-nav{display:flex;gap:6px;margin:0 0 8px}
+.tr-nav button{flex:1;font:inherit;font-size:12.5px;background:#0b1d31;color:#c9d9ea;border:1px solid var(--line);border-radius:8px;padding:7px 8px;cursor:pointer;min-height:34px}
+.tr-nav button[aria-selected=true]{background:#2f8cff;color:#fff;border-color:#5fb0ff}
+.tr-exp{font-size:12px;color:#ffe6a3;background:#3a2c05;border:1px solid #8a6a10;border-radius:10px;padding:7px 12px;margin:0 0 8px}
+.tr-exp a{color:#ffe6a3}
+.tr-panel>.tr-h:first-child{margin-top:6px}
+.tr-h{font-size:13px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#c9d9ea}
+
+/* Clases compartidas con MeteoIA (.mar-*, .ev-*) */
 .mar-ayuda,.mar-nota{color:var(--muted);font-size:12px;margin:4px 0}
 .mar-sub{font-size:12px;color:var(--muted);margin:8px 0}
 .mar-viejo{color:var(--no)}
@@ -60,33 +65,32 @@ a{color:#1f6fb2}
 .mar-crit p{margin:6px 0 2px}
 .mar-crit ul{margin:2px 0 6px;padding-left:18px}
 .ev-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
-.ev-tabs button{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:6px;padding:5px 10px;font:600 12px system-ui,sans-serif;cursor:pointer;min-height:30px}
+.ev-tabs button{border:1px solid var(--line);background:#0b1d31;color:#c9d9ea;border-radius:8px;padding:5px 10px;font:600 12px system-ui,sans-serif;cursor:pointer;min-height:30px}
 .ev-tw{overflow-x:auto}
 .ev-tabla{border-collapse:collapse;width:100%;font-size:12px}
-.ev-tabla th,.ev-tabla td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;color:var(--ink);font-weight:400}
+.ev-tabla th,.ev-tabla td{padding:4px 6px;border-bottom:1px solid rgba(29,58,88,.8);text-align:left;white-space:nowrap;color:var(--ink);font-weight:400}
 .ev-tabla thead th{color:var(--muted);font-weight:600;font-size:11px}
 .ev-tabla tbody th{font-weight:700;vertical-align:top}
 .ev-tabla tbody td{vertical-align:top}
 .ev-tabla small{color:var(--muted)}
 .ev-tabla tr.ev-sep td,.ev-tabla tr.ev-sep th{border-top:2px solid var(--line)}
 
-/* Ventana emergente de celda */
-.pp{font-size:12.5px;min-width:230px}
-.pp .ppT{font-weight:700;font-size:13.5px;margin-bottom:4px}
+/* Leaflet en tema oscuro (como la portada) */
+.leaflet-container{font:inherit}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0f243b;color:var(--ink);border:1px solid var(--line)}
+.leaflet-popup-content{margin:10px 12px;font-size:12.5px}
+.leaflet-tooltip{background:#0f243b;color:var(--ink);border:1px solid var(--line)}
+.leaflet-control-attribution{background:rgba(6,18,31,.6)!important;color:#9fb6cc!important}.leaflet-control-attribution a{color:#cfe2f5!important}
+.pp{font-size:12.5px;min-width:240px}.ppT{font-weight:800;font-size:13.5px;color:#ff7a6b;margin-bottom:4px}
 .pp table{font-size:12px;border-collapse:collapse}
-.pp th,.pp td{padding:2px 6px 2px 0;border:0;white-space:normal;text-align:left}
-.pp th{color:#5b6673;font-weight:600}
+.pp th,.pp td{padding:2px 6px 2px 0;border:0;white-space:normal;text-align:left;color:var(--ink)}
+.pp th{color:var(--muted);font-weight:600}
+.zLbl span{display:inline-block;color:#fff;font:800 15px system-ui,sans-serif;text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 8px rgba(0,0,0,.7);transform:translate(-50%,-50%);white-space:nowrap;letter-spacing:.5px}
 
-/* Contornos de zonas en el mapa */
-.zLbl span{background:rgba(15,42,68,.85);color:#fff;font:700 11px system-ui,sans-serif;padding:1px 6px;border-radius:8px;white-space:nowrap}
+/* Pie y firma */
+.pie{text-align:center;padding:0 22px 34px;font-size:12px;color:var(--muted)}.pie p{margin:0 0 8px}
+.pie a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--muted)}.pie a:hover{color:var(--acc2);border-color:var(--acc2)}
+#firmaAutor{position:fixed;right:10px;bottom:6px;z-index:4000;font:500 10.5px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff;background:rgba(15,42,68,.72);padding:3px 8px;border-radius:5px;letter-spacing:.2px;pointer-events:none;white-space:nowrap}
 
-/* Pie */
-.pie{font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);margin-top:16px;padding-top:8px}
-
-/* Modo oscuro: filas destacadas con fondo claro conservan texto oscuro */
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tr-at tr.tr-alto>*,:root:not([data-theme="light"]) .tr-at tr.tr-bajo>*{color:#18212b}
-  :root:not([data-theme="light"]) .tr-at tr.tr-alto small,:root:not([data-theme="light"]) .tr-at tr.tr-bajo small{color:#3d4752}
-  :root:not([data-theme="light"]) .tr-obs{color:#f3b26b}:root:not([data-theme="light"]) .tr-etq{background:#263238;color:#e4e9ef}}
-:root[data-theme="dark"] .tr-at tr.tr-alto>*,:root[data-theme="dark"] .tr-at tr.tr-bajo>*{color:#18212b}
-:root[data-theme="dark"] .tr-at tr.tr-alto small,:root[data-theme="dark"] .tr-at tr.tr-bajo small{color:#3d4752}
-:root[data-theme="dark"] .tr-obs{color:#f3b26b}
+@media (max-width:1100px){.wrap{grid-template-columns:1fr}.mapCard{position:relative;top:auto;height:62vh;min-height:420px}.nav{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:760px){.nav,.wrap{padding-left:12px;padding-right:12px}.nav{grid-template-columns:repeat(4,1fr);gap:8px}.nav a{font-size:11.5px;padding:8px 3px}.nav svg.ic{width:36px;height:36px}.top{padding:12px}.logo b{font-size:20px}.logo img{height:42px}.reloj .h{font-size:15px}.card{padding:12px}.leyMapa{bottom:auto;top:14px;left:14px;max-width:calc(100% - 84px)}}
