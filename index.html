@@ -57,8 +57,15 @@
   const map = L.map('map', { minZoom: 3, maxZoom: 12, zoomSnap: 0.25, zoomControl: false, preferCanvas: true });
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map);
-  const VISTA = [[-47.5, -82], [-32.5, -70]];
-  map.fitBounds(VISTA);
+  // Vista inicial: las zonas III a VI completas (extensión de data/geo/metarea.json: 33,03°–48° S, 71,6°–81° W),
+  // dejando espacio a los botones de la derecha y a la leyenda de abajo.
+  const VISTA = [[-48, -81], [-33.03, -71.6]];
+  // En celular la leyenda va arriba: se deja más margen superior
+  const ENCUADRE = innerWidth <= 760 ? { paddingTopLeft: [16, 72], paddingBottomRight: [70, 24] } : { paddingTopLeft: [24, 24], paddingBottomRight: [72, 58] };
+  let movido = false, propio = false;
+  const encuadrar = () => { propio = true; map.invalidateSize({ pan: false }); map.fitBounds(VISTA, { ...ENCUADRE, animate: false }); propio = false; };
+  map.on('movestart', () => { if (!propio) movido = true; });   // el usuario (o el panel) movió el mapa
+  encuadrar();
   const satelite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Imagen © Esri', maxZoom: 17, maxNativeZoom: 13 });
   const oceano = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri — GEBCO, NOAA', maxZoom: 16, maxNativeZoom: 13 });
   let base = satelite; base.addTo(map);
@@ -87,10 +94,11 @@
   pop.querySelectorAll('input[type=checkbox]').forEach(ch => ch.onchange = () => { const l = CAPAS[+ch.dataset.i][1]; ch.checked ? l.addTo(map) : map.removeLayer(l); });
   pop.querySelectorAll('input[name=base]').forEach(r => r.onchange = () => { map.removeLayer(base); base = r.value === 'sat' ? satelite : oceano; base.addTo(map); base.bringToBack(); });
   document.getElementById('btnCapas').onclick = () => { pop.classList.toggle('on'); document.getElementById('btnCapas').classList.toggle('on'); };
-  document.getElementById('btnInicio').onclick = () => map.flyToBounds(VISTA, { duration: 0.8 });
+  document.getElementById('btnInicio').onclick = () => map.flyToBounds(VISTA, { ...ENCUADRE, duration: 0.8 });
   document.getElementById('btnFull').onclick = () => { document.querySelector('.mapCard').classList.toggle('full'); document.getElementById('btnFull').classList.toggle('on'); setTimeout(() => map.invalidateSize(), 60); };
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.mapCard.full')) document.getElementById('btnFull').click(); });
-  try { new ResizeObserver(() => map.invalidateSize()).observe(document.querySelector('.mapCard')); } catch (e) {}
+  // Mientras no se haya movido el mapa, cualquier cambio de tamaño vuelve a encuadrar las cuatro zonas
+  try { new ResizeObserver(() => { if (movido) map.invalidateSize(); else encuadrar(); }).observe(document.querySelector('.mapCard')); } catch (e) {}
 })();
 </script>
 </body>
