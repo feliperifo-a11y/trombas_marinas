@@ -1,0 +1,98 @@
+name: Actualizar trombas marinas
+
+on:
+  schedule:
+    - cron: "17 * * * *"   # cada hora; los scripts solo trabajan con corridas nuevas o avisos nuevos
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "assets/**"
+      - "scripts/**"
+      - "data/geo/**"
+      - "data/trombas_avisos_historicos.json"
+      - "requirements.txt"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: trombas
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    environment:
+      name: github-pages
+      url: ${{ steps.publicar.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Recuperar los datos ya publicados y los avisos vigentes de MeteoIA
+        run: |
+          OWNER="${GITHUB_REPOSITORY%%/*}"; REPO="${GITHUB_REPOSITORY#*/}"
+          T=$(date +%s)
+          if [ "$REPO" = "$OWNER.github.io" ]; then BASE="https://$OWNER.github.io"; else BASE="https://$OWNER.github.io/$REPO"; fi
+          for f in trombas.json trombas_prob.json; do
+            if curl -fsSL -H "Cache-Control: no-cache" "$BASE/data/$f?t=$T" -o "/tmp/$f" && [ -s "/tmp/$f" ]; then mv "/tmp/$f" "data/$f"; else echo "Sin $f publicado; se calcula desde cero"; fi
+          done
+          # Avisos oficiales vigentes: los recolecta MeteoIA desde meteoarmada.directemar.cl
+          if curl -fsSL -H "Cache-Control: no-cache" "https://meteoia.cl/data/avisos.json?t=$T" -o /tmp/avisos.json && [ -s /tmp/avisos.json ]; then
+            mv /tmp/avisos.json data/avisos.json
+          else
+            echo "::warning::No se pudo leer avisos.json de MeteoIA; solo se completan los avisos ya archivados"
+          fi
+
+      - name: Trombas marinas (GFS 0,25°, STP, SHERBE y NST, solo con corrida nueva)
+        # Estimación experimental; si falla, se mantiene el archivo anterior.
+        continue-on-error: true
+        timeout-minutes: 15
+        run: python scripts/trombas.py
+
+      - name: Probabilidad por zona III a VI (ensamble GEFS 0,5°, corridas 00 y 12 UTC)
+        continue-on-error: true
+        timeout-minutes: 12
+        run: python scripts/trombas_ens.py
+
+      - name: Avisos de trombas, qué mostraba el modelo (GFS 0,25° en el área de cada aviso)
+        # Solo trabaja cuando hay un aviso nuevo o terminado; el resultado se acumula en el repositorio.
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          python scripts/trombas_avisos.py
+          if [ -n "$(git status --porcelain data/trombas_avisos.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/trombas_avisos.json
+            git commit -m "Archivo de avisos de trombas: parámetros del modelo"
+            for i in 1 2 3; do git pull --rebase --autostash --quiet origin main && git push --quiet origin HEAD:main && break; sleep 5; done
+          fi
+
+      - name: Armar el sitio
+        run: |
+          mkdir -p _site/data/geo
+          cp index.html _site/
+          cp -r assets _site/
+          cp data/geo/metarea.json _site/data/geo/
+          for f in trombas.json trombas_prob.json trombas_avisos.json; do [ -f data/$f ] && cp data/$f _site/data/ || true; done
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: publicar
+        uses: actions/deploy-pages@v4

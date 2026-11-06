@@ -1,0 +1,92 @@
+/* Trombas marinas · MeteoIA — estructura de la página, tema y clases compartidas con MeteoIA (.mar-*, .ev-*) */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --ink:#18212b; --muted:#5b6673; --line:#d6dce3; --head:#0f2a44; --headInk:#f2f6fa;
+  --no:#b3261e; --chip:#f3f5f8; --acento:#37474f;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#10161d; --panel:#18212b; --ink:#e4e9ef; --muted:#9aa6b2; --line:#2b3644; --head:#0b1b2c; --headInk:#e9f0f7;
+  --no:#ef6b62; --chip:#222d39; --acento:#56707d; } }
+:root[data-theme="dark"]{ --bg:#10161d; --panel:#18212b; --ink:#e4e9ef; --muted:#9aa6b2; --line:#2b3644; --head:#0b1b2c; --headInk:#e9f0f7;
+  --no:#ef6b62; --chip:#222d39; --acento:#56707d; }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column}
+a{color:#1f6fb2}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) a{color:#7fb6ea}}
+:root[data-theme="dark"] a{color:#7fb6ea}
+
+/* Cabecera */
+.cab{background:var(--head);color:var(--headInk);display:flex;align-items:center;gap:10px;padding:8px 16px;flex-wrap:wrap}
+.cab img{width:36px;height:36px;border-radius:8px;display:block}
+.cab h1{margin:0;font-size:17px;line-height:1.15;font-weight:700}
+.cab h1 small{display:block;font-size:11.5px;font-weight:500;opacity:.78}
+.cab .der{margin-left:auto;display:flex;gap:8px;align-items:center}
+.cab .der a,.cab .der button{color:var(--headInk);border:1px solid rgba(233,240,247,.35);background:transparent;border-radius:6px;padding:5px 10px;font:600 12px system-ui,sans-serif;text-decoration:none;cursor:pointer;min-height:32px;display:inline-flex;align-items:center}
+
+/* Cuerpo: panel a la izquierda y mapa a la derecha; en celular, mapa arriba y panel abajo */
+.cuerpo{flex:1;display:flex;min-height:0}
+.lado{width:min(600px,46%);overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);padding:12px 16px 24px}
+#mapWrap{flex:1;position:relative;min-width:0}
+#map{position:absolute;inset:0;background:#c9dbe6}
+@media (max-width:860px){
+  body{display:block;height:auto}
+  .cuerpo{display:flex;flex-direction:column}
+  #mapWrap{order:-1;flex:none;height:52vh;min-height:300px}
+  .lado{width:auto;border-right:0;border-top:1px solid var(--line);overflow:visible}
+  .tr-nav{top:0}
+  .cab{padding:8px 12px}.cab h1{font-size:16px}.cab .der a,.cab .der button{padding:4px 8px}
+}
+
+/* Pestañas del panel */
+.tr-nav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 6px;position:sticky;top:-12px;background:var(--panel);padding:8px 0;z-index:2;border-bottom:1px solid var(--line)}
+.tr-nav button{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:6px;padding:7px 12px;font:600 13px system-ui,sans-serif;cursor:pointer;min-height:36px}
+.tr-nav button[aria-selected=true]{background:var(--acento);border-color:var(--acento);color:#fff}
+.tr-exp{font-size:12px;color:var(--muted);margin:6px 0 4px}
+.tr-panel>.tr-h:first-child{margin-top:8px}
+
+/* Clases compartidas con MeteoIA */
+.mar-ayuda,.mar-nota{color:var(--muted);font-size:12px;margin:4px 0}
+.mar-sub{font-size:12px;color:var(--muted);margin:8px 0}
+.mar-viejo{color:var(--no)}
+.mar-det{border-top:1px solid var(--line);padding-top:8px;font-size:12.5px}
+.mar-det h3{margin:0 0 4px;font-size:14px}
+.mar-det dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:6px 0}
+.mar-det dt{color:var(--muted)}
+.mar-det dd{margin:0}
+.mar-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--muted);margin:8px 0}
+.mar-ley i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid var(--line);vertical-align:-2px;margin-right:4px;background:var(--chip)}
+.mar-crit{font-size:12px;margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.mar-crit summary{cursor:pointer;font-weight:600;padding:4px 0}
+.mar-crit p{margin:6px 0 2px}
+.mar-crit ul{margin:2px 0 6px;padding-left:18px}
+.ev-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
+.ev-tabs button{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:6px;padding:5px 10px;font:600 12px system-ui,sans-serif;cursor:pointer;min-height:30px}
+.ev-tw{overflow-x:auto}
+.ev-tabla{border-collapse:collapse;width:100%;font-size:12px}
+.ev-tabla th,.ev-tabla td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;color:var(--ink);font-weight:400}
+.ev-tabla thead th{color:var(--muted);font-weight:600;font-size:11px}
+.ev-tabla tbody th{font-weight:700;vertical-align:top}
+.ev-tabla tbody td{vertical-align:top}
+.ev-tabla small{color:var(--muted)}
+.ev-tabla tr.ev-sep td,.ev-tabla tr.ev-sep th{border-top:2px solid var(--line)}
+
+/* Ventana emergente de celda */
+.pp{font-size:12.5px;min-width:230px}
+.pp .ppT{font-weight:700;font-size:13.5px;margin-bottom:4px}
+.pp table{font-size:12px;border-collapse:collapse}
+.pp th,.pp td{padding:2px 6px 2px 0;border:0;white-space:normal;text-align:left}
+.pp th{color:#5b6673;font-weight:600}
+
+/* Contornos de zonas en el mapa */
+.zLbl span{background:rgba(15,42,68,.85);color:#fff;font:700 11px system-ui,sans-serif;padding:1px 6px;border-radius:8px;white-space:nowrap}
+
+/* Pie */
+.pie{font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);margin-top:16px;padding-top:8px}
+
+/* Modo oscuro: filas destacadas con fondo claro conservan texto oscuro */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tr-at tr.tr-alto>*,:root:not([data-theme="light"]) .tr-at tr.tr-bajo>*{color:#18212b}
+  :root:not([data-theme="light"]) .tr-at tr.tr-alto small,:root:not([data-theme="light"]) .tr-at tr.tr-bajo small{color:#3d4752}
+  :root:not([data-theme="light"]) .tr-obs{color:#f3b26b}:root:not([data-theme="light"]) .tr-etq{background:#263238;color:#e4e9ef}}
+:root[data-theme="dark"] .tr-at tr.tr-alto>*,:root[data-theme="dark"] .tr-at tr.tr-bajo>*{color:#18212b}
+:root[data-theme="dark"] .tr-at tr.tr-alto small,:root[data-theme="dark"] .tr-at tr.tr-bajo small{color:#3d4752}
+:root[data-theme="dark"] .tr-obs{color:#f3b26b}

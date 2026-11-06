@@ -1,0 +1,4 @@
+numpy
+requests>=2.31
+shapely>=2.0
+pygrib

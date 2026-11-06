@@ -1,0 +1,5 @@
+_site/
+__pycache__/
+data/avisos.json
+data/trombas.json
+data/trombas_prob.json

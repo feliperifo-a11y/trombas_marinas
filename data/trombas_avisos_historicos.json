@@ -1,0 +1,339 @@
+{
+ "_ayuda": "Avisos de trombas marinas anteriores al archivo automático. Horas en hora de Chile (America/Santiago). Límites norte/sur aproximados por región costera: Maule −34,75 a −35,95; Ñuble −35,95 a −36,45; Biobío −36,45 a −38,45 (Golfo de Arauco desde −37,0); La Araucanía −38,45 a −39,4; Los Ríos −39,4 a −40,2. 'fuente' = oficial (data/avisos.json del sitio) o prensa (nota que cita al CMM). 'observadas' = trombas confirmadas o registradas durante la vigencia. 'busqueda_prensa' = fecha en que se buscaron registros de trombas en prensa para ese aviso; sin 'observadas' significa que no se encontró registro (no que no hubiera trombas).",
+ "avisos": [
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "Biobío a Los Ríos",
+   "norte": -36.45,
+   "sur": -40.2,
+   "desde": "2025-09-09T21:00",
+   "hasta": "2025-09-10T06:00",
+   "situacion": "Sistema frontal intenso; mayor intensidad cerca de las 03:00",
+   "nota": "La nota no da horas exactas: noche del martes 9 a madrugada del miércoles 10.",
+   "urls": [
+    "https://eldesconcierto.cl/2025/09/09/trombas-marinas-podrian-afectar-al-biobio-la-araucania-y-los-rios-el-preocupante-aviso-de-la-armada"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "Servicio Meteorológico de la Armada",
+   "sector": "Maule a Los Ríos",
+   "norte": -34.75,
+   "sur": -40.2,
+   "desde": "2025-09-20T09:00",
+   "hasta": "2025-09-21T12:00",
+   "situacion": "Sistema frontal asociado a baja presión",
+   "urls": [
+    "https://www.cnnchile.com/pais/ya-circulan-registros-en-redes-emiten-aviso-por-trompas-marinas-varias-regiones-centro-sur-pais_20250920/",
+    "https://www.t13.cl/amp/noticia/el-tiempo/nacional/armada-confirmo-paso-tromba-marina-por-costa-region-rios-20-9-2025"
+   ],
+   "observadas": [
+    {
+     "fecha": "2025-09-20T14:00",
+     "lugar": "Desembocadura del Biobío, San Pedro de la Paz",
+     "lat": -36.84,
+     "lon": -73.13,
+     "confirmada": "CMM Talcahuano",
+     "url": "https://radio.uchile.cl/2025/09/20/armada-confirma-tromba-marina-en-gran-concepcion-tras-registros-virales-en-redes-sociales/"
+    },
+    {
+     "fecha": "2025-09-20T14:00",
+     "lugar": "Caleta Lenga, Hualpén",
+     "lat": -36.76,
+     "lon": -73.17,
+     "confirmada": "registro en redes (hora aproximada)",
+     "url": "https://www.t13.cl/noticia/el-tiempo/nacional/registros-tromba-marina-caleta-lenga-sectores-costeros-biobio-20-9-2025"
+    },
+    {
+     "fecha": "2025-09-20T15:30",
+     "lugar": "Chaihuín, Corral",
+     "lat": -39.94,
+     "lon": -73.58,
+     "confirmada": "Armada",
+     "url": "https://www.t13.cl/amp/noticia/el-tiempo/nacional/armada-confirmo-paso-tromba-marina-por-costa-region-rios-20-9-2025"
+    }
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "Golfo de Arauco a Los Ríos",
+   "norte": -37.0,
+   "sur": -40.2,
+   "desde": "2025-09-26T06:00",
+   "hasta": "2025-09-26T15:00",
+   "situacion": "Baja presión de 1003 hPa en 40° S / 82° W con desplazamiento al E/SE",
+   "urls": [
+    "https://www.meteored.cl/noticias/actualidad/alerta-por-trombas-marinas-en-el-sur-de-chile-sectores-costeros-entre-arauco-y-los-rios-bajo-vigilancia-este-viernes.html"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "Maule a Biobío",
+   "norte": -34.75,
+   "sur": -38.45,
+   "desde": "2026-05-06T00:00",
+   "hasta": "2026-05-06T14:00",
+   "situacion": "",
+   "urls": [
+    "https://www.24horas.cl/el-tiempo/aviso-meteorologico-por-probabilidad-de-trombas-marinas-en-3-regiones",
+    "https://www.meganoticias.cl/nacional/521269-meteorologia-armada-aviso-probables-nubes-convectivas-trombas-marinas-tres-regiones-dcv-05-05-2026.html"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "Región del Maule",
+   "norte": -34.75,
+   "sur": -35.95,
+   "desde": "2026-07-04T18:00",
+   "hasta": "2026-07-05T05:00",
+   "situacion": "",
+   "urls": [
+    "https://www.meganoticias.cl/nacional/526168-aviso-nubes-convectivas-trombas-marinas-costa-maule-armada-04-07-2026.html"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "Maule a La Araucanía",
+   "norte": -34.75,
+   "sur": -39.4,
+   "desde": "2026-07-10T05:00",
+   "hasta": "2026-07-10T14:00",
+   "situacion": "Sistema frontal con características de temporal",
+   "urls": [
+    "https://www.24horas.cl/el-tiempo/emiten-aviso-por-probabilidad-de-trombas-marinas-en-4-regiones-del-pais",
+    "https://www.meganoticias.cl/nacional/526561-directemar-aviso-probables-nubes-convectivas-trombas-marinas-regiones-sur-09-07-2026.html"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "Maule a Los Ríos",
+   "norte": -34.75,
+   "sur": -40.2,
+   "desde": "2026-07-26T14:00",
+   "hasta": "2026-07-27T14:00",
+   "situacion": "Sistema frontal asociado a un centro de baja presión de 986 hPa",
+   "urls": [
+    "https://www.24horas.cl/el-tiempo/aviso-por-trombas-marinas-entre-el-maule-y-los-rios-revisa-el-horario",
+    "https://www.meganoticias.cl/nacional/527815-armada-aviso-trombas-marinas-maule-nuble-biobio-la-araucania-los-rios-24-07-2026.html"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "Maule a Los Ríos",
+   "norte": -34.75,
+   "sur": -40.2,
+   "desde": "2026-07-31T12:00",
+   "hasta": "2026-08-03T00:00",
+   "situacion": "",
+   "nota": "Une dos avisos: Biobío a Maule (31-jul 12:00 a 1-ago 00:00) y Maule a Los Ríos (1-ago 00:00 a 3-ago 00:00).",
+   "urls": [
+    "https://www.biobiochile.cl/noticias/servicios/toma-nota/2026/07/31/directemar-emite-aviso-por-probables-nubes-convectivas-asociadas-a-trombas-marinas-para-5-regiones.shtml",
+    "https://www.24horas.cl/el-tiempo/nubes-convectivas-armada-avisa-por-probables-trombas-marinas-en-4-regiones"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "Maule a Los Ríos",
+   "norte": -34.75,
+   "sur": -40.2,
+   "desde": "2026-08-27T14:00",
+   "hasta": "2026-08-29T14:00",
+   "situacion": "",
+   "nota": "Por día: jue 27 Biobío a Los Ríos (14–21 h); vie 28 Maule a Los Ríos (12–21 h); sáb 29 Maule a La Araucanía (05–14 h).",
+   "urls": [
+    "https://eldesconcierto.cl/actualidad/entre-el-maule-los-rios-servimet-emite-aviso-especial-probables-nubes-convectivas-asociadas-trombas-marinas-n5461762"
+   ],
+   "observadas": [
+    {
+     "fecha": "2026-08-28",
+     "lugar": "Costa de Tomé",
+     "lat": -36.62,
+     "lon": -72.96,
+     "confirmada": "registro en video (prensa)",
+     "url": "https://www.biobiochile.cl/noticias/nacional/region-del-bio-bio/2026/08/28/videos-tromba-marina-se-registro-en-las-costas-de-tome.shtml"
+    },
+    {
+     "fecha": "2026-08-28",
+     "lugar": "Sector costero de Constitución",
+     "lat": -35.33,
+     "lon": -72.43,
+     "confirmada": "registro en video (prensa)",
+     "url": "https://www.biobiochile.cl/noticias/nacional/region-del-maule/2026/08/28/videos-se-registra-tromba-marina-en-sector-costero-de-constitucion-en-maule.shtml"
+    },
+    {
+     "fecha": "2026-08-28",
+     "lugar": "Talcahuano",
+     "lat": -36.7,
+     "lon": -73.11,
+     "confirmada": "citado por Meteored (episodio de 13 trombas y 3 tornados en 48 h)",
+     "url": "https://www.meteored.cl/noticias/actualidad/un-episodio-sin-precedentes-experto-analiza-los-16-tornados-y-trombas-registrados-en-chile-en-solo-48-horas.html"
+    },
+    {
+     "fecha": "2026-08-29T08:30",
+     "lugar": "Playa Perales, Coelemu",
+     "lat": -36.47,
+     "lon": -72.87,
+     "confirmada": "citado por Meteored",
+     "url": "https://www.meteored.cl/noticias/actualidad/un-episodio-sin-precedentes-experto-analiza-los-16-tornados-y-trombas-registrados-en-chile-en-solo-48-horas.html"
+    }
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano (vía Capitanía de Puerto de Carahue)",
+   "sector": "Biobío a Los Ríos",
+   "norte": -36.45,
+   "sur": -40.2,
+   "desde": "2026-09-25T00:00",
+   "hasta": "2026-09-27T20:00",
+   "situacion": "",
+   "nota": "Por día: vie 25 La Araucanía a Los Ríos (00–17 h); sáb 26 y dom 27 Biobío a Los Ríos.",
+   "urls": [
+    "https://www.meganoticias.cl/nacional/532450-armada-advierte-por-probables-trombas-marinas-en-sectores-costeros-regiones-bajo-aviso-24-09-2026.html"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "La Araucanía a Los Ríos",
+   "norte": -38.45,
+   "sur": -40.2,
+   "desde": "2026-09-28T12:00",
+   "hasta": "2026-09-28T21:00",
+   "situacion": "",
+   "urls": [
+    "https://www.meganoticias.cl/nacional/532715-aviso-posibles-trombas-marinas-araucania-los-rios-armada-nubes-convectivas-28-09-2026.html"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": "MET107RB 18/PTM",
+   "fuente": "oficial",
+   "centro": "CMM Talcahuano",
+   "sector": "Región del Ñuble a la Región de los Ríos",
+   "norte": -35.95,
+   "sur": -40.2,
+   "desde": "2026-10-04T00:00",
+   "hasta": "2026-10-04T18:00",
+   "publicado": "03/10/2026 21:10",
+   "situacion": "Inestabilidad postfrontal con desplazamiento al E/NE asociado a baja presión de 1002 hPa ubicada en lat 41° S / long 75° W (análisis 18 UTC)",
+   "urls": [
+    "https://meteoarmada.directemar.cl/meteo/site/docs/20261003/20261003211043/18_ptm___aviso_probabilidad_de_ocurrencia_de_nubes_convectivas_asociado_a_trombas_marinas.pdf"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "Maule a La Araucanía",
+   "norte": -34.75,
+   "sur": -39.4,
+   "desde": "2026-10-06T09:00",
+   "hasta": "2026-10-07T23:00",
+   "situacion": "Sistema frontal con desplazamiento al E-NE",
+   "nota": "Mayor atención: mar 6 Ñuble a Biobío (12–18 h); mié 7 Maule a La Araucanía (05–18 h).",
+   "urls": [
+    "https://www.biobiochile.cl/noticias/servicios/toma-nota/2026/10/05/armada-emite-aviso-por-posibles-trombas-marinas-desde-maule-hasta-la-araucania.shtml",
+    "https://www.24horas.cl/el-tiempo/armada-emite-aviso-por-posible-formacion-de-trombas-marinas-en-4-regiones"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "Maule a Los Ríos",
+   "norte": -34.75,
+   "sur": -40.2,
+   "desde": "2026-10-07T23:00",
+   "hasta": "2026-10-09T20:00",
+   "situacion": "",
+   "nota": "Mayor atención: jue 8 Maule a Biobío (12–17 h); vie 9 Maule a Los Ríos (05–17 h).",
+   "urls": [
+    "https://www.temucoya.cl/2026/10/08/armada-advierte-condiciones-favorables-para-trombas-marinas-entre-maule-y-los-rios/"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": null,
+   "fuente": "prensa",
+   "centro": "CMM Talcahuano",
+   "sector": "Maule a Los Ríos",
+   "norte": -34.75,
+   "sur": -40.2,
+   "desde": "2026-10-20T06:00",
+   "hasta": "2026-10-21T23:00",
+   "situacion": "Sistema frontal",
+   "nota": "Mayor atención: mar 20 Maule a Biobío (08–20 h); mié 21 Maule a Los Ríos (03–20 h).",
+   "urls": [
+    "https://www.t13.cl/noticia/el-tiempo/nacional/emiten-aviso-por-posible-formacion-trombas-marinas-entre-maule-rios-18-10-2026",
+    "https://www.chilevision.cl/noticias/alerta-climatica/advierten-posible-formacion-de-trombas-marinas-en-5-regiones-revisa-los-horarios-y-zonas-afectadas/"
+   ],
+   "observadas": [
+    {
+     "fecha": "2026-10-21T15:00",
+     "lugar": "Frente a Coronel",
+     "lat": -37.02,
+     "lon": -73.18,
+     "confirmada": "Armada (hora aproximada: \"en la tarde\")",
+     "url": "https://www.biobiochile.cl/noticias/nacional/region-del-bio-bio/2026/10/21/armada-confirma-tromba-marina-en-coronel-y-nube-embudo-en-talcahuano.shtml"
+    },
+    {
+     "fecha": "2026-10-21",
+     "lugar": "Frente a Coronel (segundo registro)",
+     "lat": -37.02,
+     "lon": -73.18,
+     "confirmada": "testigos (prensa, publicado 22-oct 07:56)",
+     "url": "https://www.chilevision.cl/noticias/nacional/video-captan-nuevo-registro-de-tromba-marina-frente-a-costas-de-coronel-en-medio-de-intenso-sistema-frontal"
+    }
+   ],
+   "busqueda_prensa": "2026-11-06"
+  },
+  {
+   "codigo": "MET107RB 20/PTM",
+   "fuente": "oficial",
+   "centro": "CMM Talcahuano",
+   "sector": "Región del Biobío a los Ríos",
+   "norte": -36.45,
+   "sur": -40.2,
+   "desde": "2026-11-03T03:00",
+   "hasta": "2026-11-03T20:00",
+   "publicado": "02/11/2026 16:27",
+   "situacion": "Sistema frontal con desplazamiento E/NE asociado a baja presión de 1004 hPa ubicada en lat 45° S / long 83° W (análisis 06 UTC)",
+   "urls": [
+    "https://meteoarmada.directemar.cl/meteo/site/docs/20261102/20261102162656/probabilidad_de_ocurrencia_de_nubes_convectivas_n_20_ptm_1.pdf"
+   ],
+   "busqueda_prensa": "2026-11-06"
+  }
+ ]
+}

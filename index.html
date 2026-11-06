@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trombas marinas · MeteoIA</title>
+<meta name="description" content="Perspectiva experimental a 72 h de ambientes favorables a trombas marinas en las zonas III a VI de Chile (GFS y ensamble GEFS), archivo de avisos y ficha técnica con referencias. No constituye aviso.">
+<meta name="theme-color" content="#0f2a44">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/ios-180.png">
+<link rel="stylesheet" href="assets/leaflet.css">
+<link rel="stylesheet" href="assets/sitio.css">
+<link rel="stylesheet" href="assets/trombas.css">
+<script>try { const t = localStorage.getItem('tema'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+</head>
+<body>
+<header class="cab">
+  <a href="https://meteoia.cl" title="Ir a MeteoIA"><img src="assets/logo-meteoia.png" alt="MeteoIA"></a>
+  <h1>Trombas marinas<small>Zonas III a VI · perspectiva 72 h · experimental</small></h1>
+  <div class="der">
+    <button type="button" id="btnTema" title="Cambiar entre modo claro y oscuro">Tema</button>
+    <a href="https://meteoia.cl" title="Plataforma de meteorología marítima MeteoIA">MeteoIA</a>
+  </div>
+</header>
+<div class="cuerpo">
+  <main class="lado" id="lado" aria-label="Trombas marinas"></main>
+  <div id="mapWrap"><div id="map" role="region" aria-label="Mapa de celdas y zonas"></div></div>
+</div>
+<script src="assets/leaflet.js"></script>
+<script src="assets/trombas.js"></script>
+<script>
+(function () {
+  const escH = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const map = L.map('map', { zoomControl: true, preferCanvas: true, worldCopyJump: false }).setView([-38.5, -75.5], 5);
+  const ocean = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri — GEBCO, NOAA', maxZoom: 16, maxNativeZoom: 13 }).addTo(map);
+  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 18 });
+  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles &copy; Esri', maxZoom: 18 });
+  const zonas = L.layerGroup().addTo(map);
+  L.control.layers({ 'Océano': ocean, 'Calles': osm, 'Satélite': sat }, { 'Zonas III a VI (Cuadro "F")': zonas }, { collapsed: true }).addTo(map);
+  L.control.scale({ imperial: false }).addTo(map);
+
+  // Zonas III a VI del Cuadro "F" (subdivisión nacional de METAREA XV), las mismas que evalúa el ensamble.
+  const limites = L.latLngBounds([]);
+  fetch('data/geo/metarea.json').then(r => r.ok ? r.json() : Promise.reject(r.status)).then(g => {
+    for (const f of g.features.filter(f => ['III', 'IV', 'V', 'VI'].includes(f.properties.id))) {
+      const capa = L.geoJSON(f, { interactive: false, style: { color: '#0f2a44', weight: 1.2, opacity: 0.8, fill: false, dashArray: '4 4' } }).addTo(zonas);
+      const c = capa.getBounds().getCenter();
+      limites.extend(capa.getBounds());
+      L.marker([c.lat, c.lng], { interactive: false, icon: L.divIcon({ className: 'zLbl', html: `<span>${escH(f.properties.id)}</span>`, iconSize: null }) }).addTo(zonas);
+    }
+    if (limites.isValid()) map.fitBounds(limites, { padding: [12, 12] });
+  }).catch(() => {});
+
+  const tr = crearTrombas(L, map, { escH, contenedor: document.getElementById('lado'), alCambiar: () => {} });
+  const pie = document.createElement('p');
+  pie.className = 'pie';
+  pie.innerHTML = 'Se actualiza automáticamente con cada corrida nueva del GFS (cuatro al día) y del ensamble GEFS (00 y 12 UTC). Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), avisos del Servicio Meteorológico de la Armada publicados en meteoarmada.directemar.cl. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.';
+  document.getElementById('lado').appendChild(pie);
+  tr.actualizar();
+  // Recarga cada 30 min mientras la página está visible
+  let ultima = Date.now();
+  setInterval(() => { if (!document.hidden && Date.now() - ultima > 30 * 60e3) { ultima = Date.now(); tr.actualizar(); } }, 60e3);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - ultima > 30 * 60e3) { ultima = Date.now(); tr.actualizar(); } });
+  // En celular el mapa cambia de tamaño con el panel: recalcular
+  addEventListener('resize', () => map.invalidateSize());
+
+  document.getElementById('btnTema').onclick = () => {
+    const osc = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    const t = osc ? 'light' : 'dark';
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem('tema', t); } catch (e) {}
+  };
+})();
+</script>
+</body>
+</html>
