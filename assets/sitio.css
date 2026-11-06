@@ -19,6 +19,7 @@ a{color:var(--acc2)}
 .nav a:hover{border-color:var(--acc);transform:translateY(-1px)}
 .nav a.on{background:linear-gradient(180deg,#16365a,#0e2540);border-color:#5fb0ff;box-shadow:0 0 0 1px rgba(95,176,255,.35),0 6px 18px rgba(47,140,255,.28)}
 .nav svg.ic{width:56px;height:56px;flex:none}
+.nav a.on{grid-column:-2/-1}  /* único acceso: conserva su lugar a la derecha */
 
 /* Mapa y columna */
 .wrap{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(380px,1fr);gap:14px;padding:0 22px 14px 22px;align-items:start}
