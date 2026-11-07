@@ -1,31 +1,30 @@
-import sys, time, json, requests
-sys.path.insert(0, "scripts")
-import ecmwf_datos as ed
+import sys, time, requests
 from datetime import datetime, timedelta, timezone
+H = {"User-Agent": "trombas-marinas/1.0 (datos abiertos ECMWF)"}
 now = datetime.now(timezone.utc)
 c = now.replace(minute=0, second=0, microsecond=0, hour=now.hour // 12 * 12)
-for _ in range(4):
-    ind = ed.indice(c, "enfo", "ef", 72)
-    if ind: break
-    c -= timedelta(hours=12)
-print("corrida", c, "mensajes", len(ind))
-u = ed.url(c, "enfo", "ef", 0, "grib2")
-r = requests.head(u, headers=ed.CAB, timeout=30); print("HEAD", r.status_code, r.headers.get("Content-Length"), dict((k, v) for k, v in r.headers.items() if k.lower().startswith("x-")))
-for mb in (1, 10, 50, 120):
-    t0 = time.time()
-    r = requests.get(u, headers={**ed.CAB, "Range": f"bytes=0-{mb*1_000_000-1}"}, timeout=120)
-    print(f"{mb} MB:", r.status_code, len(r.content), f"{time.time()-t0:.1f}s", r.text[:250] if r.status_code != 206 else "")
-    time.sleep(2)
-# orden de los mensajes en el archivo (primeros 40)
-ind0 = ed.indice(c, "enfo", "ef", 0)
-print([(e.get("number"), e.get("param"), e.get("levelist")) for e in ind0[:40]])
-inf = {}
-sel = [e for e in ind0 if __import__("trombas_ens_ecmwf").elegir(e)]
-print("necesarios", len(sel), "MB", round(sum(e["_length"] for e in sel)/1e6))
-for hueco in (0, 1_000_000, 3_000_000, 10_000_000):
-    s = sorted(sel, key=lambda e: e["_offset"]); b = []
-    for e in s:
-        ini, fin = e["_offset"], e["_offset"] + e["_length"] - 1
-        if b and ini - b[-1][1] - 1 <= hueco and fin - b[-1][0] < 120_000_000: b[-1][1] = fin
-        else: b.append([ini, fin])
-    print("hueco", hueco, "lecturas", len(b), "MB", round(sum(x[1]-x[0]+1 for x in b)/1e6))
+BASES = {"ecmwf": "https://data.ecmwf.int/forecasts", "azure": "https://ai4edataeuwest.blob.core.windows.net/ecmwf",
+         "google": "https://storage.googleapis.com/ecmwf-open-data", "aws": "https://ecmwf-forecasts.s3.eu-central-1.amazonaws.com"}
+for k in range(4):
+    cc = c - timedelta(hours=12 * k); d, h = cc.strftime("%Y%m%d"), cc.strftime("%H")
+    ruta = f"/{d}/{h}z/ifs/0p25/enfo/{d}{h}0000-0h-enfo-ef"
+    ok = False
+    for n, b in BASES.items():
+        try:
+            ri = requests.get(b + ruta + ".index", headers=H, timeout=30)
+            t0 = time.time()
+            rg = requests.get(b + ruta + ".grib2", headers={**H, "Range": "bytes=0-49999999"}, timeout=120)
+            print(d, h, n, "índice", ri.status_code, "| 50 MB:", rg.status_code, len(rg.content), f"{time.time()-t0:.1f}s", "" if rg.status_code == 206 else rg.text[:120])
+            ok = ok or ri.status_code == 200
+        except Exception as e:
+            print(d, h, n, "error", e)
+        time.sleep(1)
+    if ok:
+        # varias lecturas seguidas en el mejor espejo para medir el límite
+        for n, b in BASES.items():
+            t0, cods = time.time(), []
+            for i in range(10):
+                rg = requests.get(b + ruta + ".grib2", headers={**H, "Range": f"bytes={i*5_000_000}-{i*5_000_000+4_999_999}"}, timeout=60)
+                cods.append(rg.status_code)
+            print("  10 lecturas seguidas", n, cods, f"{time.time()-t0:.1f}s")
+        break
