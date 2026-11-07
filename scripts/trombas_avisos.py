@@ -14,6 +14,12 @@ NOMADS guarda unos 10 días de corridas; para fechas anteriores se lee el archiv
 (noaa-gfs-bdp-pds, desde 2021) con descargas parciales por mensaje GRIB. Para no alargar el flujo, cada ejecución
 procesa como máximo PRESUPUESTO plazos del GFS; los avisos pendientes se completan en las siguientes.
 En avisos largos se usan como máximo MAX_HORAS horas por etapa, repartidas en la vigencia. Nunca hace fallar el flujo.
+
+Segundo modelo (reg["ecmwf"]): las mismas tres etapas con el ECMWF IFS 0,25° de sus datos abiertos (CC-BY-4.0), sobre la
+misma área y las mismas horas. Al emitir se usa la corrida IFS publicada ~7 h antes del aviso (el IFS abierto aparece
+unas 7 h después de la hora de corrida). Los espejos de Google Cloud y AWS guardan varios meses de corridas (en
+noviembre de 2026 había desde julio de 2026): lo que ya no está publicado se marca "sin_datos" y no se vuelve a
+intentar; el resto se completa con PRESUPUESTO_EC plazos por ejecución.
 """
 import json
 import math
@@ -29,6 +35,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import trombas as tr          # noqa: E402  (descarga y cálculo GFS 0,25°)
+import trombas_ecmwf as tec   # noqa: E402  (descarga y cálculo ECMWF IFS 0,25°)
+import ecmwf_datos as ed      # noqa: E402
 import geo as va            # noqa: E402  (polígonos de tierra de data/geo/land.json)
 
 DATA = Path(__file__).resolve().parent.parent / "data"
@@ -39,12 +47,16 @@ DIAS_NOMADS = 9
 DIST_COSTA = 1.0          # grados
 MAX_HORAS = 8
 PRESUPUESTO = 40          # plazos GFS por ejecución
+PRESUPUESTO_EC = 120      # plazos ECMWF por ejecución (cada uno tarda ~1–3 s)
+RETRASO_EC = 7            # h entre la hora de corrida del IFS y su publicación abierta (aprox.)
 ZONAS_LAT = {"III": (-33.03, -35.33), "IV": (-35.33, -38.37), "V": (-38.37, -41.8), "VI": (-41.8, -48.0)}
 S3 = "https://noaa-gfs-bdp-pds.s3.amazonaws.com"
 CAMPOS_S3 = ([(v, f"{n} mb") for v in ("HGT", "TMP", "RH", "UGRD", "VGRD") for n in tr.NIVELES]
              + [("PRES", "surface"), ("HGT", "surface"), ("TMP", "surface"), ("LAND", "surface"), ("TMP", "2 m above ground"),
                 ("DPT", "2 m above ground"), ("UGRD", "10 m above ground"), ("VGRD", "10 m above ground")])
 gasto = 0
+gasto_ec = 0
+_disp_ec = {}
 VARS = ["mucape", "mlcape", "mlcape3", "mlcin", "ebsmu", "bwd06", "shr01", "srh500", "lr01", "lr03", "lr75",
         "mllcl", "dT", "dZ", "w850", "t850", "t500", "stp", "sherbe", "vgp", "nst"]
 
@@ -146,25 +158,54 @@ def leer_recortado(contenido):
     return {k: v[sl] for k, v in campos.items()}, lat[sl], lon[sl]
 
 
-def estadistica(pares, g):
+def q_gfs(c, f):
+    global gasto
+    gasto += 1
+    if (datetime.now(timezone.utc) - c).days > DIAS_NOMADS:
+        campos, lat, lon = leer_recortado(bajar_s3(c, f))
+    else:
+        campos, lat, lon = tr.leer_grib(tr.bajar(c, f))
+    q, la, lo = tr.procesar(campos, lat, lon)
+    mar = (campos[("lsm", 1, 0)] < 0.5).ravel()
+    q["t500"] = campos[("t", 100, 500)].ravel()[mar]
+    return q, la, lo
+
+
+def q_ecmwf(c, f):
+    global gasto_ec
+    gasto_ec += 1
+    campos, la1, lo1 = tec.campos_paso(c, f)
+    q, la, lo = tec.procesar(campos, la1, lo1)
+    mar = (campos["lsm"] < 0.5).ravel()
+    q["t500"] = campos[("t", 500)].ravel()[mar]
+    return q, la, lo
+
+
+def ec_disponible(pares):
+    """True si todas las corridas/plazos están publicados; False si alguno ya salió del archivo (no reintentar);
+    None si alguno aún no aparece pero podría aparecer (reintentar más adelante)."""
+    ahora = datetime.now(timezone.utc)
+    for c, f in sorted(set(pares)):
+        if (c, f) not in _disp_ec:
+            _disp_ec[(c, f)] = ed.indice(c, "oper", "fc", f) is not None
+        if not _disp_ec[(c, f)]:
+            return False if ahora - c > timedelta(days=2) else None   # reciente: aún puede publicarse
+    return True
+
+
+def estadistica(pares, g, modelo="gfs"):
     """pares: lista de (corrida, fhr). Devuelve percentiles por variable sobre todos los puntos y horas del área."""
     import shapely
     shapely.prepare(g)
     b = g.bounds
     tr.NORTE, tr.SUR, tr.OESTE, tr.ESTE = math.ceil(b[3] + 0.5), math.floor(b[1] - 0.5), math.floor(b[0] - 0.5), math.ceil(b[2] + 0.5)
+    tec.NORTE, tec.SUR, tec.OESTE, tec.ESTE = tr.NORTE, tr.SUR, tr.OESTE, tr.ESTE
     acum = {v: [] for v in VARS}
     cont = {"stp": 0, "hslc": 0, "nst": 0, "sherbe": 0, "dT12": 0, "lr01_9": 0, "total": 0}
     por_hora = []
-    global gasto
     for c, f in pares:
-        gasto += 1
-        if (datetime.now(timezone.utc) - c).days > DIAS_NOMADS:
-            campos, lat, lon = leer_recortado(bajar_s3(c, f))
-        else:
-            campos, lat, lon = tr.leer_grib(tr.bajar(c, f))
-        q, la, lo = tr.procesar(campos, lat, lon)
-        mar = (campos[("lsm", 1, 0)] < 0.5).ravel()
-        q["t500"] = campos[("t", 100, 500)].ravel()[mar] - 273.15
+        q, la, lo = (q_ecmwf if modelo == "ecmwf" else q_gfs)(c, f)
+        q["t500"] = q["t500"] - 273.15
         q["t850"] = q["t850"] - 273.15
         for k in ("ebsmu", "bwd06", "shr01"):
             q[k] = q[k] * tr.MS_A_KT
@@ -177,12 +218,37 @@ def estadistica(pares, g):
         cont["dT12"] += int((q["dT"][m] >= 12).sum()); cont["lr01_9"] += int((q["lr01"][m] >= 9).sum()); cont["total"] += int(m.sum())
         por_hora.append({"valida": iso(c + timedelta(hours=f)), "corrida": c.strftime("%Y-%m-%dT%HZ"), "fhr": f,
                          **{v: (round(float(np.nanmedian(q[v][m])), 2) if m.any() else None) for v in ("mucape", "ebsmu", "srh500", "lr01", "dT", "t500", "nst", "stp")}})
-        time.sleep(1)
+        if modelo == "gfs":
+            time.sleep(1)
     est = {}
     for v, xs in acum.items():
         x = np.concatenate(xs) if xs else np.array([])
         est[v] = [round(float(np.percentile(x, p)), 2) for p in (10, 50, 90)] + [round(float(x.min()), 2), round(float(x.max()), 2)] if x.size else None
     return {"puntos": int(cont["total"] / max(len(pares), 1)), "horas": len(pares), "estad": est, "conteos": cont, "por_hora": por_hora}
+
+
+def etapas_ecmwf(reg, a, g, hs, desde, hasta, ahora, clave):
+    """Las tres etapas con el ECMWF IFS, en reg["ecmwf"]. Devuelve True si cambió algo."""
+    ec, cambio = reg.setdefault("ecmwf", {}), False
+    etapas = []
+    if a.get("publicado"):
+        pub = datetime.strptime(a["publicado"], "%d/%m/%Y %H:%M").replace(tzinfo=TZ).astimezone(timezone.utc)
+        c = piso(pub - timedelta(hours=RETRASO_EC), 6)
+        etapas.append(("emision", [(c, int((t - c).total_seconds() // 3600)) if t >= c else (piso(t, 6), t.hour % 6) for t in hs], {"corrida": c.strftime("%Y-%m-%dT%HZ")}))
+    etapas.append(("referencia", [(piso(t - timedelta(days=7), 6), (t - timedelta(days=7)).hour % 6) for t in hs], {"desde": iso(desde - timedelta(days=7))}))
+    if ahora > hasta + timedelta(hours=7):
+        etapas.append(("durante", [(piso(t, 6), t.hour % 6) for t in hs], {}))
+    for nombre, pares, extra in etapas:
+        if nombre in ec or gasto_ec + len(pares) > PRESUPUESTO_EC:
+            continue
+        d = ec_disponible(pares)
+        if d is None:
+            continue
+        if d is False:
+            ec[nombre] = {"sin_datos": "La corrida ECMWF ya no está en su archivo abierto"}; cambio = True; continue
+        print(f"{clave}: ECMWF {nombre}")
+        ec[nombre] = {**extra, **estadistica(pares, g, "ecmwf")}; cambio = True
+    return cambio
 
 
 def main():
@@ -206,8 +272,11 @@ def main():
         if zs:
             d0 = min(datetime.fromisoformat(z["desde"].replace("Z", "+00:00")) for z in zs)
             vistos.add(f"{a.get('codigo') or 'Prensa'} · {d0:%Y-%m-%dT%HZ}")
+    def falta_ec(reg):
+        ec = reg.get("ecmwf") or {}
+        return any(n not in ec for n in ["referencia", "durante"] + (["emision"] if reg.get("publicado") else []))
     for clave, reg in arch["avisos"].items():
-        if clave not in vistos and reg.get("emision") and "durante" not in reg and reg.get("desde"):
+        if clave not in vistos and reg.get("desde") and ((reg.get("emision") and "durante" not in reg) or falta_ec(reg)):
             zs = reg.get("zonas_aviso") or [{"areas": reg.get("zonas") or []}]
             avisos.append({"codigo": reg.get("codigo"), "tipo": reg.get("tipo"), "sector": reg.get("sector"), "publicado": reg.get("publicado"),
                            "resumen": reg.get("situacion", ""), "url": reg.get("url"),
@@ -234,9 +303,7 @@ def main():
             if g is None or g.is_empty:
                 reg["nota"] = "Sin área evaluable en el Cuadro F"; continue
             hs = horas(desde, hasta)
-            if gasto >= PRESUPUESTO:
-                continue
-            if "emision" not in reg and a.get("publicado"):
+            if "emision" not in reg and a.get("publicado") and gasto < PRESUPUESTO:
                 pub = datetime.strptime(a["publicado"], "%d/%m/%Y %H:%M").replace(tzinfo=TZ).astimezone(timezone.utc)
                 c = piso(pub - timedelta(hours=5), 6)
                 pares = [(c, int((t - c).total_seconds() // 3600)) if t >= c else (piso(t, 6), t.hour % 6) for t in hs]
@@ -251,6 +318,13 @@ def main():
                 print(f"{clave}: durante (análisis)")
                 reg["durante"] = estadistica(pares, g); cambios = True
             reg.pop("error", None)
+            try:
+                cambios = etapas_ecmwf(reg, a, g, hs, desde, hasta, ahora, clave) or cambios
+                reg.get("ecmwf", {}).pop("error", None)
+            except Exception as e:
+                ln = traceback.extract_tb(e.__traceback__)[-1]
+                reg.setdefault("ecmwf", {})["error"] = f"{type(e).__name__}: {e} ({Path(ln.filename).name}:{ln.lineno})"[:300]
+                print(clave, "error ECMWF", reg["ecmwf"]["error"]); cambios = True
         except Exception as e:
             ln = traceback.extract_tb(e.__traceback__)[-1]
             reg["error"] = f"{type(e).__name__}: {e} ({Path(ln.filename).name}:{ln.lineno})"[:300]

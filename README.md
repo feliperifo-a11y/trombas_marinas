@@ -10,7 +10,7 @@ Página experimental dedicada a las trombas marinas en la costa de Chile (zonas 
 |---|---|---|---|
 | Probabilidad por zona | Porcentaje de miembros del ensamble (GEFS 0,5°, 31 miembros; ECMWF ENS 0,25°, 50 miembros) en que algún punto de mar de la zona supera STP ≤ −0,1, alto cizalle con CAPE bajo (HSLC) o NST > 1, por día y cada 6 h, a 72 h | `scripts/trombas_ens.py`, `scripts/trombas_ens_ecmwf.py` | `data/trombas_prob.json`, `data/trombas_prob_ecmwf.json` |
 | Detalle por celda | Celdas de 0,25° sobre umbral en la corrida más reciente del GFS y del ECMWF IFS, cada 3 h hasta 72 h, con sus ingredientes | `scripts/trombas.py`, `scripts/trombas_ecmwf.py` | `data/trombas.json`, `data/trombas_ecmwf.json` |
-| Avisos archivados | Qué mostraba el GFS en el área de cada aviso de trombas: al emitir, durante la vigencia y en un día de referencia 7 días antes | `scripts/trombas_avisos.py` | `data/trombas_avisos.json` (se acumula en el repositorio) |
+| Avisos archivados | Qué mostraban el GFS y el ECMWF IFS en el área de cada aviso de trombas: al emitir, durante la vigencia y en un día de referencia 7 días antes (ECMWF desde julio de 2026, lo que conserva su archivo abierto) | `scripts/trombas_avisos.py` | `data/trombas_avisos.json` (se acumula en el repositorio) |
 | Ficha técnica | Mecanismos, índices, umbrales y referencias | — | `assets/trombas.js` |
 
 Los índices se calculan en `scripts/trombas_indices.py` (validado contra MetPy). Los avisos anteriores a 2026-11 están en `data/trombas_avisos_historicos.json` (lista curada: oficiales y de prensa que citan al CMM).

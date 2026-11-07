@@ -171,7 +171,7 @@ function crearTrombas(L, map, h) {
     const lista = Object.entries(avs.avisos).filter(([, a]) => a.emision || a.durante).sort((a, b) => b[1].desde.localeCompare(a[1].desde));
     if (!lista.length) { asub.textContent = 'Aún no hay avisos de trombas procesados. Cada aviso nuevo se calcula automáticamente.'; return; }
     const pend = todos.length - lista.length;
-    asub.innerHTML = `${lista.length} aviso${lista.length > 1 ? 's' : ''} procesado${lista.length > 1 ? 's' : ''}${pend > 0 ? ` (${pend} en cálculo; se completan en las próximas actualizaciones)` : ''}. Mediana del área del aviso (mar a 1° o menos de la costa) en las horas de vigencia, GFS 0,25°. Se destaca lo que queda fuera del rango normal del día de referencia (percentiles 10–90, 7 días antes).`;
+    asub.innerHTML = `${lista.length} aviso${lista.length > 1 ? 's' : ''} procesado${lista.length > 1 ? 's' : ''}${pend > 0 ? ` (${pend} en cálculo; se completan en las próximas actualizaciones)` : ''}. Mediana del área del aviso (mar a 1° o menos de la costa) en las horas de vigencia, con el GFS y con el ECMWF IFS (ambos 0,25°). Se destaca lo que queda fuera del rango normal del día de referencia de cada modelo (percentiles 10–90, 7 días antes).`;
     atabs.innerHTML = lista.map(([k, a]) => `<button type="button" role="tab" data-k="${escH(k)}">${escH(new Date(a.desde).toLocaleDateString('es-CL', { timeZone: 'America/Santiago', day: 'numeric', month: 'short', year: '2-digit' }).replace(/\./g, ''))}${a.observadas && a.observadas.length ? ' ●' : ''}</button>`).join('') +
       (lista.length > 1 ? '<button type="button" role="tab" data-k="__todos">Todos</button>' : '');
     atabs.querySelectorAll('button').forEach(b => b.onclick = () => pintarAviso(b.dataset.k));
@@ -181,29 +181,42 @@ function crearTrombas(L, map, h) {
     avSel = k;
     atabs.querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', b.dataset.k === k));
     const fmt = (v, d) => v == null ? '–' : nf(Math.abs(v) < 0.5 * 10 ** -d ? 0 : v, d);
+    const ok = e => e && e.estad ? e : null;                      // etapa calculada (no "sin_datos")
+    const ec = a => a.ecmwf || {};
+    const cab2 = '<th class="tr-m">GFS</th><th class="tr-m">ECMWF</th>';
     if (k === '__todos') {
       const lista = Object.values(avs.avisos).filter(a => a.emision || a.durante);
       const med = (arr) => { const x = arr.filter(v => v != null).sort((a, b) => a - b); return x.length ? x[Math.floor((x.length - 1) / 2)] : null; };
       const con = lista.filter(a => a.observadas && a.observadas.length), sin = lista.filter(a => !(a.observadas && a.observadas.length));
-      const val = a => (a.durante || a.emision);
-      adet.innerHTML = `<p class="mar-ayuda">Mediana, entre los avisos de cada grupo, de la mediana del área de cada aviso (durante la vigencia; si aún no termina, al emitir). "Con tromba" = avisos con al menos una tromba registrada en prensa o confirmada por la Armada; "sin registro" no significa que no hubo trombas.</p>
-        <div class="ev-tw"><table class="ev-tabla tr-at"><thead><tr><th>Parámetro</th><th>Con tromba <small>(${con.length})</small></th><th>Sin registro <small>(${sin.length})</small></th><th>Referencias</th></tr></thead><tbody>` +
-        VARS_AV.map(([v, t, u, d]) => `<tr><th>${t}${u ? ` <small>${u}</small>` : ''}</th><td>${fmt(med(con.map(a => val(a).estad[v]?.[1])), d)}</td><td>${fmt(med(sin.map(a => val(a).estad[v]?.[1])), d)}</td><td>${fmt(med(lista.filter(a => a.referencia).map(a => a.referencia.estad[v]?.[1])), d)}</td></tr>`).join('') +
+      const valG = a => ok(a.durante) || ok(a.emision), valE = a => ok(ec(a).durante) || ok(ec(a).emision);
+      const nE = arr => arr.filter(valE).length;
+      const celda = (arr, f, v, d) => fmt(med(arr.map(f).filter(Boolean).map(e => e.estad[v]?.[1])), d);
+      adet.innerHTML = `<p class="mar-ayuda">Mediana, entre los avisos de cada grupo, de la mediana del área de cada aviso (durante la vigencia; si aún no termina, al emitir), con cada modelo. "Con tromba" = avisos con al menos una tromba registrada en prensa o confirmada por la Armada; "sin registro" no significa que no hubo trombas. ECMWF existe para los avisos cuyas corridas siguen en su archivo abierto (hoy, desde julio de 2026) y para todos los nuevos.</p>
+        <div class="ev-tw"><table class="ev-tabla tr-at tr-at2"><thead><tr><th rowspan="2">Parámetro</th><th colspan="2">Con tromba <small>(${con.length} · ${nE(con)} avisos)</small></th><th colspan="2">Sin registro <small>(${sin.length} · ${nE(sin)} avisos)</small></th><th colspan="2">Referencias</th></tr><tr>${cab2}${cab2}${cab2}</tr></thead><tbody>` +
+        VARS_AV.map(([v, t, u, d]) => `<tr><th>${t}${u ? ` <small>${u}</small>` : ''}</th><td>${celda(con, valG, v, d)}</td><td>${celda(con, valE, v, d)}</td><td>${celda(sin, valG, v, d)}</td><td>${celda(sin, valE, v, d)}</td><td>${celda(lista, a => ok(a.referencia), v, d)}</td><td>${celda(lista, a => ok(ec(a).referencia), v, d)}</td></tr>`).join('') +
         '</tbody></table></div>';
       return;
     }
-    const a = avs.avisos[k], em = a.emision, du = a.durante, rf = a.referencia, e = em || du;
-    const fuera = v => { const x = e.estad[v], y = rf?.estad[v]; return x && y ? (x[1] > y[2] ? 'tr-alto' : x[1] < y[0] ? 'tr-bajo' : '') : ''; };
+    const a = avs.avisos[k], E = ec(a);
+    const G = { em: ok(a.emision), du: ok(a.durante), rf: ok(a.referencia) }, X = { em: ok(E.emision), du: ok(E.durante), rf: ok(E.referencia) };
+    const e = G.em || G.du;
+    // Cada valor se compara con el rango normal (p10–p90) del día de referencia del mismo modelo
+    const clase = (st, rf, v) => { const x = st?.estad[v], y = rf?.estad[v]; return x && y ? (x[1] > y[2] ? 'tr-alto' : x[1] < y[0] ? 'tr-bajo' : '') : ''; };
+    const td = (st, rf, v, d) => `<td class="${clase(st, rf, v)}"${st?.estad[v] ? ` title="p10 ${fmt(st.estad[v][0], d)} · p90 ${fmt(st.estad[v][2], d)}"` : ''}>${st?.estad[v] ? fmt(st.estad[v][1], d) : '–'}</td>`;
+    const ETAPA = { em: 'emision', du: 'durante', rf: 'referencia' };
+    const estadoEC = n => E[ETAPA[n]]?.sin_datos ? 'sin datos' : X[n] ? '' : 'pendiente';
+    const notaEC = (G.em ? ['em', 'du', 'rf'] : ['du', 'rf']).map(n => [n, estadoEC(n)]).filter(([, t]) => t);
     const links = (a.urls || (a.url ? [a.url] : [])).map((u, i) => `<a href="${escH(u)}" target="_blank" rel="noopener">${a.fuente === 'oficial' && i === 0 ? 'aviso' : 'fuente ' + (i + 1)}</a>`).join(' · ');
+    const NOMBRE_ET = { em: 'al emitir', du: 'durante', rf: 'referencia' };
     adet.innerHTML = `<div class="tr-acab"><b>${escH(a.codigo || 'Aviso sin código')}</b> <span class="tr-fte">${a.fuente === 'oficial' ? 'Oficial' : 'Prensa (cita al CMM)'}</span> · ${escH(a.sector || '')} · ${escH(horaChile(a.desde))} a ${escH(horaChile(a.hasta))} (hora Chile)${links ? ' · ' + links : ''}</div>
       ${a.situacion ? `<p class="mar-ayuda">Situación sinóptica: ${escH(a.situacion)}</p>` : ''}${a.nota_aviso ? `<p class="mar-ayuda">${escH(a.nota_aviso)}</p>` : ''}
       ${(a.observadas || []).map(o => `<p class="tr-obs">● Tromba observada: ${escH(o.lugar)}, ${escH(o.fecha.replace('T', ' ') + (o.fecha.length > 10 ? ' h' : ''))} · ${escH(o.confirmada || '')}${o.url ? ` · <a href="${escH(o.url)}" target="_blank" rel="noopener">nota</a>` : ''}</p>`).join('')}
-      <p class="mar-ayuda">${em ? `Al emitir: GFS ${escH(em.corrida.replace('T', ' ').replace('Z', ' UTC'))}, ` : 'Hora de emisión desconocida: se usan los análisis de la vigencia. '}${e.puntos} puntos, ${e.horas} horas.${du ? '' : ' "Durante" se calcula al terminar la vigencia.'}${a.error ? ` <span class="mar-viejo">${escH(a.error)}</span>` : ''}</p>
-      <div class="ev-tw"><table class="ev-tabla tr-at"><thead><tr><th>Parámetro</th><th>Al emitir <small>mediana (p90)</small></th><th>Durante</th><th>Referencia −7 d</th></tr></thead><tbody>` +
-      VARS_AV.map(([v, t, u, d]) => { const x = e.estad[v]; return `<tr class="${fuera(v)}"><th>${t}${u ? ` <small>${u}</small>` : ''}</th><td>${em && em.estad[v] ? `${fmt(em.estad[v][1], d)} <small>(${fmt(em.estad[v][2], d)})</small>` : '–'}</td><td>${du && du.estad[v] ? `${fmt(du.estad[v][1], d)}${em ? '' : ` <small>(${fmt(du.estad[v][2], d)})</small>`}` : '–'}</td><td>${fmt(rf?.estad[v]?.[1], d)}</td></tr>`; }).join('') +
+      <p class="mar-ayuda">${G.em ? `Al emitir: GFS ${escH(G.em.corrida.replace('T', ' ').replace('Z', ' UTC'))}${X.em ? ` y ECMWF ${escH(X.em.corrida.replace('T', ' ').replace('Z', ' UTC'))}` : ''}, ` : 'Hora de emisión desconocida: se usan los análisis de la vigencia. '}${e ? `${e.puntos} puntos, ${e.horas} horas.` : ''}${G.du ? '' : ' "Durante" se calcula al terminar la vigencia.'}${notaEC.length ? ` ECMWF ${notaEC.map(([n, t]) => `${NOMBRE_ET[n]}: ${t}`).join(', ')}${notaEC.some(([, t]) => t === 'sin datos') ? ' (la corrida ya no está en el archivo abierto de ECMWF)' : ''}.` : ''}${a.error ? ` <span class="mar-viejo">${escH(a.error)}</span>` : ''}${E.error ? ` <span class="mar-viejo">ECMWF: ${escH(E.error)}</span>` : ''}</p>
+      <div class="ev-tw"><table class="ev-tabla tr-at tr-at2"><thead><tr><th rowspan="2">Parámetro <small>mediana del área</small></th><th colspan="2">Al emitir</th><th colspan="2">Durante</th><th colspan="2">Referencia −7 d</th></tr><tr>${cab2}${cab2}${cab2}</tr></thead><tbody>` +
+      VARS_AV.map(([v, t, u, d]) => `<tr><th>${t}${u ? ` <small>${u}</small>` : ''}</th>${td(G.em, G.rf, v, d)}${td(X.em, X.rf, v, d)}${td(G.du, G.rf, v, d)}${td(X.du, X.rf, v, d)}${td(G.rf, null, v, d)}${td(X.rf, null, v, d)}</tr>`).join('') +
       `</tbody></table></div>
-      <p class="mar-ayuda">Celdas sobre umbral ${em ? 'al emitir' : 'durante'} (puntos × horas, de ${e.conteos.total}): STP ≤ −0,1: ${e.conteos.stp} · alto cizalle y CAPE bajo: ${e.conteos.hslc} · NST &gt; 1: ${e.conteos.nst} · ΔT ≥ 12 °C: ${e.conteos.dT12} · gradiente 0–1 km ≥ 9 °C/km: ${e.conteos.lr01_9}.
-      <span class="tr-alto">Fondo naranjo</span>: sobre el rango normal del día de referencia; <span class="tr-bajo">fondo azul</span>: bajo ese rango.</p>`;
+      ${e ? `<p class="mar-ayuda">Celdas sobre umbral con el GFS ${G.em ? 'al emitir' : 'durante'} (puntos × horas, de ${e.conteos.total}): STP ≤ −0,1: ${e.conteos.stp} · alto cizalle y CAPE bajo: ${e.conteos.hslc} · NST &gt; 1: ${e.conteos.nst} · ΔT ≥ 12 °C: ${e.conteos.dT12} · gradiente 0–1 km ≥ 9 °C/km: ${e.conteos.lr01_9}.` : '<p class="mar-ayuda">'}${(X.em || X.du) ? ` Con ECMWF ${X.em ? 'al emitir' : 'durante'} (de ${(X.em || X.du).conteos.total}): STP ${(X.em || X.du).conteos.stp} · alto cizalle ${(X.em || X.du).conteos.hslc} · NST ${(X.em || X.du).conteos.nst} · ΔT ≥ 12 °C ${(X.em || X.du).conteos.dT12} · gradiente 0–1 km ≥ 9 °C/km ${(X.em || X.du).conteos.lr01_9}.` : ''}
+      <span class="tr-alto">Fondo naranjo</span>: sobre el rango normal del día de referencia del mismo modelo; <span class="tr-bajo">fondo azul</span>: bajo ese rango. Toca un valor para ver sus percentiles 10 y 90.</p>`;
   }
   const psub = card.querySelector('.tr-psub'), ptabla = card.querySelector('.tr-ptabla'), pdet = card.querySelector('.tr-pdet');
   card.querySelectorAll('.tr-ptabs button').forEach(b => b.onclick = () => {

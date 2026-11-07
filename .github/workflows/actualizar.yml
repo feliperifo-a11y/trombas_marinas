@@ -79,10 +79,10 @@ jobs:
         timeout-minutes: 30
         run: python scripts/trombas_ens_ecmwf.py
 
-      - name: Avisos de trombas, qué mostraba el modelo (GFS 0,25° en el área de cada aviso)
+      - name: Avisos de trombas, qué mostraban los modelos (GFS y ECMWF 0,25° en el área de cada aviso)
         # Solo trabaja cuando hay un aviso nuevo o terminado; el resultado se acumula en el repositorio.
         continue-on-error: true
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
           python scripts/trombas_avisos.py
           if [ -n "$(git status --porcelain data/trombas_avisos.json)" ]; then
