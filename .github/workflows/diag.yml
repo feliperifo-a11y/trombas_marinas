@@ -16,6 +16,8 @@ jobs:
         run: |
           /usr/bin/time -f "%e s, %M kB" python scripts/trombas_avisos.py 2>&1 | grep -v -E "Mean of empty|nanmean"
           /usr/bin/time -f "%e s, %M kB" python scripts/trombas_avisos.py 2>&1 | grep -v -E "Mean of empty|nanmean"
+      - uses: actions/upload-artifact@v4
+        with: { name: avisos, path: data/trombas_avisos.json }
       - name: Resumen
         run: |
           python - <<'PY'

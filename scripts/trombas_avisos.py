@@ -17,9 +17,9 @@ En avisos largos se usan como máximo MAX_HORAS horas por etapa, repartidas en l
 
 Segundo modelo (reg["ecmwf"]): las mismas tres etapas con el ECMWF IFS 0,25° de sus datos abiertos (CC-BY-4.0), sobre la
 misma área y las mismas horas. Al emitir se usa la corrida IFS publicada ~7 h antes del aviso (el IFS abierto aparece
-unas 7 h después de la hora de corrida). Los espejos de Google Cloud y AWS guardan unos 30 días de corridas: lo que
-ya no está publicado se marca "sin_datos" y no se vuelve a intentar; el resto se completa con PRESUPUESTO_EC plazos
-por ejecución.
+unas 7 h después de la hora de corrida). Los espejos de Google Cloud y AWS guardan varios meses de corridas (en
+noviembre de 2026 había desde julio de 2026): lo que ya no está publicado se marca "sin_datos" y no se vuelve a
+intentar; el resto se completa con PRESUPUESTO_EC plazos por ejecución.
 """
 import json
 import math
@@ -49,7 +49,6 @@ MAX_HORAS = 8
 PRESUPUESTO = 40          # plazos GFS por ejecución
 PRESUPUESTO_EC = 120      # plazos ECMWF por ejecución (cada uno tarda ~1–3 s)
 RETRASO_EC = 7            # h entre la hora de corrida del IFS y su publicación abierta (aprox.)
-RETENCION_EC = 28         # días que guardan los espejos (medido: ~30); más antiguo → sin datos
 ZONAS_LAT = {"III": (-33.03, -35.33), "IV": (-35.33, -38.37), "V": (-38.37, -41.8), "VI": (-41.8, -48.0)}
 S3 = "https://noaa-gfs-bdp-pds.s3.amazonaws.com"
 CAMPOS_S3 = ([(v, f"{n} mb") for v in ("HGT", "TMP", "RH", "UGRD", "VGRD") for n in tr.NIVELES]
@@ -190,7 +189,7 @@ def ec_disponible(pares):
         if (c, f) not in _disp_ec:
             _disp_ec[(c, f)] = ed.indice(c, "oper", "fc", f) is not None
         if not _disp_ec[(c, f)]:
-            return False if (ahora - c).days >= RETENCION_EC or ahora - c > timedelta(days=2) else None
+            return False if ahora - c > timedelta(days=2) else None   # reciente: aún puede publicarse
     return True
 
 
@@ -246,7 +245,7 @@ def etapas_ecmwf(reg, a, g, hs, desde, hasta, ahora, clave):
         if d is None:
             continue
         if d is False:
-            ec[nombre] = {"sin_datos": "Corrida ECMWF fuera del archivo abierto (guarda ~30 días)"}; cambio = True; continue
+            ec[nombre] = {"sin_datos": "La corrida ECMWF ya no está en su archivo abierto"}; cambio = True; continue
         print(f"{clave}: ECMWF {nombre}")
         ec[nombre] = {**extra, **estadistica(pares, g, "ecmwf")}; cambio = True
     return cambio
@@ -273,8 +272,11 @@ def main():
         if zs:
             d0 = min(datetime.fromisoformat(z["desde"].replace("Z", "+00:00")) for z in zs)
             vistos.add(f"{a.get('codigo') or 'Prensa'} · {d0:%Y-%m-%dT%HZ}")
+    def falta_ec(reg):
+        ec = reg.get("ecmwf") or {}
+        return any(n not in ec for n in ["referencia", "durante"] + (["emision"] if reg.get("publicado") else []))
     for clave, reg in arch["avisos"].items():
-        if clave not in vistos and reg.get("emision") and "durante" not in reg and reg.get("desde"):
+        if clave not in vistos and reg.get("desde") and ((reg.get("emision") and "durante" not in reg) or falta_ec(reg)):
             zs = reg.get("zonas_aviso") or [{"areas": reg.get("zonas") or []}]
             avisos.append({"codigo": reg.get("codigo"), "tipo": reg.get("tipo"), "sector": reg.get("sector"), "publicado": reg.get("publicado"),
                            "resumen": reg.get("situacion", ""), "url": reg.get("url"),
