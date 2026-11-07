@@ -3,12 +3,26 @@ on:
   push:
     branches: [diag-ecmwf]
 jobs:
-  sondeo:
+  ecmwf:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12", cache: pip }
-      - run: pip install -r requirements.txt eccodes
-      - run: python diag/sondeo.py
+      - run: pip install -r requirements.txt
+      - name: IFS determinístico
+        run: /usr/bin/time -v python scripts/trombas_ecmwf.py 2>&1 | grep -v -E "^\s+(Average|Exit|Socket|Signals|Swaps|Page size|Voluntary|Involuntary|Minor|Major|File system|Percent)"
+      - name: ENS
+        run: /usr/bin/time -v python scripts/trombas_ens_ecmwf.py 2>&1 | grep -v -E "^\s+(Average|Exit|Socket|Signals|Swaps|Page size|Voluntary|Involuntary|Minor|Major|File system|Percent)"
+      - name: Resumen
+        run: |
+          python - <<'PY'
+          import json
+          for f in ["data/trombas_ecmwf.json", "data/trombas_prob_ecmwf.json"]:
+              try: d = json.load(open(f))
+              except Exception as e: print(f, "sin archivo", e); continue
+              print(f, d.get("corrida"), d.get("fuente"), "completo", d.get("completo"), "errores", d.get("errores"))
+              if "prob_dia" in d:
+                  for a in d["areas"]: print("  ", a["id"], len(a["puntos"]), "puntos", {i: d["prob_dia"][a["id"]][i] for i in ("stp","hslc","nst")})
+          PY
