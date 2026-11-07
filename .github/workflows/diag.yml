@@ -5,10 +5,26 @@ on:
 jobs:
   diag:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12", cache: pip }
       - run: pip install -r requirements.txt
-      - run: python diag/retencion.py
+      - run: curl -fsSL "https://meteoia.cl/data/avisos.json?t=$(date +%s)" -o data/avisos.json || true
+      - name: Avisos (dos pasadas)
+        run: |
+          /usr/bin/time -f "%e s, %M kB" python scripts/trombas_avisos.py 2>&1 | grep -v -E "Mean of empty|nanmean"
+          /usr/bin/time -f "%e s, %M kB" python scripts/trombas_avisos.py 2>&1 | grep -v -E "Mean of empty|nanmean"
+      - name: Resumen
+        run: |
+          python - <<'PY'
+          import json
+          d = json.load(open("data/trombas_avisos.json"))
+          for k, r in sorted(d["avisos"].items(), key=lambda x: x[1].get("desde", ""), reverse=True):
+              ec = r.get("ecmwf", {})
+              def m(e, v="dT"):
+                  return None if not e or "estad" not in e or not e["estad"].get(v) else e["estad"][v][1]
+              print(k[:38].ljust(38), "| GFS em/du/ref ΔT:", m(r.get("emision")), m(r.get("durante")), m(r.get("referencia")),
+                    "| EC:", {n: ("sin datos" if "sin_datos" in e else m(e)) for n, e in ec.items() if n != "error"}, ec.get("error", ""))
+          PY
