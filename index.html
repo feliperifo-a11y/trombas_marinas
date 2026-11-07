@@ -15,7 +15,7 @@
 <body>
 <div class="top">
   <a class="logo" href="https://meteoia.cl" title="Ir a MeteoIA"><span class="mk"><img src="assets/logo-meteoia.png" alt="MeteoIA"></span><span><b>Trombas marinas</b><span class="tx">Perspectiva experimental a 72 h · zonas III a VI</span></span></a>
-  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">GFS cada 6 h · ensamble GEFS 00 y 12 UTC</div></div>
+  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">GFS cada 6 h · ensamble GEFS 00 y 12 UTC</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button></div>
 </div>
 </div>
 <nav class="nav"><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -44,6 +44,31 @@
   </div>
 </div>
 <footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°) y avisos del Servicio Meteorológico de la Armada. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
+<div id="info" hidden role="dialog" aria-modal="true" aria-labelledby="infoT">
+  <div class="in-caja">
+    <button type="button" class="in-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button>
+    <h2 id="infoT">Cómo funciona esta página</h2>
+    <h3>Qué hace</h3>
+    <p>Busca en los modelos numéricos los ambientes que en otros casos han acompañado a trombas marinas frente a la costa de Chile, entre Valparaíso y San Pedro (zonas III a VI del Cuadro "F" de METAREA XV), con hasta 72 horas de anticipación. También guarda cada aviso de trombas que emite el Servicio Meteorológico de la Armada y registra qué mostraba el modelo en ese momento.</p>
+    <p class="in-nota">Es una herramienta experimental de apoyo. <b>No constituye aviso</b>: los avisos oficiales se publican en <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">meteoarmada.directemar.cl</a>.</p>
+    <h3>Cómo trabaja</h3>
+    <ol>
+      <li><b>Detalle por celda (GFS 0,25°).</b> Con cada corrida nueva del GFS de NOAA (cuatro al día), el sistema descarga los niveles necesarios y calcula, en cada punto de mar y cada 3 horas hasta 72 h, tres índices: el STP en su versión para el hemisferio sur, el ambiente de alto cizalle con CAPE bajo (SHERBE) y el NST. Además muestra ingredientes como el contraste mar–aire (ΔT = TSM − T850), la profundidad de la nube y el viento en 850 hPa.</li>
+      <li><b>Probabilidad por zona (ensamble GEFS 0,5°).</b> Dos veces al día repite el cálculo en los 31 miembros del ensamble. La probabilidad es el porcentaje de miembros en que al menos un punto de mar de la zona supera el umbral. Así se ve cuánta confianza tiene la señal, no solo si aparece.</li>
+      <li><b>Archivo de avisos.</b> Cuando sale un aviso de trombas, calcula unos veinte parámetros en su área en tres momentos: con la corrida que tenía el pronosticador al emitirlo, durante la vigencia y en un día de referencia una semana antes. Los avisos se acumulan para comparar.</li>
+    </ol>
+    <p>Todo corre solo en GitHub Actions cada hora y se publica en esta página sin intervención manual. Los umbrales vienen de estudios chilenos de tornados (Marín et al., 2024 y 2026) y del SPC de Estados Unidos; están citados en la Ficha técnica.</p>
+    <h3>Aporte de la inteligencia artificial</h3>
+    <ul>
+      <li><b>Desarrollo.</b> La página completa (lectura de los modelos, cálculo de los índices, diseño y publicación automática) se programó con un asistente de IA (Claude, de Anthropic), bajo la dirección y revisión de un meteorólogo naval. La IA permitió convertir criterios publicados en artículos científicos en una herramienta que funciona sola.</li>
+      <li><b>Revisión de fuentes.</b> La IA ayudó a reunir los estudios que fijan los umbrales y a reconstruir el historial de avisos de trombas de 2025 y 2026 desde fuentes publicadas, cada uno con su referencia para verificarlo.</li>
+      <li><b>Lo que la IA no hace.</b> Los índices y las probabilidades no los decide la IA: son cálculos físicos reproducibles sobre el GFS y el GEFS, con umbrales publicados. En cada actualización no interviene ningún modelo de IA.</li>
+      <li><b>Próxima etapa.</b> El archivo de avisos y parámetros es la base para entrenar un modelo que aprenda qué combinaciones acompañan de verdad a las trombas en Chile y ajuste los umbrales a nuestra costa.</li>
+    </ul>
+    <h3>Limitaciones</h3>
+    <p>Los umbrales provienen de tornados sobre tierra y aún no están calibrados para trombas. El GFS no resuelve la vorticidad de escala local, y muchas trombas chilenas ocurren en aire frío sobre el mar, con poca convección y poco cizalle, donde estos índices dan señales débiles. Por eso la página muestra los ingredientes además de los índices.</p>
+  </div>
+</div>
 <div id="firmaAutor">Felipe Rifo Espósito™</div>
 <script src="assets/leaflet.js"></script>
 <script src="assets/trombas.js"></script>
@@ -99,6 +124,15 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.mapCard.full')) document.getElementById('btnFull').click(); });
   // Mientras no se haya movido el mapa, cualquier cambio de tamaño vuelve a encuadrar las cuatro zonas
   try { new ResizeObserver(() => { if (movido) map.invalidateSize(); else encuadrar(); }).observe(document.querySelector('.mapCard')); } catch (e) {}
+  // Ventana "Cómo funciona"
+  const info = document.getElementById('info');
+  const teclaInfo = e => { if (e.key === 'Escape') cerrarInfo(); };
+  const cerrarInfo = () => { info.hidden = true; document.removeEventListener('keydown', teclaInfo); document.getElementById('btnInfo').focus(); };
+  const abrirInfo = () => { info.hidden = false; document.addEventListener('keydown', teclaInfo); info.querySelector('.in-cerrar').focus(); };
+  document.getElementById('btnInfo').onclick = abrirInfo;
+  info.querySelector('.in-cerrar').onclick = cerrarInfo;
+  info.addEventListener('click', e => { if (e.target === info) cerrarInfo(); });
+  if (new URLSearchParams(location.search).has('info')) abrirInfo();
 })();
 </script>
 </body>

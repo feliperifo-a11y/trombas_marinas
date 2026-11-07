@@ -93,5 +93,16 @@ a{color:var(--acc2)}
 .pie a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--muted)}.pie a:hover{color:var(--acc2);border-color:var(--acc2)}
 #firmaAutor{position:fixed;right:10px;bottom:6px;z-index:4000;font:500 10.5px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#fff;background:rgba(15,42,68,.72);padding:3px 8px;border-radius:5px;letter-spacing:.2px;pointer-events:none;white-space:nowrap}
 
+/* Botón y ventana "Cómo funciona" (mismo estilo que el botón de video de la portada) */
+.btnInfo{display:inline-block;margin:8px 0 0;padding:0 12px;border:1px solid #39618b;border-radius:9px;background:none;color:#a8d3ff;font:600 12px system-ui,sans-serif;min-height:30px;line-height:28px;cursor:pointer}.btnInfo:hover{background:#153452;color:#fff}
+#info{position:fixed;inset:0;z-index:5000;background:rgba(3,10,20,.82);display:flex;align-items:center;justify-content:center;padding:16px}
+#info[hidden]{display:none}
+#info .in-caja{position:relative;width:min(760px,100%);max-height:calc(100vh - 32px);overflow-y:auto;background:linear-gradient(180deg,#0f243b,#0b1c30);border:1px solid var(--line);border-radius:14px;padding:22px 24px 18px;box-shadow:0 20px 60px rgba(0,0,0,.6);font-size:13.5px;line-height:1.55}
+#info h2{margin:0 36px 10px 0;font-size:17px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+#info h3{margin:16px 0 6px;font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--acc2)}
+#info p{margin:6px 0}#info ol,#info ul{margin:6px 0;padding-left:20px}#info li{margin:6px 0}
+#info .in-nota{background:#3a2c05;border:1px solid #8a6a10;color:#ffe6a3;border-radius:10px;padding:7px 12px}#info .in-nota a{color:#ffe6a3}
+#info .in-cerrar{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:#0b1d31;color:var(--ink);font-size:16px;cursor:pointer}#info .in-cerrar:hover{border-color:var(--acc)}
+@media (max-width:760px){#info{padding:8px}#info .in-caja{padding:18px 16px 14px;max-height:calc(100vh - 16px)}}
 @media (max-width:1100px){.wrap{grid-template-columns:1fr}.mapCard{position:relative;top:auto;height:62vh;min-height:420px}.nav{grid-template-columns:repeat(4,1fr)}}
 @media (max-width:760px){.nav,.wrap{padding-left:12px;padding-right:12px}.nav{grid-template-columns:repeat(4,1fr);gap:8px}.nav a{font-size:11.5px;padding:8px 3px}.nav svg.ic{width:36px;height:36px}.top{padding:12px}.logo b{font-size:20px}.logo img{height:42px}.reloj .h{font-size:15px}.card{padding:12px}.leyMapa{bottom:auto;top:14px;left:14px;max-width:calc(100% - 84px)}}
