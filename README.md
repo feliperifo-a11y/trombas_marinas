@@ -8,8 +8,8 @@ Página experimental dedicada a las trombas marinas en la costa de Chile (zonas 
 
 | Sección | Qué muestra | Script | Archivo |
 |---|---|---|---|
-| Probabilidad por zona | Porcentaje de miembros del ensamble GEFS 0,5° (31) en que algún punto de mar de la zona supera STP ≤ −0,1, alto cizalle con CAPE bajo (HSLC) o NST > 1, por día y cada 6 h, a 72 h | `scripts/trombas_ens.py` | `data/trombas_prob.json` |
-| Detalle por celda | Celdas de 0,25° sobre umbral en la corrida GFS más reciente, cada 3 h hasta 72 h, con sus ingredientes | `scripts/trombas.py` | `data/trombas.json` |
+| Probabilidad por zona | Porcentaje de miembros del ensamble (GEFS 0,5°, 31 miembros; ECMWF ENS 0,25°, 50 miembros) en que algún punto de mar de la zona supera STP ≤ −0,1, alto cizalle con CAPE bajo (HSLC) o NST > 1, por día y cada 6 h, a 72 h | `scripts/trombas_ens.py`, `scripts/trombas_ens_ecmwf.py` | `data/trombas_prob.json`, `data/trombas_prob_ecmwf.json` |
+| Detalle por celda | Celdas de 0,25° sobre umbral en la corrida más reciente del GFS y del ECMWF IFS, cada 3 h hasta 72 h, con sus ingredientes | `scripts/trombas.py`, `scripts/trombas_ecmwf.py` | `data/trombas.json`, `data/trombas_ecmwf.json` |
 | Avisos archivados | Qué mostraba el GFS en el área de cada aviso de trombas: al emitir, durante la vigencia y en un día de referencia 7 días antes | `scripts/trombas_avisos.py` | `data/trombas_avisos.json` (se acumula en el repositorio) |
 | Ficha técnica | Mecanismos, índices, umbrales y referencias | — | `assets/trombas.js` |
 
@@ -29,4 +29,4 @@ Los umbrales provienen de tornados sobre tierra y no están calibrados para trom
 
 ## Datos
 
-NOAA/NCEP: GFS 0,25° y GEFS 0,5° (NOMADS y archivo en AWS). Límites de zonas: `data/geo/metarea.json`. Tierra: `data/geo/land.json`.
+NOAA/NCEP: GFS 0,25° y GEFS 0,5° (NOMADS y archivo en AWS). ECMWF: IFS y ENS 0,25° de sus datos abiertos en AWS (licencia CC-BY-4.0, atribución visible en la página; `scripts/ecmwf_datos.py` baja solo los mensajes necesarios). ECMWF publica 1000, 925 y 850 hPa bajo 700 hPa y no publica TSM (ΔT usa la temperatura de piel). Límites de zonas: `data/geo/metarea.json`. Tierra: `data/geo/land.json`.

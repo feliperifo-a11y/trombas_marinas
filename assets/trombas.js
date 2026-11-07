@@ -15,6 +15,18 @@ function crearTrombas(L, map, h) {
   // Probabilidad por zona (GEFS, data/trombas_prob.json)
   const grupoZona = L.layerGroup();
   let prob = null, indProb = 'stp', celdaProb = null;
+  // Modelos disponibles: mismo cálculo y mismo formato de archivo para comparar
+  const MODELOS = {
+    gfs: { det: 'data/trombas.json', prob: 'data/trombas_prob.json', nDet: 'GFS 0,25°', nProb: 'ensamble GEFS',
+      sinDet: 'Se genera con cada corrida nueva del GFS (cuatro al día) cuando está disponible el plazo de 72 h.',
+      sinProb: 'Se calcula con las corridas GEFS de 00 y 12 UTC cuando está disponible el plazo de 72 h.', atr: 'Datos: NOAA/NCEP.' },
+    ecmwf: { det: 'data/trombas_ecmwf.json', prob: 'data/trombas_prob_ecmwf.json', nDet: 'ECMWF IFS 0,25°', nProb: 'ensamble ECMWF (ENS)',
+      sinDet: 'Se genera con cada corrida nueva del IFS de ECMWF (cuatro al día) cuando está publicado el plazo de 72 h.',
+      sinProb: 'Se calcula con las corridas ENS de 00 y 12 UTC cuando están publicados los 50 miembros a 72 h.',
+      atr: 'Datos de ECMWF (open data), licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página.' },
+  };
+  let modelo = 'gfs';
+  try { if (localStorage.getItem('trombasModelo') === 'ecmwf') modelo = 'ecmwf'; } catch (e) {}
   const NOMBRE_IND = { stp: 'STP ≤ −0,1', hslc: 'Alto cizalle y CAPE bajo', nst: 'NST > 1 (sin validar en Chile)' };
   const claseP = v => v == null ? '' : v >= 80 ? 'p4' : v >= 50 ? 'p3' : v >= 20 ? 'p2' : v > 0 ? 'p1' : 'p0';
   const diaLargo = f => new Date(f + 'T12:00:00Z').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).replace('.', '');
@@ -26,18 +38,20 @@ function crearTrombas(L, map, h) {
       <button type="button" role="tab" data-tab="ficha" aria-selected="false">Ficha técnica</button></nav>
     <p class="tr-exp">Estimación automática y experimental: <b>no constituye aviso</b>. Los avisos oficiales los emite el Servicio Meteorológico de la Armada en <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">meteoarmada.directemar.cl</a>.</p>
     <div class="tr-panel" data-tab="pron">
-    <h3 class="tr-h">Probabilidad por zona · ensamble GEFS</h3>
+    <div class="tr-mod" role="radiogroup" aria-label="Modelo"><span>Modelo</span>${Object.entries({ gfs: 'GFS · NOAA', ecmwf: 'ECMWF' }).map(([k, t]) => `<button type="button" role="radio" data-m="${k}" aria-checked="${k === modelo}">${t}</button>`).join('')}</div>
+    <p class="tr-atr"></p>
+    <h3 class="tr-h">Probabilidad por zona · <span class="tr-nprob"></span></h3>
     <p class="mar-sub tr-psub" aria-live="polite">Cargando…</p>
     <div class="ev-tabs tr-ptabs" role="tablist">${Object.entries(NOMBRE_IND).map(([k, t]) => `<button type="button" role="tab" data-i="${k}" aria-selected="${k === 'stp'}">${t}</button>`).join('')}</div>
     <div class="tr-ptabla"></div>
     <div class="mar-ley tr-pley"><span><i class="tr-p0"></i>0 %</span><span><i class="tr-p1"></i>1–19</span><span><i class="tr-p2"></i>20–49</span><span><i class="tr-p3"></i>50–79</span><span><i class="tr-p4"></i>80–100 %</span></div>
     <div class="mar-det tr-pdet" aria-live="polite"><p class="mar-ayuda">Porcentaje de los miembros del ensamble en que al menos un punto de la zona supera el umbral durante el día (hora de Chile). Selecciona una casilla para ver el detalle cada 6 h.</p></div>
-    <h3 class="tr-h">Detalle por celda · GFS 0,25° (una corrida, sin probabilidad)</h3>
+    <h3 class="tr-h">Detalle por celda · <span class="tr-ndet"></span> (una corrida, sin probabilidad)</h3>
     <p class="mar-sub tr-sub" aria-live="polite">Cargando…</p>
     <div class="tr-tira"></div>
     <div class="mar-ley tr-ley"><span><i style="background:${COLOR.stp}"></i>STP ≤ −0,1</span><span><i style="background:${COLOR.hslc}"></i>Alto cizalle y CAPE bajo</span><span><i style="background:${COLOR.nst}"></i>NST &gt; 1</span><span>número = celdas de 0,25° sobre umbral</span></div>
     <div class="mar-det tr-det" aria-live="polite"><p class="mar-ayuda">Selecciona un plazo para ver en el mapa las celdas que superan algún umbral.</p></div>
-    <p class="mar-nota">Índices calculados sobre el océano con el GFS 0,25°, dominio 20°–56° S / 85°–68° W. Los umbrales vienen de estudios de tornados chilenos en tierra (Marín et al., 2024 y 2026) y del NST del SPC: aún no están calibrados para trombas. El GFS no resuelve la vorticidad de escala local, por lo que el NST rara vez supera su umbral.</p>
+    <p class="mar-nota">Índices calculados sobre el océano con el modelo elegido, dominio 20°–56° S / 85°–68° W, con el mismo método para el GFS y para ECMWF. Los umbrales vienen de estudios de tornados chilenos en tierra (Marín et al., 2024 y 2026) y del NST del SPC: aún no están calibrados para trombas. Ningún modelo global resuelve la vorticidad de escala local, por lo que el NST rara vez supera su umbral. ECMWF publica menos niveles bajo 700 hPa que el GFS (1000, 925 y 850 hPa) y su ΔT usa la temperatura de piel del mar.</p>
     </div>
     <div class="tr-panel" data-tab="avisos" hidden>
     <h3 class="tr-h">Qué mostraba el modelo en cada aviso de trombas</h3>
@@ -200,12 +214,12 @@ function crearTrombas(L, map, h) {
 
   async function cargarProb() {
     try {
-      const r = await fetch('data/trombas_prob.json?t=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(30000) });
+      const m = modelo, r = await fetch(MODELOS[m].prob + '?t=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(30000) });
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      prob = await r.json();
+      const j = await r.json(); if (m !== modelo) return; prob = j;
     } catch (e) {
-      prob = null; ptabla.innerHTML = '';
-      psub.textContent = 'Aún no hay una corrida del ensamble procesada. Se calcula con las corridas GEFS de 00 y 12 UTC cuando está disponible el plazo de 72 h.';
+      prob = null; ptabla.innerHTML = ''; grupoZona.clearLayers();
+      psub.textContent = 'Aún no hay una corrida del ensamble procesada. ' + MODELOS[modelo].sinProb;
       return;
     }
     if (!prob.prob) { psub.innerHTML = 'La última corrida del ensamble no se pudo procesar; se reintenta en la próxima ejecución.'; ptabla.innerHTML = ''; return; }
@@ -240,12 +254,13 @@ function crearTrombas(L, map, h) {
 
   async function cargar() {
     try {
-      const r = await fetch('data/trombas.json?t=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(30000) });
+      const m = modelo, r = await fetch(MODELOS[m].det + '?t=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(30000) });
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      datos = await r.json(); cargado = Date.now();
+      const j = await r.json(); if (m !== modelo) return; datos = j; cargado = Date.now();
     } catch (e) {
       datos = null; tira.innerHTML = '';
-      sub.textContent = 'Aún no hay una corrida procesada. Se genera con cada corrida nueva del GFS (cuatro al día) cuando está disponible el plazo de 72 h.';
+      grupo.clearLayers(); det.innerHTML = '';
+      sub.textContent = 'Aún no hay una corrida procesada. ' + MODELOS[modelo].sinDet;
       return;
     }
     pintar();
@@ -296,6 +311,25 @@ function crearTrombas(L, map, h) {
       <dt>ΔT máximo</dt><dd>${nf(e.dT)} °C (TSM − T850)</dd></dl>
       <p class="mar-ayuda">${p.celdas.length ? 'Toca una celda en el mapa para ver sus valores.' : 'Ninguna celda supera los umbrales en este plazo.'} Evaluados ${p.n.puntos} puntos de océano.</p>`;
   }
+
+  // Selector de modelo
+  function rotularModelo() {
+    const M = MODELOS[modelo];
+    card.querySelector('.tr-nprob').textContent = M.nProb;
+    card.querySelector('.tr-ndet').textContent = M.nDet;
+    card.querySelector('.tr-atr').innerHTML = M.atr;
+    card.querySelectorAll('.tr-mod button').forEach(b => b.setAttribute('aria-checked', b.dataset.m === modelo));
+  }
+  card.querySelectorAll('.tr-mod button').forEach(b => b.onclick = () => {
+    if (b.dataset.m === modelo) return;
+    modelo = b.dataset.m;
+    try { localStorage.setItem('trombasModelo', modelo); } catch (e) {}
+    rotularModelo();
+    datos = null; prob = null; sel = null;
+    sub.textContent = 'Cargando…'; psub.textContent = 'Cargando…'; tira.innerHTML = ''; ptabla.innerHTML = '';
+    cargar(); cargarProb();
+  });
+  rotularModelo();
 
   function actualizar() { cargar(); cargarProb(); cargarAvisos(); }
   return { actualizar, pestana, capas: { celdas: grupo, zona: grupoZona }, get cargado() { return cargado; } };

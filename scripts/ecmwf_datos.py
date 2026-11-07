@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Lectura de los datos abiertos de ECMWF (IFS y ENS 0,25°) desde su repositorio público en AWS.
 
-Licencia CC-BY-4.0 (atribución visible obligatoria: "Datos de ECMWF, CC-BY-4.0"). Cada archivo GRIB2 trae un índice
+ECMWF publica los mismos archivos en varios espejos; se usa primero el de Google Cloud, porque el de AWS rechaza con
+frecuencia las lecturas del ensamble ("SlowDown", archivo saturado por otros usuarios), y después AWS y el servidor de
+ECMWF como respaldo. Licencia CC-BY-4.0 (atribución visible obligatoria: "Datos de ECMWF, CC-BY-4.0"). Cada archivo GRIB2 trae un índice
 (.index, una línea JSON por mensaje con su desplazamiento y largo), así que se bajan solo los mensajes necesarios con
 lecturas parciales (Range) y se unen los que quedan contiguos para hacer menos solicitudes. Los campos vienen en
 grilla global de 0,25° con compresión CCSDS; se decodifican con eccodes y se recortan al recuadro pedido.
@@ -13,7 +15,9 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import requests
 
-BASE = "https://ecmwf-forecasts.s3.eu-central-1.amazonaws.com"
+ESPEJOS = ["https://storage.googleapis.com/ecmwf-open-data",
+           "https://ecmwf-forecasts.s3.eu-central-1.amazonaws.com",
+           "https://data.ecmwf.int/forecasts"]
 CAB = {"User-Agent": "trombas-marinas/1.0 (datos abiertos ECMWF)"}
 ATRIBUCION = "Datos de ECMWF (open data, CC-BY-4.0)"
 _SES = requests.Session()
@@ -35,16 +39,25 @@ def pedir(u, rango=None, timeout=120):
     return r
 
 
-def url(c, stream, tipo, paso, ext, modelo="ifs"):
+def url(c, stream, tipo, paso, ext, modelo="ifs", base=ESPEJOS[0]):
     d, h = c.strftime("%Y%m%d"), c.strftime("%H")
-    return f"{BASE}/{d}/{h}z/{modelo}/0p25/{stream}/{d}{h}0000-{paso}h-{stream}-{tipo}.{ext}"
+    return f"{base}/{d}/{h}z/{modelo}/0p25/{stream}/{d}{h}0000-{paso}h-{stream}-{tipo}.{ext}"
+
+
+def indice_y_espejo(c, stream, tipo, paso, modelo="ifs"):
+    """Índice del primer espejo que lo tenga publicado, y ese espejo (los archivos se bajan del mismo)."""
+    for base in ESPEJOS:
+        try:
+            r = pedir(url(c, stream, tipo, paso, "index", modelo, base), timeout=60)
+        except Exception:
+            continue
+        if r.status_code == 200 and r.text.strip():
+            return [json.loads(x) for x in r.text.splitlines() if x.strip()], base
+    return None, None
 
 
 def indice(c, stream, tipo, paso, modelo="ifs"):
-    r = pedir(url(c, stream, tipo, paso, "index", modelo), timeout=60)
-    if r.status_code != 200:
-        return None
-    return [json.loads(x) for x in r.text.splitlines() if x.strip()]
+    return indice_y_espejo(c, stream, tipo, paso, modelo)[0]
 
 
 def bajar(c, stream, tipo, paso, elegir, modelo="ifs", hilos=6, tope_bloque=48_000_000, hueco=0, informe=None):
@@ -52,7 +65,7 @@ def bajar(c, stream, tipo, paso, elegir, modelo="ifs", hilos=6, tope_bloque=48_0
 
     hueco: bytes de mensajes no pedidos que se aceptan entre dos pedidos para unirlos en una sola lectura
     (menos solicitudes; el repositorio limita la cantidad por segundo)."""
-    ind = indice(c, stream, tipo, paso, modelo)
+    ind, base = indice_y_espejo(c, stream, tipo, paso, modelo)
     if ind is None:
         raise RuntimeError(f"sin índice para +{paso} h")
     sel = sorted((e for e in ind if elegir(e)), key=lambda e: e["_offset"])
@@ -63,9 +76,9 @@ def bajar(c, stream, tipo, paso, elegir, modelo="ifs", hilos=6, tope_bloque=48_0
             bloques[-1][1] = fin; bloques[-1][2].append(e)
         else:
             bloques.append([ini, fin, [e]])
-    u = url(c, stream, tipo, paso, "grib2", modelo)
+    u = url(c, stream, tipo, paso, "grib2", modelo, base)
     if informe is not None:
-        informe.update(mensajes=len(sel), lecturas=len(bloques), mb=round(sum(b[1] - b[0] + 1 for b in bloques) / 1e6))
+        informe.update(mensajes=len(sel), lecturas=len(bloques), mb=round(sum(b[1] - b[0] + 1 for b in bloques) / 1e6), espejo=base.split('/')[2])
 
     def uno(b):
         r = pedir(u, (b[0], b[1]))

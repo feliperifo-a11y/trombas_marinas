@@ -27,7 +27,7 @@ concurrency:
 jobs:
   actualizar:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 80
     environment:
       name: github-pages
       url: ${{ steps.publicar.outputs.page_url }}
@@ -47,7 +47,7 @@ jobs:
           OWNER="${GITHUB_REPOSITORY%%/*}"; REPO="${GITHUB_REPOSITORY#*/}"
           T=$(date +%s)
           if [ "$REPO" = "$OWNER.github.io" ]; then BASE="https://$OWNER.github.io"; else BASE="https://$OWNER.github.io/$REPO"; fi
-          for f in trombas.json trombas_prob.json; do
+          for f in trombas.json trombas_prob.json trombas_ecmwf.json trombas_prob_ecmwf.json; do
             if curl -fsSL -H "Cache-Control: no-cache" "$BASE/data/$f?t=$T" -o "/tmp/$f" && [ -s "/tmp/$f" ]; then mv "/tmp/$f" "data/$f"; else echo "Sin $f publicado; se calcula desde cero"; fi
           done
           # Avisos oficiales vigentes: los recolecta MeteoIA desde meteoarmada.directemar.cl
@@ -67,6 +67,17 @@ jobs:
         continue-on-error: true
         timeout-minutes: 12
         run: python scripts/trombas_ens.py
+
+      - name: Trombas marinas ECMWF (IFS 0,25°, datos abiertos CC-BY-4.0, solo con corrida nueva)
+        continue-on-error: true
+        timeout-minutes: 10
+        run: python scripts/trombas_ecmwf.py
+
+      - name: Probabilidad por zona III a VI (ensamble ECMWF ENS 0,25°, 50 miembros, corridas 00 y 12 UTC)
+        # Baja ~1 GB por plazo (campos globales); solo trabaja dos veces al día, con corrida nueva.
+        continue-on-error: true
+        timeout-minutes: 30
+        run: python scripts/trombas_ens_ecmwf.py
 
       - name: Avisos de trombas, qué mostraba el modelo (GFS 0,25° en el área de cada aviso)
         # Solo trabaja cuando hay un aviso nuevo o terminado; el resultado se acumula en el repositorio.
@@ -88,7 +99,7 @@ jobs:
           cp index.html _site/
           cp -r assets _site/
           cp data/geo/metarea.json _site/data/geo/
-          for f in trombas.json trombas_prob.json trombas_avisos.json; do [ -f data/$f ] && cp data/$f _site/data/ || true; done
+          for f in trombas.json trombas_prob.json trombas_ecmwf.json trombas_prob_ecmwf.json trombas_avisos.json; do [ -f data/$f ] && cp data/$f _site/data/ || true; done
 
       - uses: actions/upload-pages-artifact@v3
         with:
