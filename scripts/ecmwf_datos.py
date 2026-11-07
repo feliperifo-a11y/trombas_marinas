@@ -47,8 +47,11 @@ def indice(c, stream, tipo, paso, modelo="ifs"):
     return [json.loads(x) for x in r.text.splitlines() if x.strip()]
 
 
-def bajar(c, stream, tipo, paso, elegir, modelo="ifs", hilos=6, tope_bloque=48_000_000):
-    """Baja los mensajes del índice que cumplen elegir(entrada). Devuelve [(entrada, bytes)]."""
+def bajar(c, stream, tipo, paso, elegir, modelo="ifs", hilos=6, tope_bloque=48_000_000, hueco=0, informe=None):
+    """Baja los mensajes del índice que cumplen elegir(entrada). Devuelve [(entrada, bytes)].
+
+    hueco: bytes de mensajes no pedidos que se aceptan entre dos pedidos para unirlos en una sola lectura
+    (menos solicitudes; el repositorio limita la cantidad por segundo)."""
     ind = indice(c, stream, tipo, paso, modelo)
     if ind is None:
         raise RuntimeError(f"sin índice para +{paso} h")
@@ -56,11 +59,13 @@ def bajar(c, stream, tipo, paso, elegir, modelo="ifs", hilos=6, tope_bloque=48_0
     bloques = []                                   # [inicio, fin, [entradas]]
     for e in sel:
         ini, fin = e["_offset"], e["_offset"] + e["_length"] - 1
-        if bloques and ini == bloques[-1][1] + 1 and fin - bloques[-1][0] < tope_bloque:
+        if bloques and ini - bloques[-1][1] - 1 <= hueco and fin - bloques[-1][0] < tope_bloque:
             bloques[-1][1] = fin; bloques[-1][2].append(e)
         else:
             bloques.append([ini, fin, [e]])
     u = url(c, stream, tipo, paso, "grib2", modelo)
+    if informe is not None:
+        informe.update(mensajes=len(sel), lecturas=len(bloques), mb=round(sum(b[1] - b[0] + 1 for b in bloques) / 1e6))
 
     def uno(b):
         r = pedir(u, (b[0], b[1]))

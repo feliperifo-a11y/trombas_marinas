@@ -60,12 +60,13 @@ def elegir(e):
 
 def campos_paso(c, fhr):
     """{miembro: {clave: campo recortado}}, lat1, lon1"""
-    por, la, lo = {}, None, None
-    for e, grib in ed.bajar(c, "enfo", "ef", fhr, elegir, hilos=8):
+    por, la, lo, inf = {}, None, None, {}
+    for e, grib in ed.bajar(c, "enfo", "ef", fhr, elegir, hilos=3, tope_bloque=120_000_000, hueco=3_000_000, informe=inf):
         v, lats, lons = ed.decodificar(grib)
         sub, la, lo = ed.recortar(v, lats, lons, NORTE, SUR, OESTE, ESTE)
         k = (e["param"], int(e["levelist"])) if e["levtype"] == "pl" else e["param"]
         por.setdefault(int(e["number"]), {})[k] = sub
+    print(f"    +{fhr:02d} h: {inf.get('mensajes')} mensajes en {inf.get('lecturas')} lecturas, {inf.get('mb')} MB")
     return por, la, lo
 
 

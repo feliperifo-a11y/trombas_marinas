@@ -12,6 +12,7 @@ jobs:
         with: { python-version: "3.12", cache: pip }
       - run: pip install -r requirements.txt
       - name: IFS determinístico
+        if: false
         run: /usr/bin/time -v python scripts/trombas_ecmwf.py 2>&1 | grep -v -E "^\s+(Average|Exit|Socket|Signals|Swaps|Page size|Voluntary|Involuntary|Minor|Major|File system|Percent)"
       - name: ENS
         run: /usr/bin/time -v python scripts/trombas_ens_ecmwf.py 2>&1 | grep -v -E "^\s+(Average|Exit|Socket|Signals|Swaps|Page size|Voluntary|Involuntary|Minor|Major|File system|Percent)"
