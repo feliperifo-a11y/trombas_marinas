@@ -24,9 +24,13 @@ function crearTrombas(L, map, h) {
       sinDet: 'Se genera con cada corrida nueva del IFS de ECMWF (cuatro al día) cuando está publicado el plazo de 72 h.',
       sinProb: 'Se calcula con las corridas ENS de 00 y 12 UTC cuando están publicados los 50 miembros a 72 h.',
       atr: 'Datos de ECMWF (open data), licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página.' },
+    monan: { det: 'data/trombas_monan.json', prob: null, nDet: 'MONAN 3 km', nProb: 'no disponible para MONAN',
+      sinDet: 'Se genera con la corrida diaria de MONAN (malla 12 → 3 km sobre el golfo de Arauco) cuando termina.',
+      sinProb: 'MONAN se corre de forma determinística (una sola corrida): no tiene ensamble ni probabilidad por zona.',
+      atr: 'Modelo comunitario <a href="https://github.com/monanadmin/MONAN-Model" target="_blank" rel="noopener">MONAN</a> (INPE/CPTEC), corrido por esta página en una malla de 12 km que se afina a 3 km sobre el golfo de Arauco; condiciones iniciales y de borde NOAA GFS 0,25°. Los índices los calcula esta página con el mismo método.' },
   };
   let modelo = 'gfs';
-  try { if (localStorage.getItem('trombasModelo') === 'ecmwf') modelo = 'ecmwf'; } catch (e) {}
+  try { const g = localStorage.getItem('trombasModelo'); if (g === 'ecmwf' || g === 'monan') modelo = g; } catch (e) {}
   const NOMBRE_IND = { stp: 'STP ≤ −0,1', hslc: 'Alto cizalle y CAPE bajo', nst: 'NST > 1 (sin validar en Chile)' };
   const claseP = v => v == null ? '' : v >= 80 ? 'p4' : v >= 50 ? 'p3' : v >= 20 ? 'p2' : v > 0 ? 'p1' : 'p0';
   const diaLargo = f => new Date(f + 'T12:00:00Z').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).replace('.', '');
@@ -38,7 +42,7 @@ function crearTrombas(L, map, h) {
       <button type="button" role="tab" data-tab="ficha" aria-selected="false">Ficha técnica</button></nav>
     <p class="tr-exp">Estimación automática y experimental: <b>no constituye aviso</b>. Los avisos oficiales los emite el Servicio Meteorológico de la Armada en <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">meteoarmada.directemar.cl</a>.</p>
     <div class="tr-panel" data-tab="pron">
-    <div class="tr-mod" role="radiogroup" aria-label="Modelo"><span>Modelo</span>${Object.entries({ gfs: 'GFS · NOAA', ecmwf: 'ECMWF' }).map(([k, t]) => `<button type="button" role="radio" data-m="${k}" aria-checked="${k === modelo}">${t}</button>`).join('')}</div>
+    <div class="tr-mod" role="radiogroup" aria-label="Modelo"><span>Modelo</span>${Object.entries({ gfs: 'GFS · NOAA', ecmwf: 'ECMWF', monan: 'MONAN 3 km' }).map(([k, t]) => `<button type="button" role="radio" data-m="${k}" aria-checked="${k === modelo}">${t}</button>`).join('')}</div>
     <p class="tr-atr"></p>
     <h3 class="tr-h">Probabilidad por zona · <span class="tr-nprob"></span></h3>
     <p class="mar-sub tr-psub" aria-live="polite">Cargando…</p>
@@ -49,9 +53,9 @@ function crearTrombas(L, map, h) {
     <h3 class="tr-h">Detalle por celda · <span class="tr-ndet"></span> (una corrida, sin probabilidad)</h3>
     <p class="mar-sub tr-sub" aria-live="polite">Cargando…</p>
     <div class="tr-tira"></div>
-    <div class="mar-ley tr-ley"><span><i style="background:${COLOR.stp}"></i>STP ≤ −0,1</span><span><i style="background:${COLOR.hslc}"></i>Alto cizalle y CAPE bajo</span><span><i style="background:${COLOR.nst}"></i>NST &gt; 1</span><span>número = celdas de 0,25° sobre umbral</span></div>
+    <div class="mar-ley tr-ley"><span><i style="background:${COLOR.stp}"></i>STP ≤ −0,1</span><span><i style="background:${COLOR.hslc}"></i>Alto cizalle y CAPE bajo</span><span><i style="background:${COLOR.nst}"></i>NST &gt; 1</span><span class="tr-nceldas">número = celdas de 0,25° sobre umbral</span></div>
     <div class="mar-det tr-det" aria-live="polite"><p class="mar-ayuda">Selecciona un plazo para ver en el mapa las celdas que superan algún umbral.</p></div>
-    <p class="mar-nota">Índices calculados sobre el océano con el modelo elegido, dominio 20°–56° S / 85°–68° W, con el mismo método para el GFS y para ECMWF. Los umbrales vienen de estudios de tornados chilenos en tierra (Marín et al., 2024 y 2026) y del NST del SPC: aún no están calibrados para trombas. Ningún modelo global resuelve la vorticidad de escala local, por lo que el NST rara vez supera su umbral. ECMWF publica menos niveles bajo 700 hPa que el GFS (1000, 925 y 850 hPa) y su ΔT usa la temperatura de piel del mar.</p>
+    <p class="mar-nota">Índices calculados sobre el océano con el modelo elegido, dominio 20°–56° S / 85°–68° W, con el mismo método para el GFS y para ECMWF. Los umbrales vienen de estudios de tornados chilenos en tierra (Marín et al., 2024 y 2026) y del NST del SPC: aún no están calibrados para trombas. Ningún modelo global resuelve la vorticidad de escala local, por lo que el NST rara vez supera su umbral. ECMWF publica menos niveles bajo 700 hPa que el GFS (1000, 925 y 850 hPa) y su ΔT usa la temperatura de piel del mar. MONAN cubre solo un círculo de 450 km centrado en el golfo de Arauco (zona IV), con celdas de 3 km hasta unos 70 km del centro y de 12 km en el resto; sus columnas se llevan a los mismos niveles de presión que el GFS y su NST usa la vorticidad del primer nivel del modelo, que a 3 km ya resuelve parte de la escala local.</p>
     </div>
     <div class="tr-panel" data-tab="avisos" hidden>
     <h3 class="tr-h">Qué mostraba el modelo en cada aviso de trombas</h3>
@@ -226,6 +230,11 @@ function crearTrombas(L, map, h) {
   });
 
   async function cargarProb() {
+    if (!MODELOS[modelo].prob) {
+      prob = null; ptabla.innerHTML = ''; grupoZona.clearLayers();
+      psub.textContent = MODELOS[modelo].sinProb;
+      return;
+    }
     try {
       const m = modelo, r = await fetch(MODELOS[m].prob + '?t=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(30000) });
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -303,9 +312,15 @@ function crearTrombas(L, map, h) {
     sel = fhr;
     tira.querySelectorAll('.tr-p').forEach(b => b.classList.toggle('sel', +b.dataset.f === fhr));
     grupo.clearLayers();
-    const col = datos.columnas, i = Object.fromEntries(col.map((c, k) => [c, k])), m = datos.paso_grilla / 2;
+    const col = datos.columnas, i = Object.fromEntries(col.map((c, k) => [c, k]));
+    if (datos.circulo) {   // MONAN: contorno del dominio regional y de la zona de 3 km
+      const ci = datos.circulo;
+      L.circle([ci.lat, ci.lon], { radius: ci.radio_km * 1000, color: '#9fd3ff', weight: 1.2, dashArray: '6 6', fill: false, interactive: false }).addTo(grupo);
+      L.circle([ci.lat, ci.lon], { radius: ci.fino_km * 1000, color: '#9fd3ff', weight: 1, dashArray: '2 4', fill: false, interactive: false }).addTo(grupo);
+    }
     for (const c of p.celdas) {
       const k = c[i.stp] <= datos.umbrales.stp ? 'stp' : c[i.hslc] ? 'hslc' : 'nst';
+      const m = (i.paso != null && c[i.paso] != null ? c[i.paso] : datos.paso_grilla) / 2;
       L.rectangle([[c[0] - m, c[1] - m], [c[0] + m, c[1] + m]], { color: COLOR[k], weight: 0.5, fillOpacity: 0.45 })
         .bindPopup(`<div class="pp"><div class="ppT">${dm(c[0], 'N', 'S')} · ${dm(c[1], 'E', 'W')}</div><table>` +
           `<tr><th>Válido</th><td>${escH(horaChile(p.valida))}</td></tr>` +
@@ -331,6 +346,8 @@ function crearTrombas(L, map, h) {
     card.querySelector('.tr-nprob').textContent = M.nProb;
     card.querySelector('.tr-ndet').textContent = M.nDet;
     card.querySelector('.tr-atr').innerHTML = M.atr;
+    for (const c of ['.tr-ptabs', '.tr-pley', '.tr-pdet']) card.querySelector(c).style.display = M.prob ? '' : 'none';   // sin ensamble: sin tabla de probabilidad
+    card.querySelector('.tr-nceldas').textContent = modelo === 'monan' ? 'número = celdas de MONAN (3 a 12 km) sobre umbral' : 'número = celdas de 0,25° sobre umbral';
     card.querySelectorAll('.tr-mod button').forEach(b => b.setAttribute('aria-checked', b.dataset.m === modelo));
   }
   card.querySelectorAll('.tr-mod button').forEach(b => b.onclick = () => {

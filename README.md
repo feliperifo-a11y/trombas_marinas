@@ -10,6 +10,7 @@ Página experimental dedicada a las trombas marinas en la costa de Chile (zonas 
 |---|---|---|---|
 | Probabilidad por zona | Porcentaje de miembros del ensamble (GEFS 0,5°, 31 miembros; ECMWF ENS 0,25°, 50 miembros) en que algún punto de mar de la zona supera STP ≤ −0,1, alto cizalle con CAPE bajo (HSLC) o NST > 1, por día y cada 6 h, a 72 h | `scripts/trombas_ens.py`, `scripts/trombas_ens_ecmwf.py` | `data/trombas_prob.json`, `data/trombas_prob_ecmwf.json` |
 | Detalle por celda | Celdas de 0,25° sobre umbral en la corrida más reciente del GFS y del ECMWF IFS, cada 3 h hasta 72 h, con sus ingredientes | `scripts/trombas.py`, `scripts/trombas_ecmwf.py` | `data/trombas.json`, `data/trombas_ecmwf.json` |
+| Detalle por celda MONAN 3 km | Celdas de la malla de MONAN (12 km que se afina a 3 km sobre el golfo de Arauco) sobre umbral, mismos índices, cada 3 h. Se calcula en el computador que corre MONAN y se sube al repositorio | `scripts/trombas_monan.py` | `data/trombas_monan.json` (se sube con git) |
 | Avisos archivados | Qué mostraban el GFS y el ECMWF IFS en el área de cada aviso de trombas: al emitir, durante la vigencia y en un día de referencia 7 días antes (ECMWF desde julio de 2026, lo que conserva su archivo abierto) | `scripts/trombas_avisos.py` | `data/trombas_avisos.json` (se acumula en el repositorio) |
 | Ficha técnica | Mecanismos, índices, umbrales y referencias | — | `assets/trombas.js` |
 
@@ -18,6 +19,10 @@ Los índices se calculan en `scripts/trombas_indices.py` (validado contra MetPy)
 ## Actualización
 
 GitHub Actions (`.github/workflows/actualizar.yml`) corre cada hora y en cada cambio de la página o los scripts. Cada script trabaja solo cuando hay corrida nueva o aviso nuevo; si falla, se mantiene el archivo anterior. Los avisos vigentes se leen de `https://meteoia.cl/data/avisos.json`.
+
+## MONAN 3 km
+
+MONAN (Model for Ocean-laNd-Atmosphere predictioN, INPE/CPTEC; núcleo MPAS) se corre fuera de GitHub Actions, en un computador propio, con una malla regional de resolución variable: 12 km en un círculo de 450 km y 3 km hasta unos 70 km del golfo de Arauco. Condiciones iniciales y de borde: GFS 0,25°. `scripts/trombas_monan.py` lleva cada columna a los mismos niveles de presión que `trombas.py` y usa `trombas_indices.py`, de modo que GFS, ECMWF y MONAN se comparan con el mismo método. No hay ensamble, así que no hay probabilidad por zona.
 
 ## Umbrales y fuentes
 

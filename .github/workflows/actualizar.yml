@@ -11,6 +11,7 @@ on:
       - "scripts/**"
       - "data/geo/**"
       - "data/trombas_avisos_historicos.json"
+      - "data/trombas_monan.json"   # lo sube el computador que corre MONAN
       - "requirements.txt"
       - ".github/workflows/**"
   workflow_dispatch:
@@ -99,7 +100,7 @@ jobs:
           cp index.html _site/
           cp -r assets _site/
           cp data/geo/metarea.json _site/data/geo/
-          for f in trombas.json trombas_prob.json trombas_ecmwf.json trombas_prob_ecmwf.json trombas_avisos.json; do [ -f data/$f ] && cp data/$f _site/data/ || true; done
+          for f in trombas.json trombas_prob.json trombas_ecmwf.json trombas_prob_ecmwf.json trombas_avisos.json trombas_monan.json; do [ -f data/$f ] && cp data/$f _site/data/ || true; done
 
       - uses: actions/upload-pages-artifact@v3
         with:
