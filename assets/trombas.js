@@ -24,13 +24,26 @@ function crearTrombas(L, map, h) {
       sinDet: 'Se genera con cada corrida nueva del IFS de ECMWF (cuatro al día) cuando está publicado el plazo de 72 h.',
       sinProb: 'Se calcula con las corridas ENS de 00 y 12 UTC cuando están publicados los 50 miembros a 72 h.',
       atr: 'Datos de ECMWF (open data), licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página.' },
-    monan: { det: 'data/trombas_monan.json', prob: null, nDet: 'MONAN 3 km', nProb: 'no disponible para MONAN',
+    monan: { det: 'data/trombas_monan.json', prob: null, campos: 'data/monan_campos.json', nDet: 'MONAN 3 km', nProb: 'no disponible para MONAN',
       sinDet: 'Se genera con la corrida diaria de MONAN (malla 12 → 3 km sobre el golfo de Arauco) cuando termina.',
       sinProb: 'MONAN se corre de forma determinística (una sola corrida): no tiene ensamble ni probabilidad por zona.',
       atr: 'Modelo comunitario <a href="https://github.com/monanadmin/MONAN-Model" target="_blank" rel="noopener">MONAN</a> (INPE/CPTEC), corrido por esta página en una malla de 12 km que se afina a 3 km sobre el golfo de Arauco; condiciones iniciales y de borde NOAA GFS 0,25°. Los índices los calcula esta página con el mismo método.' },
   };
   let modelo = 'gfs';
   try { const g = localStorage.getItem('trombasModelo'); if (g === 'ecmwf' || g === 'monan') modelo = g; } catch (e) {}
+  // Campos de pronóstico de MONAN dibujados con la forma real de las celdas (data/monan_campos.json, scripts/monan_campos.py)
+  const CAMPOS_M = {
+    ninguno: { nombre: 'Sin campo' },
+    viento: { nombre: 'Viento 10 m', uni: 'kt', dec: 0, esc: [[0, '#1b2f52'], [5, '#1f5a7a'], [10, '#2a9d8f'], [15, '#8ac926'], [20, '#f6d36b'], [25, '#f29a3b'], [30, '#d9482b'], [40, '#a01a5a']] },
+    t2: { nombre: 'Temperatura 2 m', uni: '°C', dec: 1, esc: [[-10, '#2f5fbf'], [0, '#5aa9e6'], [5, '#9bd6e8'], [10, '#e8f1d4'], [15, '#f6d36b'], [20, '#f29a3b'], [25, '#d9482b'], [30, '#8f1d2c']] },
+    cape: { nombre: 'CAPE', uni: 'J/kg', dec: 0, esc: [[0, '#1b2f52'], [100, '#1f5a7a'], [250, '#2a9d8f'], [500, '#8ac926'], [1000, '#f6d36b'], [1500, '#f29a3b'], [2000, '#d9482b'], [3000, '#8f1d2c']] },
+    precip: { nombre: 'Precipitación', uni: 'mm', dec: 1, min: 0.1, esc: [[0.1, '#cfe8f3'], [1, '#7fc8e8'], [5, '#2f8fd1'], [10, '#2a9d8f'], [20, '#8ac926'], [40, '#f6d36b'], [60, '#d9482b']] },
+  };
+  let campoSel = 'viento', camposM = null, polysM = null, cargandoM = false;
+  try { const g = localStorage.getItem('trombasCampoMonan'); if (g && CAMPOS_M[g]) campoSel = g; } catch (e) {}
+  if (!map.getPane('camposMonan')) { map.createPane('camposMonan'); map.getPane('camposMonan').style.zIndex = 380; }
+  const rendM = L.canvas({ pane: 'camposMonan', padding: 0.3 });
+  const capaCampos = L.layerGroup(), capaFlechas = L.layerGroup();
   const NOMBRE_IND = { stp: 'STP ≤ −0,1', hslc: 'Alto cizalle y CAPE bajo', nst: 'NST > 1 (sin validar en Chile)' };
   const claseP = v => v == null ? '' : v >= 80 ? 'p4' : v >= 50 ? 'p3' : v >= 20 ? 'p2' : v > 0 ? 'p1' : 'p0';
   const diaLargo = f => new Date(f + 'T12:00:00Z').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).replace('.', '');
@@ -44,6 +57,10 @@ function crearTrombas(L, map, h) {
     <div class="tr-panel" data-tab="pron">
     <div class="tr-mod" role="radiogroup" aria-label="Modelo"><span>Modelo</span>${Object.entries({ gfs: 'GFS · NOAA', ecmwf: 'ECMWF', monan: 'MONAN 3 km' }).map(([k, t]) => `<button type="button" role="radio" data-m="${k}" aria-checked="${k === modelo}">${t}</button>`).join('')}</div>
     <p class="tr-atr"></p>
+    <div class="tr-campos" style="display:none">
+      <div class="tr-mod" role="radiogroup" aria-label="Campo de MONAN en el mapa"><span>Mapa</span>${Object.entries(CAMPOS_M).map(([k, c]) => `<button type="button" role="radio" data-c="${k}" aria-checked="${k === campoSel}">${c.nombre}</button>`).join('')}</div>
+      <div class="tr-cley"></div>
+    </div>
     <h3 class="tr-h">Probabilidad por zona · <span class="tr-nprob"></span></h3>
     <p class="mar-sub tr-psub" aria-live="polite">Cargando…</p>
     <div class="ev-tabs tr-ptabs" role="tablist">${Object.entries(NOMBRE_IND).map(([k, t]) => `<button type="button" role="tab" data-i="${k}" aria-selected="${k === 'stp'}">${t}</button>`).join('')}</div>
@@ -330,6 +347,7 @@ function crearTrombas(L, map, h) {
         .addTo(grupo);
     }
     if (!map.hasLayer(grupo)) grupo.addTo(map);
+    pintarCampo();
     const e = p.extremos;
     det.innerHTML = `<h3>${escH(horaChile(p.valida))} <small>(+${p.fhr} h)</small></h3>
       <dl><dt>STP mínimo</dt><dd>${nf(e.stp, 2)} · ${p.n.stp} celdas ≤ −0,1</dd>
@@ -339,6 +357,105 @@ function crearTrombas(L, map, h) {
       <dt>ΔT máximo</dt><dd>${nf(e.dT)} °C (TSM − T850)</dd></dl>
       <p class="mar-ayuda">${p.celdas.length ? 'Toca una celda en el mapa para ver sus valores.' : 'Ninguna celda supera los umbrales en este plazo.'} Evaluados ${p.n.puntos} puntos de océano.</p>`;
   }
+
+  // ---- Campos de MONAN en el mapa
+  const hex = c => [1, 3, 5].map(k => parseInt(c.slice(k, k + 2), 16));
+  function colorM(c, v) {
+    const e = c.esc;
+    if (v <= e[0][0]) return e[0][1];
+    for (let k = 1; k < e.length; k++) if (v <= e[k][0]) {
+      const f = (v - e[k - 1][0]) / (e[k][0] - e[k - 1][0]), a = hex(e[k - 1][1]), b = hex(e[k][1]);
+      return `rgb(${a.map((x, j) => Math.round(x + (b[j] - x) * f)).join(',')})`;
+    }
+    return e[e.length - 1][1];
+  }
+  const cajaCampos = card.querySelector('.tr-campos'), cley = card.querySelector('.tr-cley');
+  function valorM(k, t, i) {
+    const C = camposM.campos;
+    if (k === 'viento') { const u = C.u10.datos[t][i], v = C.v10.datos[t][i]; return u == null || v == null ? null : Math.hypot(u, v); }
+    const m = { t2: 't2', cape: 'cape', precip: 'precip' }[k], a = C[m].datos[t][i];
+    return a == null ? null : a / C[m].esc;
+  }
+  function leyendaM() {
+    const c = CAMPOS_M[campoSel];
+    if (!c.esc) { cley.innerHTML = ''; return; }
+    cley.innerHTML = `<div class="mar-ley" style="flex-wrap:wrap;gap:2px 0"><span style="width:100%">${escH(c.nombre)} (${escH(c.uni)}) · MONAN, celdas de 3 a 12 km${camposM && camposM._sinDato ? ' · <b>sin dato en este plazo</b>' : ''}</span>` +
+      c.esc.map(([v, col]) => `<span><i style="background:${col}"></i>${String(v).replace('.', ',')}</span>`).join('') + '</div>';
+  }
+  async function cargarCampos() {
+    const url = MODELOS[modelo].campos;
+    cajaCampos.style.display = url ? '' : 'none';
+    if (!url) { map.removeLayer(capaCampos); map.removeLayer(capaFlechas); return; }
+    if (!camposM && !cargandoM) {
+      cargandoM = true;
+      try {
+        const r = await fetch(url + '?t=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(60000) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        camposM = await r.json();
+      } catch (e) { camposM = null; cley.innerHTML = '<p class="mar-nota">Aún no hay campos de MONAN publicados.</p>'; cargandoM = false; return; }
+      cargandoM = false;
+      polysM = camposM.celdas.map((vs, i) => L.polygon(vs.map(k => [camposM.vlat[k], camposM.vlon[k]]),
+        { renderer: rendM, pane: 'camposMonan', stroke: false, fillOpacity: 0, interactive: true })
+        .on('click', ev => {
+          const c = CAMPOS_M[campoSel]; if (!c.esc) return;
+          const t = plazoM(), v = valorM(campoSel, t, i);
+          L.popup().setLatLng(ev.latlng).setContent(`<div class="pp"><div class="ppT">${escH(c.nombre)}: ${v == null ? 's/d' : nf(v, c.dec) + ' ' + escH(c.uni)}</div>` +
+            `<div>${escH(horaChile(camposM.plazos[t].valida))} · ${camposM.tierra[i] ? 'tierra' : 'mar'}${camposM.borde[i] ? ' · zona de borde' : ''}</div></div>`).openOn(map);
+        }).addTo(capaCampos));
+      // centros de celda para las flechas de viento
+      camposM._centros = camposM.celdas.map(vs => [vs.reduce((s, k) => s + camposM.vlat[k], 0) / vs.length, vs.reduce((s, k) => s + camposM.vlon[k], 0) / vs.length]);
+    }
+    if (camposM) pintarCampo();
+  }
+  function plazoM() {
+    if (!camposM) return 0;
+    const f = sel == null ? camposM.plazos[0].fhr : sel;
+    let k = 0; camposM.plazos.forEach((p, j) => { if (p.fhr <= f) k = j; });
+    return k;
+  }
+  function pintarCampo() {
+    if (!camposM || modelo !== 'monan') return;
+    const c = CAMPOS_M[campoSel], t = plazoM();
+    capaFlechas.clearLayers();
+    if (!c.esc) { polysM.forEach(p => p.setStyle({ fillOpacity: 0 })); map.removeLayer(capaFlechas); camposM._sinDato = false; leyendaM(); return; }
+    let n = 0;
+    polysM.forEach((p, i) => {
+      const v = valorM(campoSel, t, i);
+      if (v == null || (c.min != null && v < c.min)) { p.setStyle({ fillOpacity: 0 }); return; }
+      n++; p.setStyle({ fillColor: colorM(c, v), fillOpacity: camposM.borde[i] ? 0.25 : 0.6 });
+    });
+    camposM._sinDato = n === 0 && campoSel !== 'precip';
+    if (!map.hasLayer(capaCampos)) capaCampos.addTo(map);
+    if (campoSel === 'viento') {
+      // densidad según el zoom: unas 30 flechas a lo ancho del mapa
+      const b = map.getBounds(), paso = Math.max((b.getEast() - b.getWest()) / 22, 0.03), vistas = new Map();
+      camposM._centros.forEach(([la, lo], i) => {
+        if (camposM.borde[i] || !b.pad(0.1).contains([la, lo])) return;
+        const key = Math.floor(la / paso) + ',' + Math.floor(lo / paso);
+        if (!vistas.has(key)) vistas.set(key, [i, la, lo]);
+      });
+      for (const [i, la, lo] of vistas.values()) {
+        const u = camposM.campos.u10.datos[t][i], v = camposM.campos.v10.datos[t][i];
+        if (u == null || v == null) continue;
+        const kt = Math.hypot(u, v); if (kt < 1) continue;
+        const L_ = paso * (0.35 + Math.min(kt, 40) * 0.012), dx = u / kt * L_ / Math.cos(la * Math.PI / 180), dy = v / kt * L_;
+        const a = [la - dy / 2, lo - dx / 2], b = [la + dy / 2, lo + dx / 2], ang = Math.atan2(dy, dx * Math.cos(la * Math.PI / 180));
+        const p1 = [b[0] - 0.35 * L_ * Math.sin(ang - 0.5), b[1] - 0.35 * L_ * Math.cos(ang - 0.5) / Math.cos(la * Math.PI / 180)];
+        const p2 = [b[0] - 0.35 * L_ * Math.sin(ang + 0.5), b[1] - 0.35 * L_ * Math.cos(ang + 0.5) / Math.cos(la * Math.PI / 180)];
+        L.polyline([a, b], { renderer: rendM, pane: 'camposMonan', color: '#fff', weight: 1.2, opacity: 0.85, interactive: false }).addTo(capaFlechas);
+        L.polyline([p1, b, p2], { renderer: rendM, pane: 'camposMonan', color: '#fff', weight: 1.2, opacity: 0.85, interactive: false }).addTo(capaFlechas);
+      }
+      if (!map.hasLayer(capaFlechas)) capaFlechas.addTo(map);
+    } else map.removeLayer(capaFlechas);
+    leyendaM();
+  }
+  map.on('moveend', () => { if (campoSel === 'viento' && camposM && modelo === 'monan') pintarCampo(); });
+  cajaCampos.querySelectorAll('button').forEach(b => b.onclick = () => {
+    campoSel = b.dataset.c;
+    try { localStorage.setItem('trombasCampoMonan', campoSel); } catch (e) {}
+    cajaCampos.querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', x === b));
+    pintarCampo();
+  });
 
   // Selector de modelo
   function rotularModelo() {
@@ -357,10 +474,13 @@ function crearTrombas(L, map, h) {
     rotularModelo();
     datos = null; prob = null; sel = null;
     sub.textContent = 'Cargando…'; psub.textContent = 'Cargando…'; tira.innerHTML = ''; ptabla.innerHTML = '';
-    cargar(); cargarProb();
+    cargar(); cargarProb(); cargarCampos();
   });
   rotularModelo();
 
-  function actualizar() { cargar(); cargarProb(); cargarAvisos(); }
+  function actualizar() {
+    capaCampos.clearLayers(); capaFlechas.clearLayers(); camposM = null; polysM = null;   // relee los campos de la corrida nueva
+    cargar(); cargarProb(); cargarAvisos(); cargarCampos();
+  }
   return { actualizar, pestana, capas: { celdas: grupo, zona: grupoZona }, get cargado() { return cargado; } };
 }
