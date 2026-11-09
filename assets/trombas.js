@@ -398,8 +398,7 @@ function crearTrombas(L, map, h) {
       } catch (e) { camposM = null; cley.innerHTML = '<p class="mar-nota">Aún no hay campos de MONAN publicados.</p>'; cargandoM = false; return; }
       cargandoM = false;
       polysM = camposM.celdas.map((vs, i) => L.polygon(vs.map(k => [camposM.vlat[k], camposM.vlon[k]]),
-        { renderer: rendM, pane: 'camposMonan', stroke: false, fillOpacity: 0, interactive: true })
-        .on('click', ev => fichaPunto(i, ev.latlng)).addTo(capaCampos));
+        { renderer: rendM, pane: 'camposMonan', stroke: false, fillOpacity: 0, interactive: false }).addTo(capaCampos));
       // centros de celda para las flechas de viento
       camposM._centros = camposM.celdas.map(vs => [vs.reduce((s, k) => s + camposM.vlat[k], 0) / vs.length, vs.reduce((s, k) => s + camposM.vlon[k], 0) / vs.length]);
     }
@@ -506,6 +505,19 @@ function crearTrombas(L, map, h) {
     } else grupoMonan.removeLayer(capaFlechas);
     leyendaM();
   }
+  // Clic en el mapa: la celda MONAN más cercana. Se escucha en el mapa y no en cada polígono porque el lienzo
+  // de las otras capas (overlayPane) queda encima del de MONAN y se lleva los clics.
+  let ultPopup = 0;
+  map.on('popupopen', () => { ultPopup = Date.now(); });
+  map.on('click', ev => {
+    if (modelo !== 'monan' || !camposM || !camposM._centros || !map.hasLayer(grupoMonan)) return;
+    if (Date.now() - ultPopup < 60) return;   // el clic ya abrió la ficha de una celda sobre umbral
+    const la = ev.latlng.lat, lo = ev.latlng.lng, cl = Math.cos(la * Math.PI / 180);
+    let mejor = -1, dmin = Infinity;
+    camposM._centros.forEach(([a, b], i) => { const d = (a - la) ** 2 + ((b - lo) * cl) ** 2; if (d < dmin) { dmin = d; mejor = i; } });
+    if (mejor < 0 || Math.sqrt(dmin) * 111 > 25) return;   // fuera del dominio
+    fichaPunto(mejor, ev.latlng);
+  });
   map.on('moveend', () => { if (campoSel === 'viento' && camposM && modelo === 'monan') pintarCampo(); });
   cajaCampos.querySelectorAll('button').forEach(b => b.onclick = () => {
     campoSel = b.dataset.c;
