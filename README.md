@@ -12,6 +12,7 @@ Página experimental dedicada a las trombas marinas en la costa de Chile (zonas 
 | Detalle por celda | Celdas de 0,25° sobre umbral en la corrida más reciente del GFS y del ECMWF IFS, cada 3 h hasta 72 h, con sus ingredientes | `scripts/trombas.py`, `scripts/trombas_ecmwf.py` | `data/trombas.json`, `data/trombas_ecmwf.json` |
 | Detalle por celda MONAN 3 km | Celdas de la malla de MONAN (12 km que se afina a 3 km sobre el golfo de Arauco) sobre umbral, mismos índices, cada 3 h. Se calcula en el computador que corre MONAN y se sube al repositorio | `scripts/trombas_monan.py` | `data/trombas_monan.json` (se sube con git) |
 | Campos MONAN en el mapa | Viento a 10 m (kt, con flechas), temperatura a 2 m, CAPE y precipitación acumulada de MONAN cada 3 h, dibujados con la forma real de las celdas | `scripts/monan_campos.py` | `data/monan_campos.json` (se sube con git) |
+| Ficha de un punto MONAN | Al tocar cualquier celda: viento, temperatura, CAPE, precipitación y todos los índices (STP, SHERBE, HSLC, NST, VGP, LCL, SRH, cizalle, ΔT, ΔZ, viento 850) en el plazo elegido | `scripts/trombas_monan.py` | `data/monan_indices.json` (se sube con git) |
 | Avisos archivados | Qué mostraban el GFS y el ECMWF IFS en el área de cada aviso de trombas: al emitir, durante la vigencia y en un día de referencia 7 días antes (ECMWF desde julio de 2026, lo que conserva su archivo abierto) | `scripts/trombas_avisos.py` | `data/trombas_avisos.json` (se acumula en el repositorio) |
 | Ficha técnica | Mecanismos, índices, umbrales y referencias | — | `assets/trombas.js` |
 

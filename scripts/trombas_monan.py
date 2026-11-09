@@ -11,6 +11,9 @@ que usa scripts/trombas.py con el GFS y calcula los mismos índices con scripts/
 Mismo formato que data/trombas.json, con una columna extra "paso" (tamaño de la celda en grados),
 porque la malla de MONAN no es uniforme.
 
+Además escribe, junto a SALIDA.json, monan_indices.json: los mismos índices para TODAS las celdas de mar,
+cada plazo, para consultar cualquier punto en el mapa de la página.
+
 Uso:
     python trombas_monan.py DIRECTORIO_CORRIDA SALIDA.json [ARCHIVO_INIT]
 
@@ -99,6 +102,10 @@ def main():
 
     p_obj = np.array(NIVELES, float) * 100.0
     pasos = []
+    # Índices de todas las celdas de mar, por plazo (enteros escalados para que el archivo sea liviano)
+    COL_P = [("stp", 100), ("sherbe", 100), ("nst", 100), ("vgp", 100), ("mlcape", 1), ("mucape", 1), ("srh500", 1),
+             ("ebsmu_kt", 1), ("dT", 10), ("dZ_km", 10), ("w850_kt", 1), ("mllcl", 1), ("hslc", 1)]
+    puntos = []
     for f in hist:
         d = Dataset(f)
         d.set_auto_mask(False)
@@ -148,6 +155,11 @@ def main():
                    r(q["dT"][i], 1), r(q["dZ"][i], 1), r(q["w850"][i], 0), r(q["mlcape"][i], 0), r(q["srh500"][i], 0),
                    r(q["ebsmu"][i] * MS_A_KT, 0), r(q["mucape"][i], 0), r(q["vgp"][i], 2), r(q["mllcl"][i], 0),
                    int(bool(q["hslc"][i])), r(pa[i], 3)] for i in idx]
+        cols = {"stp": stp, "sherbe": sh, "nst": ns, "vgp": q["vgp"], "mlcape": q["mlcape"], "mucape": q["mucape"],
+                "srh500": q["srh500"], "ebsmu_kt": q["ebsmu"] * MS_A_KT, "dT": q["dT"], "dZ_km": q["dZ"],
+                "w850_kt": q["w850"], "mllcl": q["mllcl"], "hslc": q["hslc"].astype(float)}
+        puntos.append({"fhr": fhr, "valida": valida.strftime("%Y-%m-%dT%H:%MZ"),
+                       "datos": [[None if not np.isfinite(v) else int(round(float(v) * e)) for v in cols[c]] for c, e in COL_P]})
         pasos.append({"fhr": fhr, "valida": valida.strftime("%Y-%m-%dT%H:%MZ"),
                       "extremos": {"stp": r(np.nanmin(stp), 2), "sherbe": r(np.nanmax(sh), 2), "nst": r(np.nanmax(ns), 2),
                                    "vgp": r(np.nanmax(q["vgp"]), 2), "dT": r(np.nanmax(q["dT"]), 1)},
@@ -169,6 +181,13 @@ def main():
            "pasos": pasos}
     salida.parent.mkdir(parents=True, exist_ok=True)
     salida.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    puntos.sort(key=lambda p: p["fhr"])
+    sal_p = salida.parent / "monan_indices.json"
+    sal_p.write_text(json.dumps({"version": 1, "corrida": out["corrida"], "generado": out["generado"],
+                                 "celdas": [int(i) for i in m], "columnas": [c for c, _ in COL_P],
+                                 "escala": [e for _, e in COL_P], "plazos": puntos},
+                                ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print(f"MONAN: índices de {m.size} celdas de mar → {sal_p} ({os.path.getsize(sal_p)/1e6:.2f} MB)")
     print(f"MONAN: {len(pasos)} plazos → {salida} ({os.path.getsize(salida)/1e3:.0f} kB)")
 
 

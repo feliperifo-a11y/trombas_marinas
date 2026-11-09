@@ -24,7 +24,7 @@ function crearTrombas(L, map, h) {
       sinDet: 'Se genera con cada corrida nueva del IFS de ECMWF (cuatro al día) cuando está publicado el plazo de 72 h.',
       sinProb: 'Se calcula con las corridas ENS de 00 y 12 UTC cuando están publicados los 50 miembros a 72 h.',
       atr: 'Datos de ECMWF (open data), licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página.' },
-    monan: { det: 'data/trombas_monan.json', prob: null, campos: 'data/monan_campos.json', nDet: 'MONAN 3 km', nProb: 'no disponible para MONAN',
+    monan: { det: 'data/trombas_monan.json', prob: null, campos: 'data/monan_campos.json', puntos: 'data/monan_indices.json', nDet: 'MONAN 3 km', nProb: 'no disponible para MONAN',
       sinDet: 'Se genera con la corrida diaria de MONAN (malla 12 → 3 km sobre el golfo de Arauco) cuando termina.',
       sinProb: 'MONAN se corre de forma determinística (una sola corrida): no tiene ensamble ni probabilidad por zona.',
       atr: 'Modelo comunitario <a href="https://github.com/monanadmin/MONAN-Model" target="_blank" rel="noopener">MONAN</a> (INPE/CPTEC), corrido por esta página en una malla de 12 km que se afina a 3 km sobre el golfo de Arauco; condiciones iniciales y de borde NOAA GFS 0,25°. Los índices los calcula esta página con el mismo método.' },
@@ -60,6 +60,7 @@ function crearTrombas(L, map, h) {
     <div class="tr-campos" style="display:none">
       <div class="tr-mod" role="radiogroup" aria-label="Campo de MONAN en el mapa"><span>Mapa</span>${Object.entries(CAMPOS_M).map(([k, c]) => `<button type="button" role="radio" data-c="${k}" aria-checked="${k === campoSel}">${c.nombre}</button>`).join('')}</div>
       <div class="tr-cley"></div>
+      <p class="mar-ayuda" style="margin:4px 0 0">Toca cualquier punto del dominio de MONAN para ver todos sus parámetros en el plazo elegido.</p>
     </div>
     <h3 class="tr-h">Probabilidad por zona · <span class="tr-nprob"></span></h3>
     <p class="mar-sub tr-psub" aria-live="polite">Cargando…</p>
@@ -396,16 +397,54 @@ function crearTrombas(L, map, h) {
       cargandoM = false;
       polysM = camposM.celdas.map((vs, i) => L.polygon(vs.map(k => [camposM.vlat[k], camposM.vlon[k]]),
         { renderer: rendM, pane: 'camposMonan', stroke: false, fillOpacity: 0, interactive: true })
-        .on('click', ev => {
-          const c = CAMPOS_M[campoSel]; if (!c.esc) return;
-          const t = plazoM(), v = valorM(campoSel, t, i);
-          L.popup().setLatLng(ev.latlng).setContent(`<div class="pp"><div class="ppT">${escH(c.nombre)}: ${v == null ? 's/d' : nf(v, c.dec) + ' ' + escH(c.uni)}</div>` +
-            `<div>${escH(horaChile(camposM.plazos[t].valida))} · ${camposM.tierra[i] ? 'tierra' : 'mar'}${camposM.borde[i] ? ' · zona de borde' : ''}</div></div>`).openOn(map);
-        }).addTo(capaCampos));
+        .on('click', ev => fichaPunto(i, ev.latlng)).addTo(capaCampos));
       // centros de celda para las flechas de viento
       camposM._centros = camposM.celdas.map(vs => [vs.reduce((s, k) => s + camposM.vlat[k], 0) / vs.length, vs.reduce((s, k) => s + camposM.vlon[k], 0) / vs.length]);
     }
     if (camposM) pintarCampo();
+  }
+  // ---- Ficha de un punto: todos los parámetros de MONAN en la celda tocada
+  let indicesM = null, cargandoI = null;
+  async function cargarIndices() {
+    if (indicesM || !MODELOS[modelo].puntos) return indicesM;
+    if (!cargandoI) cargandoI = fetch(MODELOS[modelo].puntos + '?t=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(60000) })
+      .then(r => r.ok ? r.json() : null).then(j => {
+        if (j) { j._pos = new Map(j.celdas.map((c, k) => [c, k])); j._col = Object.fromEntries(j.columnas.map((c, k) => [c, k])); }
+        indicesM = j; return j;
+      }).catch(() => null);
+    return cargandoI;
+  }
+  async function fichaPunto(i, latlng) {
+    const t = plazoM(), P = camposM.plazos[t], C = camposM.campos, [la, lo] = camposM._centros[i];
+    const fila = (n, v) => `<tr><th>${n}</th><td>${v}</td></tr>`;
+    const u = C.u10.datos[t][i], v = C.v10.datos[t][i];
+    let viento = 's/d';
+    if (u != null && v != null) { const kt = Math.hypot(u, v), dir = (270 - Math.atan2(v, u) * 180 / Math.PI + 360) % 360; viento = `${String(Math.round(dir / 10) * 10 % 360).padStart(3, '0')}° / ${nf(kt, 0)} kt`; }
+    const val = (k, e, d, uni) => { const a = C[k].datos[t][i]; return a == null ? 's/d' : nf(a / e, d) + ' ' + uni; };
+    const cab = `<div class="pp"><div class="ppT">${dm(la, 'N', 'S')} · ${dm(lo, 'E', 'W')}</div><table>` +
+      fila('Válido', escH(horaChile(P.valida)) + ` (+${P.fhr} h)`) +
+      fila('Superficie', (camposM.tierra[i] ? 'tierra' : 'mar') + (camposM.borde[i] ? ' · zona de borde (no representativa)' : '')) +
+      fila('Viento 10 m', viento) + fila('Temperatura 2 m', val('t2', 10, 1, '°C')) +
+      fila('CAPE', val('cape', 1, 0, 'J/kg')) + fila('Precipitación acumulada', val('precip', 10, 1, 'mm'));
+    const pop = L.popup({ maxWidth: 320 }).setLatLng(latlng).setContent(cab + fila('Índices de trombas', 'cargando…') + '</table></div>').openOn(map);
+    const I = await cargarIndices();
+    let ind = '';
+    if (camposM.tierra[i]) ind = fila('Índices de trombas', 'solo se calculan sobre el mar');
+    else if (!I || !I._pos.has(i)) ind = fila('Índices de trombas', camposM.borde[i] ? 'no se calculan en la zona de borde' : 'no disponibles');
+    else {
+      const pl = I.plazos.find(x => x.fhr === P.fhr), k = I._pos.get(i);
+      const g = c => { const a = pl && pl.datos[I._col[c]][k]; return a == null ? null : a / I.escala[I._col[c]]; };
+      const mark = (txt, alto) => alto ? `<b style="color:#f28c00">${txt}</b>` : txt;
+      const stp = g('stp'), sh = g('sherbe'), ns = g('nst'), hs = g('hslc');
+      ind = fila('STP (HS)', mark(nf(stp, 2), stp != null && stp <= -0.1)) + fila('SHERBE', nf(sh, 2)) +
+        fila('Alto cizalle, CAPE bajo', mark(hs ? 'sí' : 'no', !!hs)) + fila('NST', mark(nf(ns, 2), ns != null && ns > 1)) +
+        fila('VGP', nf(g('vgp'), 2) + ' m/s²') + fila('Base de nube (LCL)', nf(g('mllcl'), 0) + ' m') +
+        fila('MUCAPE', nf(g('mucape'), 0) + ' J/kg') + fila('MLCAPE', nf(g('mlcape'), 0) + ' J/kg') +
+        fila('SRH 0–500 m', nf(g('srh500'), 0) + ' m²/s²') + fila('Cizalle efectivo', nf(g('ebsmu_kt'), 0) + ' kt') +
+        fila('ΔT (TSM − T850)', nf(g('dT'), 1) + ' °C') + fila('ΔZ (EL − LCL)', nf(g('dZ_km'), 1) + ' km') +
+        fila('Viento 850 hPa', nf(g('w850_kt'), 0) + ' kt');
+    }
+    if (map.hasLayer(pop)) pop.setContent(cab + ind + '</table><p class="mar-ayuda" style="margin:6px 0 0">En naranjo, lo que supera el umbral. MONAN, celda de la malla de 3 a 12 km.</p></div>');
   }
   function plazoM() {
     if (!camposM) return 0;
@@ -479,7 +518,7 @@ function crearTrombas(L, map, h) {
   rotularModelo();
 
   function actualizar() {
-    capaCampos.clearLayers(); capaFlechas.clearLayers(); camposM = null; polysM = null;   // relee los campos de la corrida nueva
+    capaCampos.clearLayers(); capaFlechas.clearLayers(); camposM = null; polysM = null; indicesM = null; cargandoI = null;   // relee la corrida nueva
     cargar(); cargarProb(); cargarAvisos(); cargarCampos();
   }
   return { actualizar, pestana, capas: { celdas: grupo, zona: grupoZona }, get cargado() { return cargado; } };
