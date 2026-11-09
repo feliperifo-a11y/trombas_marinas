@@ -113,7 +113,7 @@
   setInterval(refrescar, 60e3); document.addEventListener('visibilitychange', refrescar);
 
   // Capas y mapa base (mismo control que la portada)
-  const CAPAS = [['Zonas III a VI (Cuadro "F")', zonas], ['Celdas GFS sobre umbral', tr.capas.celdas], ['Puntos del ensamble (zona elegida)', tr.capas.zona]];
+  const CAPAS = [['Zonas III a VI (Cuadro "F")', zonas], ['Celdas sobre umbral (modelo elegido)', tr.capas.celdas], ['Puntos del ensamble (zona elegida)', tr.capas.zona], ['MONAN 3 km: campos y ficha por punto', tr.capas.monan]];
   const pop = document.getElementById('capasPop');
   pop.innerHTML = '<div class="t">Capas</div>' + CAPAS.map(([n], i) => `<label><input type="checkbox" data-i="${i}" checked> ${escH(n)}</label>`).join('') +
     '<div class="t" style="margin-top:8px">Mapa base</div><label><input type="radio" name="base" value="sat" checked> Imagen satelital</label><label><input type="radio" name="base" value="oc"> Océano (claro)</label>';

@@ -44,6 +44,8 @@ function crearTrombas(L, map, h) {
   if (!map.getPane('camposMonan')) { map.createPane('camposMonan'); map.getPane('camposMonan').style.zIndex = 380; }
   const rendM = L.canvas({ pane: 'camposMonan', padding: 0.3 });
   const capaCampos = L.layerGroup(), capaFlechas = L.layerGroup();
+  // Grupo que el usuario enciende o apaga desde "Capas"; el cambio de modelo solo vacía o llena su contenido
+  const grupoMonan = L.layerGroup().addTo(map);
   const NOMBRE_IND = { stp: 'STP ≤ −0,1', hslc: 'Alto cizalle y CAPE bajo', nst: 'NST > 1 (sin validar en Chile)' };
   const claseP = v => v == null ? '' : v >= 80 ? 'p4' : v >= 50 ? 'p3' : v >= 20 ? 'p2' : v > 0 ? 'p1' : 'p0';
   const diaLargo = f => new Date(f + 'T12:00:00Z').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).replace('.', '');
@@ -386,7 +388,7 @@ function crearTrombas(L, map, h) {
   async function cargarCampos() {
     const url = MODELOS[modelo].campos;
     cajaCampos.style.display = url ? '' : 'none';
-    if (!url) { map.removeLayer(capaCampos); map.removeLayer(capaFlechas); return; }
+    if (!url) { grupoMonan.removeLayer(capaCampos); grupoMonan.removeLayer(capaFlechas); map.closePopup(); return; }
     if (!camposM && !cargandoM) {
       cargandoM = true;
       try {
@@ -426,7 +428,22 @@ function crearTrombas(L, map, h) {
       fila('Superficie', (camposM.tierra[i] ? 'tierra' : 'mar') + (camposM.borde[i] ? ' · zona de borde (no representativa)' : '')) +
       fila('Viento 10 m', viento) + fila('Temperatura 2 m', val('t2', 10, 1, '°C')) +
       fila('CAPE', val('cape', 1, 0, 'J/kg')) + fila('Precipitación acumulada', val('precip', 10, 1, 'mm'));
-    const pop = L.popup({ maxWidth: 320 }).setLatLng(latlng).setContent(cab + fila('Índices de trombas', 'cargando…') + '</table></div>').openOn(map);
+    // Viento pronosticado en el punto, todos los plazos
+    const flecha = (uu, vv) => { const a = Math.atan2(-vv, uu) * 180 / Math.PI + 90; return `<span style="display:inline-block;transform:rotate(${a.toFixed(0)}deg)">↑</span>`; };
+    let serie = '<div style="margin-top:6px"><b>Viento 10 m pronosticado</b></div><div style="max-height:170px;overflow:auto;margin-top:2px"><table class="tr-vserie" style="width:100%;font-size:12px;border-collapse:collapse">';
+    camposM.plazos.forEach((pp, k) => {
+      const uu = C.u10.datos[k][i], vv = C.v10.datos[k][i];
+      let txt = 's/d', fl = '';
+      if (uu != null && vv != null) {
+        const kt = Math.hypot(uu, vv), dir = (270 - Math.atan2(vv, uu) * 180 / Math.PI + 360) % 360;
+        txt = `${String(Math.round(dir / 10) * 10 % 360).padStart(3, '0')}° / <b>${nf(kt, 0)} kt</b>`; fl = flecha(uu, vv);
+      }
+      const act = k === t ? ' style="background:rgba(63,179,217,.18)"' : '';
+      serie += `<tr${act}><td style="padding:1px 4px">${escH(horaChile(pp.valida))}</td><td style="padding:1px 4px;text-align:right">${txt}</td><td style="padding:1px 4px;width:14px">${fl}</td></tr>`;
+    });
+    serie += '</table></div>';
+    const cab2 = () => cab;   // se arma una vez
+    const pop = L.popup({ maxWidth: 340 }).setLatLng(latlng).setContent(cab + '</table>' + serie + '<table>' + fila('Índices de trombas', 'cargando…') + '</table></div>').openOn(map);
     const I = await cargarIndices();
     let ind = '';
     if (camposM.tierra[i]) ind = fila('Índices de trombas', 'solo se calculan sobre el mar');
@@ -444,7 +461,7 @@ function crearTrombas(L, map, h) {
         fila('ΔT (TSM − T850)', nf(g('dT'), 1) + ' °C') + fila('ΔZ (EL − LCL)', nf(g('dZ_km'), 1) + ' km') +
         fila('Viento 850 hPa', nf(g('w850_kt'), 0) + ' kt');
     }
-    if (map.hasLayer(pop)) pop.setContent(cab + ind + '</table><p class="mar-ayuda" style="margin:6px 0 0">En naranjo, lo que supera el umbral. MONAN, celda de la malla de 3 a 12 km.</p></div>');
+    if (map.hasLayer(pop)) pop.setContent(cab2() + '</table>' + serie + '<div style="margin-top:6px"><b>Índices de trombas</b> (' + escH(horaChile(P.valida)) + ')</div><table>' + ind + '</table><p class="mar-ayuda" style="margin:6px 0 0">En naranjo, lo que supera el umbral. Las flechas indican hacia dónde sopla. MONAN, celda de la malla de 3 a 12 km.</p></div>');
   }
   function plazoM() {
     if (!camposM) return 0;
@@ -456,7 +473,8 @@ function crearTrombas(L, map, h) {
     if (!camposM || modelo !== 'monan') return;
     const c = CAMPOS_M[campoSel], t = plazoM();
     capaFlechas.clearLayers();
-    if (!c.esc) { polysM.forEach(p => p.setStyle({ fillOpacity: 0 })); map.removeLayer(capaFlechas); camposM._sinDato = false; leyendaM(); return; }
+    if (!grupoMonan.hasLayer(capaCampos)) grupoMonan.addLayer(capaCampos);   // celdas siempre tocables (ficha)
+    if (!c.esc) { polysM.forEach(p => p.setStyle({ fillOpacity: 0 })); grupoMonan.removeLayer(capaFlechas); camposM._sinDato = false; leyendaM(); return; }
     let n = 0;
     polysM.forEach((p, i) => {
       const v = valorM(campoSel, t, i);
@@ -464,7 +482,7 @@ function crearTrombas(L, map, h) {
       n++; p.setStyle({ fillColor: colorM(c, v), fillOpacity: camposM.borde[i] ? 0.25 : 0.6 });
     });
     camposM._sinDato = n === 0 && campoSel !== 'precip';
-    if (!map.hasLayer(capaCampos)) capaCampos.addTo(map);
+
     if (campoSel === 'viento') {
       // densidad según el zoom: unas 30 flechas a lo ancho del mapa
       const b = map.getBounds(), paso = Math.max((b.getEast() - b.getWest()) / 22, 0.03), vistas = new Map();
@@ -484,8 +502,8 @@ function crearTrombas(L, map, h) {
         L.polyline([a, b], { renderer: rendM, pane: 'camposMonan', color: '#fff', weight: 1.2, opacity: 0.85, interactive: false }).addTo(capaFlechas);
         L.polyline([p1, b, p2], { renderer: rendM, pane: 'camposMonan', color: '#fff', weight: 1.2, opacity: 0.85, interactive: false }).addTo(capaFlechas);
       }
-      if (!map.hasLayer(capaFlechas)) capaFlechas.addTo(map);
-    } else map.removeLayer(capaFlechas);
+      if (!grupoMonan.hasLayer(capaFlechas)) grupoMonan.addLayer(capaFlechas);
+    } else grupoMonan.removeLayer(capaFlechas);
     leyendaM();
   }
   map.on('moveend', () => { if (campoSel === 'viento' && camposM && modelo === 'monan') pintarCampo(); });
@@ -521,5 +539,5 @@ function crearTrombas(L, map, h) {
     capaCampos.clearLayers(); capaFlechas.clearLayers(); camposM = null; polysM = null; indicesM = null; cargandoI = null;   // relee la corrida nueva
     cargar(); cargarProb(); cargarAvisos(); cargarCampos();
   }
-  return { actualizar, pestana, capas: { celdas: grupo, zona: grupoZona }, get cargado() { return cargado; } };
+  return { actualizar, pestana, capas: { celdas: grupo, zona: grupoZona, monan: grupoMonan }, get cargado() { return cargado; } };
 }
