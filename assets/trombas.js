@@ -54,6 +54,7 @@ function crearTrombas(L, map, h) {
   card.innerHTML = `<nav class="tr-nav" role="tablist" aria-label="Secciones">
       <button type="button" role="tab" data-tab="pron" aria-selected="true">Pronóstico</button>
       <button type="button" role="tab" data-tab="avisos" aria-selected="false">Avisos</button>
+      <button type="button" role="tab" data-tab="obs" aria-selected="false">Observadas</button>
       <button type="button" role="tab" data-tab="ficha" aria-selected="false">Ficha técnica</button></nav>
     <p class="tr-exp">Estimación automática y experimental: <b>no constituye aviso</b>. Los avisos oficiales los emite el Servicio Meteorológico de la Armada en <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">meteoarmada.directemar.cl</a>.</p>
     <div class="tr-panel" data-tab="pron">
@@ -82,6 +83,14 @@ function crearTrombas(L, map, h) {
     <p class="mar-sub tr-asub" aria-live="polite">Cargando…</p>
     <div class="ev-tabs tr-atabs" role="tablist"></div>
     <div class="tr-adet" aria-live="polite"></div>
+    </div>
+    <div class="tr-panel" data-tab="obs" hidden>
+    <h3 class="tr-h">Trombas observadas en Chile</h3>
+    <p class="mar-sub tr-osub" aria-live="polite">Cargando…</p>
+    <div class="tr-omes"></div>
+    <div class="mar-ley tr-oley"></div>
+    <div class="tr-otabla"></div>
+    <p class="mar-nota tr-onota"></p>
     </div>
     <div class="tr-panel" data-tab="ficha" hidden>
     
@@ -547,9 +556,80 @@ function crearTrombas(L, map, h) {
   });
   rotularModelo();
 
+  // ---- Trombas observadas (data/trombas_eventos.json): catálogo de eventos ocurridos, no avisos ni pronóstico
+  const grupoObs = L.layerGroup();
+  const COLOR_OBS = { confirmada: '#ff5252', catalogo: '#4db6ff', registro: '#f6d36b', dudosa: '#8a97a6' };
+  const NOMBRE_OBS = { confirmada: 'Confirmada por una autoridad', catalogo: 'Catálogo científico', registro: 'Video o testigos citados por prensa', dudosa: 'Dudosa' };
+  const MES3 = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  const osub = card.querySelector('.tr-osub'), omes = card.querySelector('.tr-omes'), oley = card.querySelector('.tr-oley');
+  const otabla = card.querySelector('.tr-otabla'), onota = card.querySelector('.tr-onota');
+  let obs = null, marcasObs = new Map();
+
+  async function cargarObservadas() {
+    try {
+      const r = await fetch('data/trombas_eventos.json?t=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(30000) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      obs = await r.json();
+    } catch (e) { obs = null; osub.textContent = 'No se pudo leer el catálogo de trombas observadas.'; return; }
+    pintarObs();
+  }
+
+  function pintarObs() {
+    grupoObs.clearLayers(); marcasObs.clear();
+    const ev = (obs.eventos || []).filter(e => e.lat != null && e.lon != null);
+    if (!ev.length) { osub.textContent = 'El catálogo no tiene eventos con posición.'; return; }
+    const mar = ev.filter(e => e.tipo !== 'lacustre');
+    const annos = ev.map(e => e.fecha.slice(0, 4));
+    osub.innerHTML = `<b>${ev.length}</b> trombas con posición conocida entre ${escH(annos.reduce((a, b) => a < b ? a : b))} y ${escH(annos.reduce((a, b) => a > b ? a : b))}: ${mar.length} marinas y ${ev.length - mar.length} lacustres. ` +
+      'Son eventos <b>ocurridos</b>, no avisos ni pronóstico. El catálogo une el catálogo científico de tornados y trombas de Chile con registros de prensa; cada evento lleva su fuente.';
+
+    // Marcas en el mapa: círculo lleno para las marinas, hueco para las lacustres
+    for (const e of ev) {
+      const lacustre = e.tipo === 'lacustre';
+      const m = L.circleMarker([e.lat, e.lon], {
+        radius: e.nivel === 'dudosa' ? 4 : 5.5, color: '#ffffff', weight: 1.4, opacity: 0.9,
+        fillColor: COLOR_OBS[e.nivel] || '#8a97a6', fillOpacity: lacustre ? 0.18 : 0.85,
+      });
+      const u = (e.urls || [])[0];
+      m.bindPopup(`<b>${escH(e.lugar)}</b><br><span class="tr-opop">${escH(new Date(e.fecha + 'T12:00:00Z').toLocaleDateString('es-CL', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' }))}` +
+        `${e.hora ? ' · ' + escH(e.hora) + ' h' : ' · sin hora'}${lacustre ? ' · tromba lacustre' : ''}</span>` +
+        `<br><span class="tr-opop">${escH(NOMBRE_OBS[e.nivel] || e.nivel)}: ${escH(e.respaldo || '')}</span>` +
+        (e.nota ? `<br><span class="tr-opop">${escH(e.nota)}</span>` : '') +
+        (u ? `<br><a href="${escH(u)}" target="_blank" rel="noopener">Fuente ↗</a>` : ''), { maxWidth: 320 });
+      m.addTo(grupoObs); marcasObs.set(e.id, m);
+    }
+
+    // Reparto por mes: la pregunta operativa es cuándo ocurren
+    const porMes = Array(12).fill(0);
+    for (const e of mar) porMes[+e.fecha.slice(5, 7) - 1]++;
+    const tope = Math.max(...porMes, 1);
+    omes.innerHTML = '<div class="tr-omt">Trombas marinas por mes</div><div class="tr-ombar">' +
+      porMes.map((n, i) => `<span title="${n} en ${MES3[i]}"><i style="height:${Math.round(4 + 42 * n / tope)}px"></i><b>${n || ''}</b><em>${MES3[i][0].toUpperCase()}</em></span>`).join('') + '</div>';
+
+    oley.innerHTML = Object.entries(NOMBRE_OBS).map(([k, t]) => `<span><i style="background:${COLOR_OBS[k]}"></i>${escH(t)}</span>`).join('') +
+      '<span><i class="tr-olac"></i>Lacustre (círculo hueco)</span>';
+
+    // Tabla: de la más reciente a la más antigua
+    const filas = ev.slice().sort((a, b) => (b.fecha + (b.hora || '')).localeCompare(a.fecha + (a.hora || '')));
+    otabla.innerHTML = '<div class="ev-tw tr-otw"><table class="ev-tabla tr-ot"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Respaldo</th></tr></thead><tbody>' +
+      filas.map(e => `<tr data-id="${escH(e.id)}" tabindex="0" title="Ver en el mapa">` +
+        `<td>${escH(new Date(e.fecha + 'T12:00:00Z').toLocaleDateString('es-CL', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, ''))}</td>` +
+        `<td>${escH(e.hora || '–')}</td><td><i class="tr-op" style="background:${COLOR_OBS[e.nivel] || '#8a97a6'};${e.tipo === 'lacustre' ? 'opacity:.35' : ''}"></i>${escH(e.lugar)}${e.region ? ', ' + escH(e.region) : ''}${e.cantidad ? ` <small>(${escH(e.cantidad)})</small>` : ''}</td>` +
+        `<td><small>${escH(NOMBRE_OBS[e.nivel] || e.nivel)}</small></td></tr>`).join('') + '</tbody></table></div>';
+    const ir = id => { const m = marcasObs.get(id); if (!m) return; if (!map.hasLayer(grupoObs)) grupoObs.addTo(map); map.flyTo(m.getLatLng(), Math.max(map.getZoom(), 8), { duration: 0.7 }); m.openPopup(); };
+    otabla.querySelectorAll('tbody tr').forEach(tr => {
+      tr.onclick = () => ir(tr.dataset.id);
+      tr.onkeydown = ev2 => { if (ev2.key === 'Enter' || ev2.key === ' ') { ev2.preventDefault(); ir(tr.dataset.id); } };
+    });
+
+    onota.innerHTML = 'La posición es la del lugar que nombra la fuente, no la del embudo, y sirve para una grilla de 0,25°. ' +
+      'El registro depende de quién mira: casi todas las trombas conocidas son de 2010 en adelante, de día y frente a lugares poblados, lo que refleja los teléfonos con cámara y no un cambio del clima. ' +
+      'Por eso un día sin registro no es un día sin tromba. ' + (obs.base_cientifica && obs.base_cientifica.cita ? escH(obs.base_cientifica.cita) : '');
+  }
+
   function actualizar() {
     capaCampos.clearLayers(); capaFlechas.clearLayers(); camposM = null; polysM = null; indicesM = null; cargandoI = null;   // relee la corrida nueva
-    cargar(); cargarProb(); cargarAvisos(); cargarCampos();
+    cargar(); cargarProb(); cargarAvisos(); cargarCampos(); cargarObservadas();
   }
-  return { actualizar, pestana, capas: { celdas: grupo, zona: grupoZona, monan: grupoMonan }, get cargado() { return cargado; } };
+  return { actualizar, pestana, capas: { celdas: grupo, zona: grupoZona, monan: grupoMonan, obs: grupoObs }, get cargado() { return cargado; } };
 }
