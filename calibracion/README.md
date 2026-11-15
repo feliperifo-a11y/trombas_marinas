@@ -30,6 +30,9 @@ python verificar.py                    # tablas en ~/trombas-era5/resultados/res
 La espera en la cola de Copernicus manda sobre todo lo demás: medido en noviembre de 2026, **más de una hora por
 pedido**, sin importar su tamaño. De ahí salen las dos decisiones que hacen viable esto:
 
+- **15 niveles de presión** en vez de los 20 de la página. Con 20, un mes da 12.000 campos y el servicio lo rechaza,
+  obligando a partirlo en dos pedidos. Con 15 son 9.000 y el mes entra en uno solo. Se conservan todos los niveles
+  bajo 700 hPa, que son los que mandan en CAPE, base de nube y cizalle.
 - **Muestreo cada 3 horas** (12, 15, 18 y 21 UTC) en vez de cada hora. Con 12 horas por día, un mes supera el límite
   de tamaño por pedido y hay que partirlo en cuatro: 952 pedidos, unos 52 días de espera. Con 4 horas por día cada
   mes entra en un solo pedido: 238 pedidos.
@@ -45,7 +48,7 @@ fino, su máximo diario saldría más alto por construcción.
 los que no se pueden reemplazar, y sigue con el resto en orden aleatorio fijo. Así la descarga se puede detener en
 cualquier momento y lo que haya alcanza para calibrar: están todos los eventos y una muestra de meses sin evento
 repartida por todo el período, en vez de los primeros años solamente. Con 2 trabajos, los meses con trombas están
-listos en unas 40 horas; el total son varios días.
+listos en poco más de un día; el total es cerca de una semana.
 
 ## Espacio en disco
 

@@ -19,7 +19,12 @@ HORAS = (12, 15, 18, 21)
 LAT_N, LAT_S = -34.0, -42.5
 AREA = [-33.5, -76.0, -43.0, -71.0]   # N, W, S, E (con margen para derivadas)
 TRAMOS = [(-34.0, -36.0, "34°–36° S"), (-36.0, -38.5, "36°–38,5° S"), (-38.5, -40.2, "38,5°–40,2° S"), (-40.2, -42.5, "40,2°–42,5° S")]
-NIVELES = [1000, 975, 950, 925, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250, 200, 150]
+# 15 niveles en vez de los 20 de la página. Con 20, un mes de 4 horas diarias da 12.000 campos y Copernicus lo
+# rechaza, obligando a partirlo en dos pedidos y duplicando la espera en cola; con 15 son 9.000 campos y el mes
+# entra en un solo pedido. Se conservan todos los niveles bajo 700 hPa, que son los que mandan en CAPE, base de
+# nube, cizalle 0-1 km y gradientes; se omiten 550, 450, 350, 250 y 150 hPa, donde el perfil es suave y el código
+# interpola igual a su grilla fina de 5 hPa.
+NIVELES = [1000, 975, 950, 925, 900, 850, 800, 750, 700, 650, 600, 500, 400, 300, 200]
 TZ = ZoneInfo("America/Santiago")
 
 
