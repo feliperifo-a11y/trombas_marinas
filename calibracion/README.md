@@ -21,9 +21,19 @@ cd calibracion
 python era5_descargar.py --probar      # un día: confirma que la cuenta funciona
 python era5_indices.py --solo prueba   # confirma que el formato se lee y muestra valores para revisar
 python era5_descargar.py               # todo: 119 meses + días de eventos fuera de temporada
-python era5_indices.py                 # índices por hora y celda costera
+python era5_indices.py --borrar        # índices por hora y celda costera, borrando cada mes ya procesado
 python verificar.py                    # tablas en ~/trombas-era5/resultados/resumen.md y resumen.json
 ```
+
+## Espacio en disco
+
+La descarga completa son unos 15 GB (118 MB de niveles de presión y 9 MB de superficie por mes). Los archivos de
+ERA5 solo sirven para calcular los índices, que ocupan menos de 1 GB en total. Con `--borrar`, `era5_indices.py`
+elimina cada par `pl_`/`sfc_` apenas lo procesa, así que el disco nunca guarda más de un mes a la vez.
+
+Conviene dejar la descarga corriendo en una ventana y, cada cierto rato, correr `era5_indices.py --borrar` en otra:
+`era5_descargar.py` escribe primero un archivo `.parcial` y solo le pone el nombre definitivo cuando termina, así que
+nunca se procesa una descarga a medio bajar. Si después se borra un mes que hacía falta, basta volver a descargarlo.
 
 La descarga depende de la cola del servicio de Copernicus y puede tomar desde horas hasta más de un día. Los tres
 scripts se pueden interrumpir y volver a correr: no repiten lo ya hecho. `verificar.py` funciona con lo que haya

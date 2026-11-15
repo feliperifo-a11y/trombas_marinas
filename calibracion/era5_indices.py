@@ -5,7 +5,11 @@ Para cada par pl_X.nc / sfc_X.nc calcula, hora por hora, los índices de scripts
 cercanas a la costa (hasta dos celdas de 0,25° de una celda de tierra) entre 34° y 42,5° S. Guarda un archivo por mes con
 un arreglo (hora, celda) por variable. Se puede interrumpir y volver a correr: no repite lo ya calculado.
 
+Los archivos de ERA5 solo sirven para este cálculo: con --borrar se elimina cada par pl_/sfc_ apenas queda
+procesado, de modo que el disco nunca guarda más de un mes a la vez (unos 130 MB en vez de ~15 GB).
+
 Uso:  python calibracion/era5_indices.py            (todo lo descargado)
+      python calibracion/era5_indices.py --borrar    (y borra cada mes de ERA5 ya procesado)
       python calibracion/era5_indices.py --solo prueba
 """
 import argparse
@@ -108,19 +112,40 @@ def procesar(etiqueta):
     return f"{nt} horas × {nc} celdas"
 
 
+def borrar(etiqueta):
+    n = 0
+    for f in (ENTRADA / f"pl_{etiqueta}.nc", ENTRADA / f"sfc_{etiqueta}.nc"):
+        if f.exists():
+            n += f.stat().st_size; f.unlink()
+        d = f.parent / (f.stem + "_zip")
+        if d.is_dir():
+            for x in d.glob("*"):
+                n += x.stat().st_size; x.unlink()
+            d.rmdir()
+    return n
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--solo")
+    ap.add_argument("--borrar", action="store_true", help="borra el par pl_/sfc_ de ERA5 después de calcular sus índices")
     a = ap.parse_args()
     etiquetas = sorted(f.stem[3:] for f in ENTRADA.glob("pl_*.nc") if (ENTRADA / f"sfc_{f.stem[3:]}.nc").exists())
     if a.solo:
         etiquetas = [e for e in etiquetas if e == a.solo]
     if not etiquetas:
         sys.exit(f"No hay pares pl_/sfc_ en {ENTRADA}")
+    liberado = 0
     for e in etiquetas:
         try:
-            print(f"{e}: {procesar(e)}", flush=True)
+            r = procesar(e)
+            if a.borrar and e != "prueba":
+                liberado += borrar(e)
+                r += " · ERA5 borrado"
+            print(f"{e}: {r}", flush=True)
         except Exception as ex:
             print(f"{e}: ERROR {ex!r}", flush=True)
+    if liberado:
+        print(f"Liberados {liberado / 1e9:.1f} GB de archivos de ERA5 ya procesados.")
     if a.solo:
         d = np.load(SALIDA / f"idx_{a.solo}.npz")
         print("Resumen de la prueba (mediana y extremos por variable):")
