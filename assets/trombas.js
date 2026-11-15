@@ -581,7 +581,9 @@ function crearTrombas(L, map, h) {
     const mar = ev.filter(e => e.tipo !== 'lacustre');
     const annos = ev.map(e => e.fecha.slice(0, 4));
     osub.innerHTML = `<b>${ev.length}</b> trombas con posición conocida entre ${escH(annos.reduce((a, b) => a < b ? a : b))} y ${escH(annos.reduce((a, b) => a > b ? a : b))}: ${mar.length} marinas y ${ev.length - mar.length} lacustres. ` +
-      'Son eventos <b>ocurridos</b>, no avisos ni pronóstico. El catálogo une el catálogo científico de tornados y trombas de Chile con registros de prensa; cada evento lleva su fuente.';
+      'Son eventos <b>ocurridos</b>, no avisos ni pronóstico. Reúne el catálogo científico de tornados y trombas de Chile de ' +
+      '<a href="https://doi.org/10.6084/m9.figshare.25119566" target="_blank" rel="noopener">Bastías-Curivil et al. (2025)</a>, con licencia ' +
+      '<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, y registros de prensa posteriores; cada evento lleva su fuente.';
 
     // Marcas en el mapa: círculo lleno para las marinas, hueco para las lacustres
     for (const e of ev) {
