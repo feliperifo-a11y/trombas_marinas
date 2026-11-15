@@ -8,19 +8,18 @@ Baja, mes por mes, abril a octubre de 2010 a 2026, las horas 12, 15, 18 y 21 UTC
 Además baja los días de las trombas del catálogo que quedan fuera de ese período (reserva 1940–2009 y fuera de
 temporada), con las mismas horas: pl_ev_AAAAMMDD.nc y sfc_ev_AAAAMMDD.nc.
 
-La espera en la cola de Copernicus domina el tiempo total (medido: más de una hora por pedido), así que conviene
-bajar varios meses a la vez con --trabajos. El servicio encola pocos pedidos por conjunto de datos y rechaza el
-resto ("Maximum number queued requests for this dataset has been reached"); cuando eso pasa, el script espera y
-vuelve a mandar el pedido en vez de descartarlo, así que un número alto de trabajos no rompe nada, solo hace que
-varios se queden esperando. 2 o 3 es lo razonable.
+La espera en la cola de Copernicus domina el tiempo total (medido: más de una hora por pedido, cualquiera sea su
+tamaño). El servicio encola muy pocos pedidos por conjunto de datos y rechaza el resto ("Maximum number queued
+requests for this dataset has been reached. Please configure your scripts to request data sequentially"), así que
+mandar dos pedidos a la vez del mismo conjunto hace que los rechacen los dos. Por eso la descarga corre en dos
+filas independientes, una por conjunto de datos, y cada una manda un pedido a la vez.
 
 Si el servicio rechaza un mes completo por tamaño ("cost limits exceeded"), el mes se parte solo en tramos de días
 (pl_AAAAMMdDD.nc) hasta que lo acepta, y ese tamaño se reutiliza en los meses siguientes.
 
 Se puede interrumpir y volver a correr: no repite lo ya descargado.
 Uso:  python calibracion/era5_descargar.py --probar       (un solo día, para revisar que la cuenta y el formato funcionan)
-      python calibracion/era5_descargar.py                (todo, 4 meses a la vez)
-      python calibracion/era5_descargar.py --trabajos 6   (6 meses a la vez)
+      python calibracion/era5_descargar.py                (todo)
       python calibracion/era5_descargar.py --desde 2023   (solo desde ese año)
 """
 import argparse
@@ -40,7 +39,7 @@ VARS_SFC = ["sea_surface_temperature", "2m_temperature", "2m_dewpoint_temperatur
 SALIDA = DATOS / "era5"
 # El servicio rechaza un pedido que supere su límite de tamaño ("cost limits exceeded"). Cuando eso pasa, el mes se
 # parte en mitades hasta que lo acepta, y el tamaño que resultó se reutiliza en los meses siguientes.
-TAMANO = {"dias": None}
+TAMANO = {"pl": None, "sfc": None}
 CANDADO = threading.Lock()
 LOCAL = threading.local()
 
@@ -75,41 +74,44 @@ def pedir(cliente, conjunto, variables, anio, mes, dias, horas, destino, niveles
     return True
 
 
-def bajar(cliente, etiqueta, anio, mes, dias, horas, partible=False):
-    """Descarga un tramo de días: espera si la cola del servicio está llena y parte el tramo si es muy grande."""
+def bajar_uno(cliente, conjunto, variables, niveles, prefijo, etiqueta, anio, mes, dias, horas, partible=False):
+    """Un conjunto de datos y un tramo de días: espera si la cola está llena y parte el tramo si el pedido es muy grande.
+
+    Las dos filas (niveles de presión y superficie) corren en paralelo, pero cada una manda un pedido a la vez: el
+    servicio encola muy pocos por conjunto de datos y rechaza el resto, con el consejo expreso de pedir en serie.
+    """
     dias = list(dias)
-    lim = TAMANO["dias"]
+    lim = TAMANO[prefijo]
     if partible and lim and len(dias) > lim:
         for i in range(0, len(dias), lim):
             t = dias[i:i + lim]
-            bajar(cliente, f"{anio}{mes:02d}d{t[0]:02d}", anio, mes, t, horas)
+            bajar_uno(cliente, conjunto, variables, niveles, prefijo, f"{anio}{mes:02d}d{t[0]:02d}", anio, mes, t, horas)
         return
+    destino = SALIDA / f"{prefijo}_{etiqueta}.nc"
     espera, total = 60, 0
     while True:
         try:
-            n = pedir(cliente, "reanalysis-era5-pressure-levels", VARS_PL, anio, mes, dias, horas, SALIDA / f"pl_{etiqueta}.nc", NIVELES)
-            n |= pedir(cliente, "reanalysis-era5-single-levels", VARS_SFC, anio, mes, dias, horas, SALIDA / f"sfc_{etiqueta}.nc")
+            n = pedir(cliente, conjunto, variables, anio, mes, dias, horas, destino, niveles)
             break
         except Exception as e:
             if demasiado_grande(e) and len(dias) >= 2:
-                for f in (SALIDA / f"pl_{etiqueta}.nc", SALIDA / f"sfc_{etiqueta}.nc"):
-                    f.unlink(missing_ok=True)
+                destino.unlink(missing_ok=True)
                 m = (len(dias) + 1) // 2
                 with CANDADO:
-                    if not TAMANO["dias"] or m < TAMANO["dias"]:
-                        TAMANO["dias"] = m
-                print(f"{etiqueta}: el pedido excede el límite del servicio; se parte en tramos de {m} días", flush=True)
+                    if not TAMANO[prefijo] or m < TAMANO[prefijo]:
+                        TAMANO[prefijo] = m
+                print(f"{prefijo} {etiqueta}: el pedido excede el límite del servicio; se parte en tramos de {m} días", flush=True)
                 for t in (dias[:m], dias[m:]):
-                    bajar(cliente, f"{anio}{mes:02d}d{t[0]:02d}", anio, mes, t, horas)
+                    bajar_uno(cliente, conjunto, variables, niveles, prefijo, f"{anio}{mes:02d}d{t[0]:02d}", anio, mes, t, horas)
                 return
             if not cola_llena(e) or total >= MAX_ESPERA:
                 raise
             if total == 0:
-                print(f"{etiqueta}: la cola del servicio está llena; espera y reintenta", flush=True)
+                print(f"{prefijo} {etiqueta}: la cola del servicio está llena; espera y reintenta", flush=True)
             time.sleep(espera)
             total += espera
             espera = min(espera * 2, 900)
-    print(f"{etiqueta}: {'descargado' if n else 'ya estaba'}", flush=True)
+    print(f"{prefijo} {etiqueta}: {'descargado' if n else 'ya estaba'}", flush=True)
 
 
 def cliente():
@@ -120,18 +122,24 @@ def cliente():
     return LOCAL.c
 
 
-def tarea(etiqueta, anio, mes, dias, partible=False):
-    try:
-        bajar(cliente(), etiqueta, anio, mes, dias, HORAS, partible=partible)
-    except Exception as e:
-        print(f"{etiqueta}: ERROR {e!r} (se reintenta en la próxima corrida)", flush=True)
+FILAS = [("reanalysis-era5-pressure-levels", VARS_PL, NIVELES, "pl"),
+         ("reanalysis-era5-single-levels", VARS_SFC, None, "sfc")]
+
+
+def fila(conjunto, variables, niveles, prefijo, pendientes):
+    """Recorre toda la lista para un conjunto de datos, un pedido a la vez."""
+    c = cliente()
+    for etiqueta, anio, mes, dias, partible in pendientes:
+        try:
+            bajar_uno(c, conjunto, variables, niveles, prefijo, etiqueta, anio, mes, dias, HORAS, partible=partible)
+        except Exception as e:
+            print(f"{prefijo} {etiqueta}: ERROR {e!r} (se reintenta en la próxima corrida)", flush=True)
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--probar", action="store_true")
     ap.add_argument("--desde", type=int, default=min(ANIOS))
-    ap.add_argument("--trabajos", type=int, default=2, help="meses a descargar a la vez; el servicio encola pocos por conjunto de datos")
     a = ap.parse_args()
     try:
         import cdsapi  # noqa: F401
@@ -139,7 +147,11 @@ def main():
         sys.exit("Falta cdsapi: pip install -r calibracion/requirements.txt")
     SALIDA.mkdir(parents=True, exist_ok=True)
     if a.probar:
-        tarea("prueba", 2026, 8, [28])
+        for cj, va, ni, pf in FILAS:
+            try:
+                bajar_uno(cliente(), cj, va, ni, pf, "prueba", 2026, 8, [28], HORAS)
+            except Exception as e:
+                print(f"{pf} prueba: ERROR {e!r}", flush=True)
         print(f"Prueba lista en {SALIDA}. Ahora: python calibracion/era5_indices.py --solo prueba")
         return
     hoy = date.today()
@@ -164,13 +176,12 @@ def main():
     resto = [m for m in meses if m[0] not in con_evento]
     random.Random(20261115).shuffle(resto)
     pendientes = claves + dias_sueltos + resto
-    n = max(1, min(a.trabajos, 10))
-    print(f"{len(pendientes)} meses y días por descargar, {n} a la vez.", flush=True)
+    print(f"{len(pendientes)} meses y días por descargar, en dos filas (niveles de presión y superficie).", flush=True)
     print(f"Primero los {len(claves)} meses con trombas y {len(dias_sueltos)} días de la reserva; "
           f"después los {len(resto)} meses restantes en orden aleatorio.", flush=True)
-    with ThreadPoolExecutor(max_workers=n) as pool:
-        for t in pendientes:
-            pool.submit(tarea, *t)
+    with ThreadPoolExecutor(max_workers=len(FILAS)) as pool:
+        for cj, va, ni, pf in FILAS:
+            pool.submit(fila, cj, va, ni, pf, pendientes)
 
 
 if __name__ == "__main__":

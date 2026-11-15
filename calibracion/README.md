@@ -20,7 +20,7 @@ Corre en un computador propio (no en GitHub Actions). Los datos quedan fuera del
 cd calibracion
 python era5_descargar.py --probar      # un día: confirma que la cuenta funciona
 python era5_indices.py --solo prueba   # confirma que el formato se lee y muestra valores para revisar
-python era5_descargar.py               # todo: 119 meses + días de eventos, 2 a la vez
+python era5_descargar.py               # todo: 119 meses + días de eventos
 python era5_indices.py --borrar        # índices por hora y celda costera, borrando cada mes ya procesado
 python verificar.py                    # tablas en ~/trombas-era5/resultados/resumen.md y resumen.json
 ```
@@ -36,10 +36,11 @@ pedido**, sin importar su tamaño. De ahí salen las dos decisiones que hacen vi
 - **Muestreo cada 3 horas** (12, 15, 18 y 21 UTC) en vez de cada hora. Con 12 horas por día, un mes supera el límite
   de tamaño por pedido y hay que partirlo en cuatro: 952 pedidos, unos 52 días de espera. Con 4 horas por día cada
   mes entra en un solo pedido: 238 pedidos.
-- **Dos meses a la vez** (`--trabajos`). Copernicus encola pocos pedidos por conjunto de datos y rechaza el resto
+- **Una fila por conjunto de datos.** Copernicus encola muy pocos pedidos por conjunto y rechaza el resto
   ("Maximum number queued requests for this dataset has been reached. Please configure your scripts to request data
-  sequentially"). Con muchos trabajos los hilos se estorban entre sí; 2 es lo razonable. Cuando el servicio rechaza
-  un pedido por cola llena, el script espera y lo vuelve a mandar en vez de descartarlo.
+  sequentially"): dos pedidos a la vez del mismo conjunto terminan los dos rechazados. La descarga corre en dos
+  filas independientes, niveles de presión y superficie, y cada una manda un pedido a la vez. Si aun así el
+  servicio rechaza por cola llena, el script espera y vuelve a mandar el pedido en vez de descartarlo.
 
 El muestreo tiene que ser el mismo para los días con tromba y sin tromba: si los días con evento se muestrearan más
 fino, su máximo diario saldría más alto por construcción.
@@ -47,8 +48,9 @@ fino, su máximo diario saldría más alto por construcción.
 **El orden importa.** La descarga empieza por los 22 meses que contienen trombas y los días de la reserva, que son
 los que no se pueden reemplazar, y sigue con el resto en orden aleatorio fijo. Así la descarga se puede detener en
 cualquier momento y lo que haya alcanza para calibrar: están todos los eventos y una muestra de meses sin evento
-repartida por todo el período, en vez de los primeros años solamente. Con 2 trabajos, los meses con trombas están
-listos en poco más de un día; el total es cerca de una semana.
+repartida por todo el período, en vez de los primeros años solamente. Los meses con trombas quedan listos en unos dos
+días y medio; el total, cerca de una semana. La cola de Copernicus es la que manda: en períodos de mucha demanda
+sus propios foros reportan esperas de varias horas por pedido.
 
 ## Espacio en disco
 
