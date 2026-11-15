@@ -9,10 +9,10 @@ Además baja los días de las trombas del catálogo que quedan fuera de ese per�
 temporada), con las mismas horas: pl_ev_AAAAMMDD.nc y sfc_ev_AAAAMMDD.nc.
 
 La espera en la cola de Copernicus domina el tiempo total (medido: más de una hora por pedido, cualquiera sea su
-tamaño). El servicio encola muy pocos pedidos por conjunto de datos y rechaza el resto ("Maximum number queued
-requests for this dataset has been reached. Please configure your scripts to request data sequentially"), así que
-mandar dos pedidos a la vez del mismo conjunto hace que los rechacen los dos. Por eso la descarga corre en dos
-filas independientes, una por conjunto de datos, y cada una manda un pedido a la vez.
+tamaño). El servicio rechaza los pedidos cuando hay más de uno en cola ("Maximum number queued requests for this
+dataset has been reached. Please configure your scripts to request data sequentially"), y en noviembre de 2026 se
+comprobó que el límite es de la cuenta y no de cada conjunto: dos pedidos simultáneos, aunque sean de conjuntos
+distintos, terminan los dos rechazados. Por eso la descarga manda un pedido a la vez, en serie.
 
 Si el servicio rechaza un mes completo por tamaño ("cost limits exceeded"), el mes se parte solo en tramos de días
 (pl_AAAAMMdDD.nc) hasta que lo acepta, y ese tamaño se reutiliza en los meses siguientes.
@@ -126,14 +126,20 @@ FILAS = [("reanalysis-era5-pressure-levels", VARS_PL, NIVELES, "pl"),
          ("reanalysis-era5-single-levels", VARS_SFC, None, "sfc")]
 
 
-def fila(conjunto, variables, niveles, prefijo, pendientes):
-    """Recorre toda la lista para un conjunto de datos, un pedido a la vez."""
+def recorrer(pendientes):
+    """Un pedido a la vez, en serie, alternando los dos conjuntos de datos de cada mes.
+
+    Probado en noviembre de 2026: dos pedidos simultáneos terminan los dos rechazados, incluso siendo de conjuntos
+    distintos (uno de niveles de presión y otro de superficie). El límite de pedidos en cola es de la cuenta, no de
+    cada conjunto, de modo que la única forma que el servicio acepta es la que él mismo recomienda: en serie.
+    """
     c = cliente()
     for etiqueta, anio, mes, dias, partible in pendientes:
-        try:
-            bajar_uno(c, conjunto, variables, niveles, prefijo, etiqueta, anio, mes, dias, HORAS, partible=partible)
-        except Exception as e:
-            print(f"{prefijo} {etiqueta}: ERROR {e!r} (se reintenta en la próxima corrida)", flush=True)
+        for conjunto, variables, niveles, prefijo in FILAS:
+            try:
+                bajar_uno(c, conjunto, variables, niveles, prefijo, etiqueta, anio, mes, dias, HORAS, partible=partible)
+            except Exception as e:
+                print(f"{prefijo} {etiqueta}: ERROR {e!r} (se reintenta en la próxima corrida)", flush=True)
 
 
 def main():
@@ -176,12 +182,10 @@ def main():
     resto = [m for m in meses if m[0] not in con_evento]
     random.Random(20261115).shuffle(resto)
     pendientes = claves + dias_sueltos + resto
-    print(f"{len(pendientes)} meses y días por descargar, en dos filas (niveles de presión y superficie).", flush=True)
+    print(f"{len(pendientes)} meses y días por descargar, un pedido a la vez.", flush=True)
     print(f"Primero los {len(claves)} meses con trombas y {len(dias_sueltos)} días de la reserva; "
           f"después los {len(resto)} meses restantes en orden aleatorio.", flush=True)
-    with ThreadPoolExecutor(max_workers=len(FILAS)) as pool:
-        for cj, va, ni, pf in FILAS:
-            pool.submit(fila, cj, va, ni, pf, pendientes)
+    recorrer(pendientes)
 
 
 if __name__ == "__main__":
