@@ -20,10 +20,24 @@ Corre en un computador propio (no en GitHub Actions). Los datos quedan fuera del
 cd calibracion
 python era5_descargar.py --probar      # un día: confirma que la cuenta funciona
 python era5_indices.py --solo prueba   # confirma que el formato se lee y muestra valores para revisar
-python era5_descargar.py               # todo: 119 meses + días de eventos fuera de temporada
+python era5_descargar.py --trabajos 4  # todo: 119 meses + días de eventos, 4 a la vez
 python era5_indices.py --borrar        # índices por hora y celda costera, borrando cada mes ya procesado
 python verificar.py                    # tablas en ~/trombas-era5/resultados/resumen.md y resumen.json
 ```
+
+## Cuánto demora
+
+La espera en la cola de Copernicus manda sobre todo lo demás: medido en noviembre de 2026, **más de una hora por
+pedido**, sin importar su tamaño. De ahí salen las dos decisiones que hacen viable esto:
+
+- **Muestreo cada 3 horas** (12, 15, 18 y 21 UTC) en vez de cada hora. Con 12 horas por día, un mes supera el límite
+  de tamaño por pedido y hay que partirlo en cuatro: 952 pedidos, unos 52 días de espera. Con 4 horas por día cada
+  mes entra en un solo pedido: 238 pedidos.
+- **Varios meses a la vez** (`--trabajos`). Copernicus admite hasta 10 pedidos en paralelo por usuario, pero
+  [castiga con menor prioridad a quien manda demasiados](https://confluence.ecmwf.int/x/kuFtDg); 4 a 6 es razonable.
+
+Con 4 trabajos son unos 3 días; con 6, unos 2. El muestreo tiene que ser el mismo para los días con tromba y sin
+tromba: si los días con evento se muestrearan más fino, su máximo diario saldría más alto por construcción.
 
 ## Espacio en disco
 
@@ -52,7 +66,7 @@ de unidades o de formato del archivo.
 
 ## Qué mide y qué no
 
-- Unidad: el tramo-día (cuatro tramos de costa entre 34° y 42,5° S; abril a octubre; 12–23 UTC).
+- Unidad: el tramo-día (cuatro tramos de costa entre 34° y 42,5° S; abril a octubre; 12, 15, 18 y 21 UTC).
 - Un tramo-día sin registro no es un tramo-día sin tromba. Por eso se informa cuántas trombas captura cada umbral y
   qué fracción de días deja bajo aviso, no una tasa de falsas alarmas.
 - Intervalos por remuestreo de días completos, porque las trombas llegan en racimos.
