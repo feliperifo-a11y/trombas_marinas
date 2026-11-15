@@ -1,0 +1,328 @@
+{
+ "generado": "2026-11-15T16:10Z",
+ "_ayuda": "Verificación de los avisos de trombas contra las trombas observadas. NO incluye tasa de falsa alarma: un aviso sin tromba observada no es una falsa alarma, porque el registro de trombas depende de que alguien mire. 'esperado_por_azar' es el POD que daría un aviso puesto al azar con la misma cobertura en la latitud de cada evento, y 'p_azar' la probabilidad de alcanzar el POD observado por casualidad.",
+ "periodo": {
+  "desde": "2025-09-10T00:00Z",
+  "hasta": "2026-11-03T23:00Z",
+  "horas": 10079
+ },
+ "avisos": {
+  "n": 16,
+  "oficiales": 2,
+  "horas_bajo_aviso": 447
+ },
+ "fuera_del_alcance": [
+  {
+   "id": "TM-20260620-055",
+   "fecha": "2026-06-20",
+   "lugar": "Estuario de Reloncaví, frente a Caleta La Arena–Puelche",
+   "lat": -41.7
+  },
+  {
+   "id": "TM-20260718-056",
+   "fecha": "2026-07-18",
+   "lugar": "Sector El Pangal, Pichilemu",
+   "lat": -34.39
+  }
+ ],
+ "deteccion": {
+  "trombas": 15,
+  "capturadas": 13,
+  "pod": 0.867,
+  "ic95": [
+   0.621,
+   0.963
+  ],
+  "esperado_por_azar": 0.039,
+  "p_azar": 0.0
+ },
+ "cobertura_por_region": [
+  {
+   "region": "Maule",
+   "cobertura": 0.0315,
+   "trombas": 2,
+   "capturadas": 1
+  },
+  {
+   "region": "Ñuble",
+   "cobertura": 0.0321,
+   "trombas": 2,
+   "capturadas": 2
+  },
+  {
+   "region": "Biobío",
+   "cobertura": 0.0421,
+   "trombas": 10,
+   "capturadas": 9
+  },
+  {
+   "region": "La Araucanía",
+   "cobertura": 0.0419,
+   "trombas": 0,
+   "capturadas": 0
+  },
+  {
+   "region": "Los Ríos",
+   "cobertura": 0.0377,
+   "trombas": 1,
+   "capturadas": 1
+  }
+ ],
+ "trombas": [
+  {
+   "id": "TM-20250920-052",
+   "fecha": "2025-09-20",
+   "hora": "14:00",
+   "hora_exacta": true,
+   "lugar": "Desembocadura del Biobío, San Pedro de la Paz",
+   "lat": -36.84,
+   "nivel": "confirmada",
+   "en_aviso": true,
+   "aviso": "Prensa · 2025-09-20T12Z",
+   "anticipacion_h": 5.0,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0415
+  },
+  {
+   "id": "TM-20250920-053",
+   "fecha": "2025-09-20",
+   "hora": "14:00",
+   "hora_exacta": true,
+   "lugar": "Caleta Lenga, Hualpén",
+   "lat": -36.76,
+   "nivel": "registro",
+   "en_aviso": true,
+   "aviso": "Prensa · 2025-09-20T12Z",
+   "anticipacion_h": 5.0,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0415
+  },
+  {
+   "id": "TM-20250920-054",
+   "fecha": "2025-09-20",
+   "hora": "15:30",
+   "hora_exacta": true,
+   "lugar": "Chaihuín, Corral",
+   "lat": -39.94,
+   "nivel": "confirmada",
+   "en_aviso": true,
+   "aviso": "Prensa · 2025-09-20T12Z",
+   "anticipacion_h": 6.5,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0372
+  },
+  {
+   "id": "TM-20260620-055",
+   "fecha": "2026-06-20",
+   "hora": "16:20",
+   "hora_exacta": true,
+   "lugar": "Estuario de Reloncaví, frente a Caleta La Arena–Puelche",
+   "lat": -41.7,
+   "nivel": "confirmada",
+   "en_aviso": false,
+   "aviso": null,
+   "anticipacion_h": null,
+   "motivo": "fuera del tramo de costa que cubren los avisos archivados",
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0
+  },
+  {
+   "id": "TM-20260718-056",
+   "fecha": "2026-07-18",
+   "hora": null,
+   "hora_exacta": false,
+   "lugar": "Sector El Pangal, Pichilemu",
+   "lat": -34.39,
+   "nivel": "registro",
+   "en_aviso": false,
+   "aviso": null,
+   "anticipacion_h": null,
+   "motivo": "fuera del tramo de costa que cubren los avisos archivados",
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0
+  },
+  {
+   "id": "TM-20260828-058",
+   "fecha": "2026-08-28",
+   "hora": "08:58",
+   "hora_exacta": true,
+   "lugar": "Costanera de Talcahuano",
+   "lat": -36.7,
+   "nivel": "registro",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-08-27T18Z",
+   "anticipacion_h": 18.0,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0415
+  },
+  {
+   "id": "TM-20260828-059",
+   "fecha": "2026-08-28",
+   "hora": "12:30",
+   "hora_exacta": true,
+   "lugar": "Caleta Cocholgüe, entre Tomé e isla Quiriquina",
+   "lat": -36.59,
+   "nivel": "confirmada",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-08-27T18Z",
+   "anticipacion_h": 21.5,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0415
+  },
+  {
+   "id": "TM-20260828-060",
+   "fecha": "2026-08-28",
+   "hora": "16:00",
+   "hora_exacta": true,
+   "lugar": "Frente a caleta Pellines, Constitución",
+   "lat": -35.47,
+   "nivel": "registro",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-08-27T18Z",
+   "anticipacion_h": 25.0,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0315
+  },
+  {
+   "id": "TM-20260829-061",
+   "fecha": "2026-08-29",
+   "hora": null,
+   "hora_exacta": false,
+   "lugar": "La Achira, Cobquecura",
+   "lat": -36.21,
+   "nivel": "registro",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-08-27T18Z",
+   "anticipacion_h": null,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0321
+  },
+  {
+   "id": "TM-20260829-062",
+   "fecha": "2026-08-29",
+   "hora": "08:30",
+   "hora_exacta": true,
+   "lugar": "Playa Perales, Coelemu",
+   "lat": -36.47,
+   "nivel": "registro",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-08-27T18Z",
+   "anticipacion_h": 41.5,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0415
+  },
+  {
+   "id": "TM-20260829-063",
+   "fecha": "2026-08-29",
+   "hora": "11:30",
+   "hora_exacta": true,
+   "lugar": "Rinconada de Taucú, Cobquecura",
+   "lat": -36.1,
+   "nivel": "registro",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-08-27T18Z",
+   "anticipacion_h": 44.5,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0321
+  },
+  {
+   "id": "TM-20260829-064",
+   "fecha": "2026-08-29",
+   "hora": "12:30",
+   "hora_exacta": true,
+   "lugar": "Caleta Tumbes, Talcahuano",
+   "lat": -36.62,
+   "nivel": "registro",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-08-27T18Z",
+   "anticipacion_h": 45.5,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0415
+  },
+  {
+   "id": "TM-20260829-065",
+   "fecha": "2026-08-29",
+   "hora": "12:30",
+   "hora_exacta": true,
+   "lugar": "Frente a Coliumo, Tomé",
+   "lat": -36.53,
+   "nivel": "registro",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-08-27T18Z",
+   "anticipacion_h": 45.5,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0415
+  },
+  {
+   "id": "TM-20260829-066",
+   "fecha": "2026-08-29",
+   "hora": "15:11",
+   "hora_exacta": true,
+   "lugar": "Frente a Pingueral, Tomé",
+   "lat": -36.56,
+   "nivel": "registro",
+   "en_aviso": false,
+   "aviso": null,
+   "anticipacion_h": null,
+   "motivo": "el aviso de su tramo terminó 11 min antes",
+   "brecha_h": 0.18,
+   "cobertura_en_su_latitud": 0.0415
+  },
+  {
+   "id": "TM-20261021-067",
+   "fecha": "2026-10-21",
+   "hora": null,
+   "hora_exacta": false,
+   "lugar": "Frente a Coronel (segundo registro)",
+   "lat": -37.02,
+   "nivel": "registro",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-10-20T09Z",
+   "anticipacion_h": null,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0424
+  },
+  {
+   "id": "TM-20261021-068",
+   "fecha": "2026-10-21",
+   "hora": "15:00",
+   "hora_exacta": true,
+   "lugar": "Frente a Coronel",
+   "lat": -37.02,
+   "nivel": "confirmada",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-10-20T09Z",
+   "anticipacion_h": 33.0,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0424
+  },
+  {
+   "id": "TM-20261022-069",
+   "fecha": "2026-10-22",
+   "hora": null,
+   "hora_exacta": false,
+   "lugar": "Frente a Playa Cardonal, Curanipe, Pelluhue",
+   "lat": -35.87,
+   "nivel": "confirmada",
+   "en_aviso": false,
+   "aviso": null,
+   "anticipacion_h": null,
+   "motivo": "el aviso de su tramo terminó al menos 1 h antes",
+   "brecha_h": 1.0,
+   "cobertura_en_su_latitud": 0.0315
+  }
+ ]
+}
