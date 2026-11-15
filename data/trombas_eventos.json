@@ -3,9 +3,14 @@
  "actualizado": "2026-11-15",
  "_ayuda": "Trombas marinas y lacustres OBSERVADAS en Chile (no avisos). Une el catálogo científico de Bastías-Curivil et al. (versión 5, hasta mayo de 2025) con registros de prensa de 2021 a 2026. Fecha y hora en hora de Chile; 'hora' nula = la fuente no la da; puede ser un rango. Posición aproximada del lugar, válida para una grilla de 0,25°. 'tipo': marina o lacustre (para calibrar sobre el mar se usan solo las marinas). 'nivel': catalogo = revisada por los analistas del catálogo; confirmada = una autoridad (Armada, Gobernación Marítima, Senapred) la confirma; registro = video o testigos citados por prensa; dudosa = la fuente la pone en duda o no consta que tocara el agua. 'catalogo' = identificador en el catálogo científico. 'toco_tierra' = verdadero si el catálogo la registra además como tornado o la fuente dice que entró a tierra. 'en_aviso' = cae dentro de un aviso del archivo (desde 2025-09). Se incluyen del catálogo las filas con Waterspout = 1 y tres en que el comentario dice que se formaron sobre el agua (CL0046, CL0047, CL0084).",
  "base_cientifica": {
-  "cita": "Bastías-Curivil, C., Rondanelli, R., Vicencio, J., Matus, F., Caballero, V., Muñoz, F., Barraza, J., Campos, D., Valenzuela, R. y de la Maza, A. (2024). Tornadoes and Waterspouts in Chile / Tornados y Trombas en Chile [conjunto de datos]. figshare.",
+  "cita": "Bastías-Curivil, C., Rondanelli, R., Vicencio, J., Matus, F., Caballero, V., Muñoz, F., Barraza, J., Campos, D., Valenzuela, R., de la Maza, A., Campos, J. y Trobok, I. (2025). Tornadoes and Waterspouts in Chile / Tornados y Trombas en Chile [conjunto de datos]. figshare, versión 5.",
   "doi": "https://doi.org/10.6084/m9.figshare.25119566",
-  "estado": "Integrado desde la versión 5 (copia entregada por el usuario el 2026-11-14). LICENCIA SIN VERIFICAR: confirmar en figshare antes de publicar. Correcciones propias anotadas en cada evento (CL0085, CL0099). Los eventos 2025-06 en adelante salen de prensa."
+  "version": "5 (publicada el 2025-07-14)",
+  "licencia": "CC BY 4.0",
+  "licencia_url": "https://creativecommons.org/licenses/by/4.0/",
+  "licencia_verificada": "2026-11-15, en la página del conjunto de datos en figshare",
+  "financiamiento": "FONDAP/ANID 1523A0002",
+  "estado": "Integrado desde la versión 5 (copia entregada por el usuario el 2026-11-14). La licencia CC BY 4.0 permite el uso con atribución: la atribución va en este archivo, en el README y al pie de la página. Correcciones propias anotadas en cada evento (CL0085, CL0099). Los eventos 2025-06 en adelante salen de prensa y son aporte propio."
  },
  "pendientes": [
   "Tromba en la Región de Aysén, marzo de 2026 (citada por Meteored, sin fecha ni lugar).",

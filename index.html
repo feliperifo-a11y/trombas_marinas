@@ -43,7 +43,7 @@
     <section class="card" id="panel"><h2>Trombas marinas <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">Avisos oficiales ↗</a></h2><div id="lado"></div></section>
   </div>
 </div>
-<footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), ECMWF (IFS y ENS 0,25°, datos abiertos con licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página) y avisos del Servicio Meteorológico de la Armada. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
+<footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), ECMWF (IFS y ENS 0,25°, datos abiertos con licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página) y avisos del Servicio Meteorológico de la Armada. El catálogo de trombas observadas incorpora datos de Bastías-Curivil et al. (2025), <a href="https://doi.org/10.6084/m9.figshare.25119566" target="_blank" rel="noopener">Tornadoes and Waterspouts in Chile</a>, figshare v5, licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
 <div id="info" hidden role="dialog" aria-modal="true" aria-labelledby="infoT">
   <div class="in-caja">
     <button type="button" class="in-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button>
@@ -113,11 +113,15 @@
   setInterval(refrescar, 60e3); document.addEventListener('visibilitychange', refrescar);
 
   // Capas y mapa base (mismo control que la portada)
-  const CAPAS = [['Zonas III a VI (Cuadro "F")', zonas], ['Celdas sobre umbral (modelo elegido)', tr.capas.celdas], ['Puntos del ensamble (zona elegida)', tr.capas.zona], ['MONAN 3 km: campos y ficha por punto', tr.capas.monan]];
+  // El tercer elemento marca las capas que parten apagadas (referencia histórica, no vista operativa)
+  const CAPAS = [['Zonas III a VI (Cuadro "F")', zonas], ['Celdas sobre umbral (modelo elegido)', tr.capas.celdas], ['Puntos del ensamble (zona elegida)', tr.capas.zona], ['MONAN 3 km: campos y ficha por punto', tr.capas.monan], ['Trombas observadas (catálogo)', tr.capas.obs, false]];
   const pop = document.getElementById('capasPop');
-  pop.innerHTML = '<div class="t">Capas</div>' + CAPAS.map(([n], i) => `<label><input type="checkbox" data-i="${i}" checked> ${escH(n)}</label>`).join('') +
+  pop.innerHTML = '<div class="t">Capas</div>' + CAPAS.map(([n, , on], i) => `<label><input type="checkbox" data-i="${i}"${on === false ? '' : ' checked'}> ${escH(n)}</label>`).join('') +
     '<div class="t" style="margin-top:8px">Mapa base</div><label><input type="radio" name="base" value="sat" checked> Imagen satelital</label><label><input type="radio" name="base" value="oc"> Océano (claro)</label>';
   pop.querySelectorAll('input[type=checkbox]').forEach(ch => ch.onchange = () => { const l = CAPAS[+ch.dataset.i][1]; ch.checked ? l.addTo(map) : map.removeLayer(l); });
+  // La casilla sigue a la capa: la tabla de trombas observadas puede encenderla sola al ir a un evento
+  const sincronizarCapas = () => pop.querySelectorAll('input[type=checkbox]').forEach(ch => { ch.checked = map.hasLayer(CAPAS[+ch.dataset.i][1]); });
+  map.on('layeradd layerremove', sincronizarCapas);
   pop.querySelectorAll('input[name=base]').forEach(r => r.onchange = () => { map.removeLayer(base); base = r.value === 'sat' ? satelite : oceano; base.addTo(map); base.bringToBack(); });
   document.getElementById('btnCapas').onclick = () => { pop.classList.toggle('on'); document.getElementById('btnCapas').classList.toggle('on'); };
   document.getElementById('btnInicio').onclick = () => map.flyToBounds(VISTA, { ...ENCUADRE, duration: 0.8 });
