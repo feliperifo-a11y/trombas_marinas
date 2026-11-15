@@ -27,13 +27,17 @@ python verificar.py                    # tablas en ~/trombas-era5/resultados/res
 
 ## Espacio en disco
 
-La descarga completa son unos 15 GB (118 MB de niveles de presión y 9 MB de superficie por mes). Los archivos de
+La descarga completa son unos 7 GB (alrededor de 60 MB por mes, ya comprimidos). Los archivos de
 ERA5 solo sirven para calcular los índices, que ocupan menos de 1 GB en total. Con `--borrar`, `era5_indices.py`
 elimina cada par `pl_`/`sfc_` apenas lo procesa, así que el disco nunca guarda más de un mes a la vez.
 
 Conviene dejar la descarga corriendo en una ventana y, cada cierto rato, correr `era5_indices.py --borrar` en otra:
 `era5_descargar.py` escribe primero un archivo `.parcial` y solo le pone el nombre definitivo cuando termina, así que
 nunca se procesa una descarga a medio bajar. Si después se borra un mes que hacía falta, basta volver a descargarlo.
+
+Copernicus rechaza un pedido que supere su límite de tamaño ("cost limits exceeded"). Cuando pasa, `era5_descargar.py`
+parte el mes en tramos de días hasta que lo acepta (archivos `pl_AAAAMMdDD.nc`) y reutiliza ese tamaño en los meses
+siguientes. Los scripts de índices y verificación tratan cada tramo igual que un mes, sin cambios.
 
 La descarga depende de la cola del servicio de Copernicus y puede tomar desde horas hasta más de un día. Los tres
 scripts se pueden interrumpir y volver a correr: no repiten lo ya hecho. `verificar.py` funciona con lo que haya

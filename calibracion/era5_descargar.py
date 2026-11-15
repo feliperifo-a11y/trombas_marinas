@@ -8,6 +8,9 @@ Baja, mes por mes, abril a octubre de 2010 a 2026, las horas 12–23 UTC, en 33,
 Además baja los días de las trombas del catálogo que quedan fuera de ese período (reserva 1940–2009 y fuera de temporada),
 con las 24 horas del día y del día siguiente: pl_ev_AAAAMMDD.nc y sfc_ev_AAAAMMDD.nc.
 
+Si el servicio rechaza un mes completo por tamaño ("cost limits exceeded"), el mes se parte solo en tramos de días
+(pl_AAAAMMdDD.nc) hasta que lo acepta, y ese tamaño se reutiliza en los meses siguientes.
+
 Se puede interrumpir y volver a correr: no repite lo ya descargado.
 Uso:  python calibracion/era5_descargar.py --probar     (un solo día, para revisar que la cuenta y el formato funcionan)
       python calibracion/era5_descargar.py              (todo)
@@ -24,6 +27,14 @@ VARS_PL = ["geopotential", "temperature", "relative_humidity", "u_component_of_w
 VARS_SFC = ["sea_surface_temperature", "2m_temperature", "2m_dewpoint_temperature", "surface_pressure",
             "10m_u_component_of_wind", "10m_v_component_of_wind", "land_sea_mask", "geopotential"]
 SALIDA = DATOS / "era5"
+# El servicio rechaza un pedido que supere su límite de tamaño ("cost limits exceeded"). Cuando eso pasa, el mes se
+# parte en mitades hasta que lo acepta, y el tamaño que resultó se reutiliza en los meses siguientes.
+TAMANO = {"dias": None}
+
+
+def demasiado_grande(e):
+    t = str(e).lower()
+    return "cost limit" in t or "too large" in t or "reduce your selection" in t
 
 
 def pedir(cliente, conjunto, variables, anio, mes, dias, horas, destino, niveles=None):
@@ -40,9 +51,29 @@ def pedir(cliente, conjunto, variables, anio, mes, dias, horas, destino, niveles
     return True
 
 
-def bajar(cliente, etiqueta, anio, mes, dias, horas):
-    n = pedir(cliente, "reanalysis-era5-pressure-levels", VARS_PL, anio, mes, dias, horas, SALIDA / f"pl_{etiqueta}.nc", NIVELES)
-    n |= pedir(cliente, "reanalysis-era5-single-levels", VARS_SFC, anio, mes, dias, horas, SALIDA / f"sfc_{etiqueta}.nc")
+def bajar(cliente, etiqueta, anio, mes, dias, horas, partible=False):
+    """Descarga un tramo de días. Si el servicio lo rechaza por tamaño, lo parte en mitades y reintenta."""
+    dias = list(dias)
+    lim = TAMANO["dias"]
+    if partible and lim and len(dias) > lim:
+        for i in range(0, len(dias), lim):
+            t = dias[i:i + lim]
+            bajar(cliente, f"{anio}{mes:02d}d{t[0]:02d}", anio, mes, t, horas)
+        return
+    try:
+        n = pedir(cliente, "reanalysis-era5-pressure-levels", VARS_PL, anio, mes, dias, horas, SALIDA / f"pl_{etiqueta}.nc", NIVELES)
+        n |= pedir(cliente, "reanalysis-era5-single-levels", VARS_SFC, anio, mes, dias, horas, SALIDA / f"sfc_{etiqueta}.nc")
+    except Exception as e:
+        if not demasiado_grande(e) or len(dias) < 2:
+            raise
+        for f in (SALIDA / f"pl_{etiqueta}.nc", SALIDA / f"sfc_{etiqueta}.nc"):
+            f.unlink(missing_ok=True)
+        m = (len(dias) + 1) // 2
+        TAMANO["dias"] = m
+        print(f"{etiqueta}: el pedido excede el límite del servicio; se parte en tramos de {m} días", flush=True)
+        for t in (dias[:m], dias[m:]):
+            bajar(cliente, f"{anio}{mes:02d}d{t[0]:02d}", anio, mes, t, horas)
+        return
     print(f"{etiqueta}: {'descargado' if n else 'ya estaba'}", flush=True)
 
 
@@ -70,7 +101,7 @@ def main():
             if fin > hoy - timedelta(days=7):      # ERA5 llega con unos 5 días de retraso
                 continue
             try:
-                bajar(c, f"{anio}{mes:02d}", anio, mes, range(1, fin.day + 1), HORAS)
+                bajar(c, f"{anio}{mes:02d}", anio, mes, range(1, fin.day + 1), HORAS, partible=True)
             except Exception as e:
                 print(f"{anio}{mes:02d}: ERROR {e!r} (se reintenta en la próxima corrida)", flush=True)
     extra = sorted({e["fecha"] for e in eventos() if not en_calibracion(e["fecha"])})
