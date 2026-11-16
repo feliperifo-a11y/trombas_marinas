@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Trombas marinas · MeteoIA</title>
-<meta name="description" content="Perspectiva experimental a 72 h de ambientes favorables a trombas marinas en las zonas III a VI de Chile (GFS y ensamble GEFS), archivo de avisos y ficha técnica con referencias. No constituye aviso.">
+<meta name="description" content="Perspectiva experimental a 72 h de ambientes favorables a trombas marinas en las zonas III a VI de Chile (GFS, ECMWF y sus ensambles, más MONAN 3 km a 48 h en el golfo de Arauco), archivo de avisos y ficha técnica con referencias. No constituye aviso.">
 <meta name="theme-color" content="#06121f">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
 <link rel="apple-touch-icon" href="assets/ios-180.png">
@@ -15,8 +15,7 @@
 <body>
 <div class="top">
   <a class="logo" href="https://meteoia.cl" title="Ir a MeteoIA"><span class="mk"><img src="assets/logo-meteoia.png" alt="MeteoIA"></span><span><b>Trombas marinas</b><span class="tx">Perspectiva experimental a 72 h · zonas III a VI</span></span></a>
-  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">GFS cada 6 h · ensamble GEFS 00 y 12 UTC</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button></div>
-</div>
+  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">GFS e IFS cada 6 h · ensambles 00 y 12 UTC · MONAN diario (48 h)</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button></div>
 </div>
 <nav class="nav"><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="gOla" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e88ff"/><stop offset="1" stop-color="#22c3ee"/></linearGradient>
@@ -43,34 +42,35 @@
     <section class="card" id="panel"><h2>Trombas marinas <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">Avisos oficiales ↗</a></h2><div id="lado"></div></section>
   </div>
 </div>
-<footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), ECMWF (IFS y ENS 0,25°, datos abiertos con licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página) y avisos del Servicio Meteorológico de la Armada. El catálogo de trombas observadas incorpora datos de Bastías-Curivil et al. (2025), <a href="https://doi.org/10.6084/m9.figshare.25119566" target="_blank" rel="noopener">Tornadoes and Waterspouts in Chile</a>, figshare v5, licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
+<footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), ECMWF (IFS y ENS 0,25°, datos abiertos con licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página), modelo comunitario MONAN (INPE/CPTEC), corrido por esta página con condiciones iniciales y de borde del GFS, y avisos del Servicio Meteorológico de la Armada. El catálogo de trombas observadas incorpora datos de Bastías-Curivil et al. (2025), <a href="https://doi.org/10.6084/m9.figshare.25119566" target="_blank" rel="noopener">Tornadoes and Waterspouts in Chile</a>, figshare v5, licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
 <div id="info" hidden role="dialog" aria-modal="true" aria-labelledby="infoT">
   <div class="in-caja">
     <button type="button" class="in-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button>
     <h2 id="infoT">Cómo funciona esta página</h2>
     <h3>Qué hace</h3>
-    <p>Busca en los modelos numéricos los ambientes que en otros casos han acompañado a trombas marinas frente a la costa de Chile, entre Valparaíso y San Pedro (zonas III a VI del Cuadro "F" de METAREA XV), con hasta 72 horas de anticipación. También guarda cada aviso de trombas que emite el Servicio Meteorológico de la Armada y registra qué mostraba el modelo en ese momento.</p>
+    <p>Busca en los modelos numéricos los ambientes que en otros casos han acompañado a trombas marinas frente a la costa de Chile, entre Valparaíso y San Pedro (zonas III a VI del Cuadro "F" de METAREA XV), con hasta 72 horas de anticipación (48 horas en el caso de MONAN). También guarda cada aviso de trombas que emite el Servicio Meteorológico de la Armada y registra qué mostraba el modelo en ese momento.</p>
     <p class="in-nota">Es una herramienta experimental de apoyo. <b>No constituye aviso</b>: los avisos oficiales se publican en <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">meteoarmada.directemar.cl</a>.</p>
     <h3>Cómo trabaja</h3>
     <ol>
-      <li><b>Dos modelos, el mismo método.</b> Todo se calcula por separado con el GFS de NOAA (Estados Unidos) y con el IFS de ECMWF (Centro Europeo), y se elige cuál ver con el selector "Modelo". Cuando ambos coinciden, la señal es más sólida; cuando difieren, la incertidumbre es mayor.</li>
+      <li><b>Tres modelos, el mismo método.</b> Todo se calcula por separado con el GFS de NOAA (Estados Unidos), con el IFS de ECMWF (Centro Europeo) y con MONAN (INPE/CPTEC, Brasil), y se elige cuál ver con el selector "Modelo". Cuando coinciden, la señal es más sólida; cuando difieren, la incertidumbre es mayor.</li>
       <li><b>Detalle por celda (GFS e IFS, 0,25°).</b> Con cada corrida nueva de cada modelo (cuatro al día), el sistema descarga los niveles necesarios y calcula, en cada punto de mar y cada 3 horas hasta 72 h, tres índices: el STP en su versión para el hemisferio sur, el ambiente de alto cizalle con CAPE bajo (SHERBE) y el NST. Además muestra ingredientes como el contraste mar–aire (ΔT = TSM − T850), la profundidad de la nube y el viento en 850 hPa.</li>
       <li><b>Probabilidad por zona (ensambles GEFS y ENS).</b> Dos veces al día repite el cálculo en cada miembro de los ensambles: 31 del GEFS de NOAA (0,5°) y 50 del ENS de ECMWF (0,25°). La probabilidad es el porcentaje de miembros en que al menos un punto de mar de la zona supera el umbral. Así se ve cuánta confianza tiene la señal, no solo si aparece.</li>
+      <li><b>Detalle regional (MONAN 3 km).</b> Una vez al día se corre MONAN en un computador propio, con una malla de 12 km que se afina a 3 km sobre el golfo de Arauco y condiciones iniciales y de borde del GFS. Entrega los mismos índices cada 3 horas hasta 48 h, más viento, temperatura, CAPE y precipitación en el mapa. Es una sola corrida: no tiene ensamble ni probabilidad por zona.</li>
       <li><b>Archivo de avisos.</b> Cuando sale un aviso de trombas, calcula unos veinte parámetros en su área en tres momentos, con el GFS y con ECMWF lado a lado: con la corrida que tenía el pronosticador al emitirlo, durante la vigencia y en un día de referencia una semana antes. Los avisos se acumulan para comparar y para ver qué modelo anticipa mejor los avisos reales.</li>
     </ol>
-    <p>Todo corre solo en GitHub Actions cada hora y se publica en esta página sin intervención manual. Los umbrales vienen de estudios chilenos de tornados (Marín et al., 2024 y 2026) y del SPC de Estados Unidos; están citados en la Ficha técnica.</p>
+    <p>El GFS, ECMWF y el archivo de avisos corren solos en GitHub Actions cada hora; MONAN corre una vez al día en un computador propio y sube sus resultados. Todo se publica en esta página sin intervención manual. Los umbrales se apoyan en estudios chilenos de tornados (Marín et al., 2024 y 2026) y en el SPC de Estados Unidos; el del STP (≤ −0,1) es un criterio propio, más permisivo que el publicado (≤ −0,3). Están citados en la Ficha técnica.</p>
     <h3>Aporte de la inteligencia artificial</h3>
     <ul>
       <li><b>Desarrollo.</b> La página completa (lectura de los modelos, cálculo de los índices, diseño y publicación automática) se programó con un asistente de IA (Claude, de Anthropic), bajo la dirección y revisión de un meteorólogo naval. La IA permitió convertir criterios publicados en artículos científicos en una herramienta que funciona sola.</li>
       <li><b>Revisión de fuentes.</b> La IA ayudó a reunir los estudios que fijan los umbrales y a reconstruir el historial de avisos de trombas de 2025 y 2026 desde fuentes publicadas, cada uno con su referencia para verificarlo.</li>
-      <li><b>Lo que la IA no hace.</b> Los índices y las probabilidades no los decide la IA: son cálculos físicos reproducibles sobre el GFS y el GEFS, con umbrales publicados. En cada actualización no interviene ningún modelo de IA.</li>
+      <li><b>Lo que la IA no hace.</b> Los índices y las probabilidades no los decide la IA: son cálculos físicos reproducibles sobre los modelos numéricos (GFS, GEFS, IFS y ENS de ECMWF, y MONAN), con umbrales tomados de la literatura. En cada actualización no interviene ningún modelo de IA.</li>
       <li><b>Próxima etapa.</b> El archivo de avisos y parámetros es la base para entrenar un modelo que aprenda qué combinaciones acompañan de verdad a las trombas en Chile y ajuste los umbrales a nuestra costa.</li>
     </ul>
     <h3>Limitaciones</h3>
-    <p>Los umbrales provienen de tornados sobre tierra y aún no están calibrados para trombas. El GFS no resuelve la vorticidad de escala local, y muchas trombas chilenas ocurren en aire frío sobre el mar, con poca convección y poco cizalle, donde estos índices dan señales débiles. Por eso la página muestra los ingredientes además de los índices.</p>
+    <p>Los umbrales provienen de tornados sobre tierra y aún no están calibrados para trombas. Los modelos globales no resuelven la vorticidad de escala local (MONAN, a 3 km, resuelve solo una parte, y por eso su NST no es comparable con el de los modelos globales), y muchas trombas chilenas ocurren en aire frío sobre el mar, con poca convección y poco cizalle, donde estos índices dan señales débiles. Por eso la página muestra los ingredientes además de los índices.</p>
   </div>
 </div>
-<div id="firmaAutor">Felipe Rifo Espósito™</div>
+<div id="firmaAutor">Desarrollada por Felipe Rifo Espósito</div>
 <script src="assets/leaflet.js"></script>
 <script src="assets/trombas.js"></script>
 <script>

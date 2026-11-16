@@ -17,14 +17,14 @@ function crearTrombas(L, map, h) {
   let prob = null, indProb = 'stp', celdaProb = null;
   // Modelos disponibles: mismo cálculo y mismo formato de archivo para comparar
   const MODELOS = {
-    gfs: { det: 'data/trombas.json', prob: 'data/trombas_prob.json', nDet: 'GFS 0,25°', nProb: 'ensamble GEFS',
+    gfs: { det: 'data/trombas.json', prob: 'data/trombas_prob.json', nDet: 'GFS 0,25°', nProb: 'ensamble GEFS', viejoH: 15, viejoProbH: 22,
       sinDet: 'Se genera con cada corrida nueva del GFS (cuatro al día) cuando está disponible el plazo de 72 h.',
       sinProb: 'Se calcula con las corridas GEFS de 00 y 12 UTC cuando está disponible el plazo de 72 h.', atr: 'Datos: NOAA/NCEP.' },
-    ecmwf: { det: 'data/trombas_ecmwf.json', prob: 'data/trombas_prob_ecmwf.json', nDet: 'ECMWF IFS 0,25°', nProb: 'ensamble ECMWF (ENS)',
+    ecmwf: { det: 'data/trombas_ecmwf.json', prob: 'data/trombas_prob_ecmwf.json', nDet: 'ECMWF IFS 0,25°', nProb: 'ensamble ECMWF (ENS)', viejoH: 15, viejoProbH: 22,
       sinDet: 'Se genera con cada corrida nueva del IFS de ECMWF (cuatro al día) cuando está publicado el plazo de 72 h.',
       sinProb: 'Se calcula con las corridas ENS de 00 y 12 UTC cuando están publicados los 50 miembros a 72 h.',
       atr: 'Datos de ECMWF (open data), licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página.' },
-    monan: { det: 'data/trombas_monan.json', prob: null, campos: 'data/monan_campos.json', puntos: 'data/monan_indices.json', nDet: 'MONAN 3 km', nProb: 'no disponible para MONAN',
+    monan: { det: 'data/trombas_monan.json', prob: null, campos: 'data/monan_campos.json', puntos: 'data/monan_indices.json', nDet: 'MONAN 3 km', nProb: 'no disponible para MONAN', viejoH: 33,
       sinDet: 'Se genera con la corrida diaria de MONAN (malla 12 → 3 km sobre el golfo de Arauco) cuando termina.',
       sinProb: 'MONAN se corre de forma determinística (una sola corrida): no tiene ensamble ni probabilidad por zona.',
       atr: 'Modelo comunitario <a href="https://github.com/monanadmin/MONAN-Model" target="_blank" rel="noopener">MONAN</a> (INPE/CPTEC), corrido por esta página en una malla de 12 km que se afina a 3 km sobre el golfo de Arauco; condiciones iniciales y de borde NOAA GFS 0,25°. Los índices los calcula esta página con el mismo método.' },
@@ -76,7 +76,7 @@ function crearTrombas(L, map, h) {
     <div class="tr-tira"></div>
     <div class="mar-ley tr-ley"><span><i style="background:${COLOR.stp}"></i>STP ≤ −0,1</span><span><i style="background:${COLOR.hslc}"></i>Alto cizalle y CAPE bajo</span><span><i style="background:${COLOR.nst}"></i>NST &gt; 1</span><span class="tr-nceldas">número = celdas de 0,25° sobre umbral</span></div>
     <div class="mar-det tr-det" aria-live="polite"><p class="mar-ayuda">Selecciona un plazo para ver en el mapa las celdas que superan algún umbral.</p></div>
-    <p class="mar-nota">Índices calculados sobre el océano con el modelo elegido, dominio 20°–56° S / 85°–68° W, con el mismo método para el GFS y para ECMWF. Los umbrales vienen de estudios de tornados chilenos en tierra (Marín et al., 2024 y 2026) y del NST del SPC: aún no están calibrados para trombas. Ningún modelo global resuelve la vorticidad de escala local, por lo que el NST rara vez supera su umbral. ECMWF publica menos niveles bajo 700 hPa que el GFS (1000, 925 y 850 hPa) y su ΔT usa la temperatura de piel del mar. MONAN cubre solo un círculo de 450 km centrado en el golfo de Arauco (zona IV), con celdas de 3 km hasta unos 70 km del centro y de 12 km en el resto; sus columnas se llevan a los mismos niveles de presión que el GFS y su NST usa la vorticidad del primer nivel del modelo, que a 3 km ya resuelve parte de la escala local.</p>
+    <p class="mar-nota">Índices calculados sobre el océano con el modelo elegido, dominio 20°–56° S / 85°–68° W, con el mismo método para el GFS, ECMWF y MONAN. Los umbrales se apoyan en estudios de tornados chilenos en tierra (Marín et al., 2024 y 2026) y en el NST del SPC: aún no están calibrados para trombas. El STP ≤ −0,1 es un criterio propio, más permisivo que el umbral publicado (≤ −0,3). Ningún modelo global resuelve la vorticidad de escala local, por lo que el NST rara vez supera su umbral. ECMWF publica menos niveles bajo 700 hPa que el GFS (1000, 925 y 850 hPa) y su ΔT usa la temperatura de piel del mar. MONAN cubre solo un círculo de 450 km centrado en el golfo de Arauco (zona IV), con celdas de 3 km hasta unos 70 km del centro y de 12 km en el resto; sus columnas se llevan a los mismos niveles de presión que el GFS y su NST usa la vorticidad del primer nivel del modelo, que a 3 km ya resuelve parte de la escala local: por eso MONAN marca muchas más celdas con NST &gt; 1 y su conteo no es comparable con el de los modelos globales.</p>
     </div>
     <div class="tr-panel" data-tab="avisos" hidden>
     <h3 class="tr-h">Qué mostraba el modelo en cada aviso de trombas</h3>
@@ -105,7 +105,7 @@ function crearTrombas(L, map, h) {
     <div class="ev-tw"><table class="ev-tabla tr-tabla">
       <thead><tr><th>Tipo</th><th>Índice e ingredientes</th><th>Umbral de referencia</th><th>Fuente</th></tr></thead>
       <tbody>
-        <tr><th>Frontal / postfrontal</th><td><b>STP</b> (versión hemisferio sur): MLCAPE, MLLCL, MLCIN, SRH 0–500 m con movimiento Bunkers izquierdo, cizalle efectivo</td><td>STP ≤ −0,1 (máximos de los 16 tornados notables entre −0,1 y −0,9)</td><td>Marín et al. (2024)</td></tr>
+        <tr><th>Frontal / postfrontal</th><td><b>STP</b> (versión hemisferio sur): MLCAPE, MLLCL, MLCIN, SRH 0–500 m con movimiento Bunkers izquierdo, cizalle efectivo</td><td>STP ≤ −0,1: criterio de MeteoIA, tomado del extremo menos intenso de los máximos de los 16 tornados notables (−0,1 a −0,9). El umbral publicado por los autores para los días favorables es STP ≤ −0,3</td><td>Marín et al. (2024)</td></tr>
         <tr><th></th><td><b>Alto cizalle y CAPE bajo (HSLC)</b>: SHERBE (cizalle efectivo, gradientes 0–3 km y 700–500 hPa) con cizalle efectivo y CAPE</td><td>SHERBE ≥ 1, cizalle efectivo &gt; 18 m/s y MUCAPE &lt; 1000 J/kg (MeteoIA exige además MUCAPE &gt; 0)</td><td>Marín et al. (2026)</td></tr>
         <tr><th></th><td><b>VGP</b>: cizalle 0–1 km × √CAPE; y <b>base de nube</b> (LCL)</td><td>Sin umbral publicado; se muestran como referencia</td><td>Caballero-Morán y Rondanelli (2025); Marín et al. (2026)</td></tr>
         <tr class="ev-sep"><th>Convectiva general</th><td><b>SWI</b> (nomograma de Szilagyi): ΔT = TSM − T850; ΔZ = EL − LCL; viento en 850 hPa</td><td>SWI ≥ 0; viento 850 hPa ≤ 40 kt</td><td>Szilagyi (2009)</td></tr>
@@ -147,20 +147,19 @@ function crearTrombas(L, map, h) {
       <li>Adriático, WRF a 500 m: el SWI acertó casi todos los casos; falló uno invernal con nube poco profunda (ΔZ 2,5 km) y cizalle 0–1 km alto (16 m/s). Ese tipo de caso se parece al ambiente HSLC chileno.</li>
     </ul></div></details>
 
-    <details class="mar-crit"><summary>Dónde obtener los datos</summary><div><ul>
-      <li><b>GFS 0,25° (NOMADS):</b> CAPE y CIN 180-0 mb (parcela más inestable) y 90-0 mb (capa mezclada), HLCY 0–3000 m (Bunkers; no equivale al SRH 0–500 m con movimiento izquierdo), temperatura, viento y humedad por niveles (975, 950, 925, 900 hPa…), temperatura de superficie.</li>
-      <li><b>ECMWF IFS open data (CC-BY-4.0):</b> MUCAPE. Sirve para el patrón sinóptico; tiene pocos niveles en la capa límite para SRH 0–500 m.</li>
-      <li><b>WRF 3 km:</b> todos los niveles del modelo; la mejor base para los cuatro índices en la franja costera.</li>
-      <li><b>TSM:</b> NASA GIBS MUR (ya en el sitio) o temperatura de superficie del GFS sobre el océano.</li>
-      <li><b>Calibración:</b> ERA5 (Copernicus CDS), la misma base del artículo de Marín et al.</li>
-      <li><b>Cálculo:</b> MetPy (Python) o thundeR (R, el paquete usado por Marín et al.; calcula el STP para el hemisferio norte por defecto).</li>
-      <li><b>Dominio de referencia:</b> 20°–56° S, 85°–68° W (ERA5 en Marín et al.), sin máscara continental para incluir el océano.</li>
+    <details class="mar-crit"><summary>Datos y cálculo que usa esta página</summary><div><ul>
+      <li><b>GFS 0,25° y ensamble GEFS 0,5° (NOAA/NCEP):</b> temperatura, humedad, viento y altura geopotencial por niveles de presión, más superficie. ΔT usa la temperatura de superficie del modelo sobre el océano.</li>
+      <li><b>ECMWF IFS y ENS 0,25° (datos abiertos, CC-BY-4.0):</b> mismo cálculo. Publica solo 1000, 925 y 850 hPa bajo 700 hPa, por lo que la helicidad 0–500 m y el gradiente 0–1 km quedan más suavizados; no publica TSM y ΔT usa la temperatura de piel.</li>
+      <li><b>MONAN 3 km (INPE/CPTEC):</b> corrida diaria propia a 48 h, malla de 12 km que se afina a 3 km sobre el golfo de Arauco, con condiciones iniciales y de borde del GFS 0,25°. Sus columnas se llevan a los mismos niveles de presión que el GFS.</li>
+      <li><b>Cálculo:</b> código propio (<code>scripts/trombas_indices.py</code>), el mismo para los tres modelos, validado contra MetPy. Marín et al. usan thundeR (R), que calcula el STP para el hemisferio norte por defecto.</li>
+      <li><b>Dominio:</b> 20°–56° S, 85°–68° W para el GFS y ECMWF (el de ERA5 en Marín et al.), sin máscara continental para incluir el océano; MONAN cubre un círculo de 450 km centrado en el golfo de Arauco.</li>
+      <li><b>Calibración:</b> ERA5 (Copernicus CDS), la misma base del artículo de Marín et al., cruzado con el catálogo de trombas observadas.</li>
     </ul></div></details>
 
     <details class="mar-crit"><summary>Próximos pasos</summary><div><ul>
-      <li>Calcular STP (HS), SHERBE, SWI y NST cada 3 h desde GFS 0,25°, y luego desde WRF.</li>
-      <li>Reunir casos chilenos de trombas con hora conocida (avisos SERVIMET, reportes visuales) y verificar los umbrales contra ellos.</li>
-      <li>Mostrar en el mapa solo las celdas que superen el umbral, con hora de corrida y de validez.</li>
+      <li>Calibrar los umbrales para trombas con ERA5 y el catálogo de trombas observadas: hoy vienen de tornados sobre tierra.</li>
+      <li>Completar el catálogo con los registros que no llegan a la prensa y con las fuentes primarias de los episodios recientes.</li>
+      <li>Entrenar, con el archivo de avisos y parámetros, un modelo que aprenda qué combinaciones acompañan a las trombas en Chile.</li>
     </ul></div></details>
 
     <details class="mar-crit"><summary>Referencias</summary><div><ul class="tr-ref">
@@ -235,7 +234,7 @@ function crearTrombas(L, map, h) {
     const e = G.em || G.du;
     // Cada valor se compara con el rango normal (p10–p90) del día de referencia del mismo modelo
     const clase = (st, rf, v) => { const x = st?.estad[v], y = rf?.estad[v]; return x && y ? (x[1] > y[2] ? 'tr-alto' : x[1] < y[0] ? 'tr-bajo' : '') : ''; };
-    const td = (st, rf, v, d) => `<td class="${clase(st, rf, v)}"${st?.estad[v] ? ` title="p10 ${fmt(st.estad[v][0], d)} · p90 ${fmt(st.estad[v][2], d)}"` : ''}>${st?.estad[v] ? fmt(st.estad[v][1], d) : '–'}</td>`;
+    const td = (st, rf, v, d) => `<td class="${clase(st, rf, v)}"${st?.estad[v] ? ` title="p10 ${fmt(st.estad[v][0], d)} · p90 ${fmt(st.estad[v][2], d)}" tabindex="0"` : ''}>${st?.estad[v] ? fmt(st.estad[v][1], d) : '–'}</td>`;
     const ETAPA = { em: 'emision', du: 'durante', rf: 'referencia' };
     const estadoEC = n => E[ETAPA[n]]?.sin_datos ? 'sin datos' : X[n] ? '' : 'pendiente';
     const notaEC = (G.em ? ['em', 'du', 'rf'] : ['du', 'rf']).map(n => [n, estadoEC(n)]).filter(([, t]) => t);
@@ -249,7 +248,12 @@ function crearTrombas(L, map, h) {
       VARS_AV.map(([v, t, u, d]) => `<tr><th>${t}${u ? ` <small>${u}</small>` : ''}</th>${td(G.em, G.rf, v, d)}${td(X.em, X.rf, v, d)}${td(G.du, G.rf, v, d)}${td(X.du, X.rf, v, d)}${td(G.rf, null, v, d)}${td(X.rf, null, v, d)}</tr>`).join('') +
       `</tbody></table></div>
       ${e ? `<p class="mar-ayuda">Celdas sobre umbral con el GFS ${G.em ? 'al emitir' : 'durante'} (puntos × horas, de ${e.conteos.total}): STP ≤ −0,1: ${e.conteos.stp} · alto cizalle y CAPE bajo: ${e.conteos.hslc} · NST &gt; 1: ${e.conteos.nst} · ΔT ≥ 12 °C: ${e.conteos.dT12} · gradiente 0–1 km ≥ 9 °C/km: ${e.conteos.lr01_9}.` : '<p class="mar-ayuda">'}${(X.em || X.du) ? ` Con ECMWF ${X.em ? 'al emitir' : 'durante'} (de ${(X.em || X.du).conteos.total}): STP ${(X.em || X.du).conteos.stp} · alto cizalle ${(X.em || X.du).conteos.hslc} · NST ${(X.em || X.du).conteos.nst} · ΔT ≥ 12 °C ${(X.em || X.du).conteos.dT12} · gradiente 0–1 km ≥ 9 °C/km ${(X.em || X.du).conteos.lr01_9}.` : ''}
-      <span class="tr-alto">Fondo naranjo</span>: sobre el rango normal del día de referencia del mismo modelo; <span class="tr-bajo">fondo azul</span>: bajo ese rango. Toca un valor para ver sus percentiles 10 y 90.</p>`;
+      <span class="tr-alto">Fondo naranjo</span>: sobre el rango normal del día de referencia del mismo modelo; <span class="tr-bajo">fondo azul</span>: bajo ese rango. Toca un valor para ver sus percentiles 10 y 90.</p>
+      <p class="mar-ayuda tr-pctl" aria-live="polite"></p>`;
+    // En celular no hay "title": al tocar (o con Enter) el valor, sus percentiles se escriben bajo la tabla
+    const pctl = adet.querySelector('.tr-pctl'), COLS = ['al emitir · GFS', 'al emitir · ECMWF', 'durante · GFS', 'durante · ECMWF', 'referencia · GFS', 'referencia · ECMWF'];
+    const verPctl = c => { pctl.innerHTML = `<b>${escH(c.parentNode.firstElementChild.textContent)}</b> (${COLS[c.cellIndex - 1]}): mediana ${escH(c.textContent)} · ${escH(c.title)}`; };
+    adet.querySelectorAll('td[title]').forEach(c => { c.onclick = () => verPctl(c); c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); verPctl(c); } }; });
   }
   const psub = card.querySelector('.tr-psub'), ptabla = card.querySelector('.tr-ptabla'), pdet = card.querySelector('.tr-pdet');
   card.querySelectorAll('.tr-ptabs button').forEach(b => b.onclick = () => {
@@ -280,7 +284,7 @@ function crearTrombas(L, map, h) {
   function pintarProb() {
     const d = prob, hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
     const dias = d.dias.filter(f => f >= hoy);
-    psub.innerHTML = `Corrida ${escH(d.corrida.replace('T', ' ').replace('Z', ' UTC'))} · ${escH(d.fuente)} · procesada ${escH(horaChile(d.generado))} (hora Chile)`;
+    psub.innerHTML = `Corrida ${escH(d.corrida.replace('T', ' ').replace('Z', ' UTC'))} · ${escH(d.fuente)} · procesada ${escH(horaChile(d.generado))} (hora Chile)${Date.now() - new Date(d.generado) > (MODELOS[modelo].viejoProbH || 22) * 3600e3 ? ' · <b class="mar-viejo">corrida antigua</b>' : ''}`;
     ptabla.innerHTML = `<div class="ev-tw"><table class="ev-tabla tr-pt"><thead><tr><th>Zona</th>${dias.map(f => `<th>${escH(diaLargo(f))}</th>`).join('')}</tr></thead><tbody>` +
       d.areas.map(a => `<tr><th title="${escH(a.nombre)}">${escH(a.nombre.replace(/^Zona (\S+) · /, '$1 · '))}</th>` +
         dias.map(f => { const v = d.prob_dia[a.id][indProb][f]; return `<td><button type="button" class="tr-pc tr-${claseP(v)}${celdaProb && celdaProb[0] === a.id && celdaProb[1] === f ? ' sel' : ''}" data-a="${a.id}" data-f="${f}">${v == null ? '–' : v + ' %'}</button></td>`; }).join('') + '</tr>').join('') +
@@ -320,7 +324,8 @@ function crearTrombas(L, map, h) {
   function pintar() {
     const d = datos, ahora = Date.now() - 3 * 3600e3;
     const pasos = d.pasos.filter(p => new Date(p.valida) >= ahora);
-    const viejo = Date.now() - new Date(d.generado) > 15 * 3600e3;
+    // GFS e IFS se renuevan cada 6 h; MONAN, una vez al día: cada modelo tiene su propio plazo para la marca
+    const viejo = Date.now() - new Date(d.generado) > (MODELOS[modelo].viejoH || 15) * 3600e3;
     sub.innerHTML = `Corrida ${escH(d.corrida.replace('T', ' ').replace('Z', ' UTC'))} · ${escH(d.fuente)} · procesada ${escH(horaChile(d.generado))} (hora Chile)${viejo ? ' · <b class="mar-viejo">corrida antigua</b>' : ''}`;
     if (d.completo === false) sub.innerHTML += ' · <b class="mar-viejo">no se pudo procesar; se reintenta en la próxima ejecución</b>';
     let html = '', dia = '';
@@ -560,6 +565,7 @@ function crearTrombas(L, map, h) {
   const grupoObs = L.layerGroup();
   const COLOR_OBS = { confirmada: '#ff5252', catalogo: '#4db6ff', registro: '#f6d36b', dudosa: '#8a97a6' };
   const NOMBRE_OBS = { confirmada: 'Confirmada por una autoridad', catalogo: 'Catálogo científico', registro: 'Video o testigos citados por prensa', dudosa: 'Dudosa' };
+  const fmtHora = s => String(s).replace(/(\d{1,2}:\d{2}):\d{2}/g, '$1').replace(/\s*[-–]\s*/g, '–');
   const MES3 = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   const osub = card.querySelector('.tr-osub'), omes = card.querySelector('.tr-omes'), oley = card.querySelector('.tr-oley');
   const otabla = card.querySelector('.tr-otabla'), onota = card.querySelector('.tr-onota');
@@ -594,7 +600,7 @@ function crearTrombas(L, map, h) {
       });
       const u = (e.urls || [])[0];
       m.bindPopup(`<b>${escH(e.lugar)}</b><br><span class="tr-opop">${escH(new Date(e.fecha + 'T12:00:00Z').toLocaleDateString('es-CL', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' }))}` +
-        `${e.hora ? ' · ' + escH(e.hora) + ' h' : ' · sin hora'}${lacustre ? ' · tromba lacustre' : ''}</span>` +
+        `${e.hora ? ' · ' + escH(fmtHora(e.hora)) + ' h' : ' · sin hora'}${lacustre ? ' · tromba lacustre' : ''}</span>` +
         `<br><span class="tr-opop">${escH(NOMBRE_OBS[e.nivel] || e.nivel)}: ${escH(e.respaldo || '')}</span>` +
         (e.nota ? `<br><span class="tr-opop">${escH(e.nota)}</span>` : '') +
         (u ? `<br><a href="${escH(u)}" target="_blank" rel="noopener">Fuente ↗</a>` : ''), { maxWidth: 320 });
@@ -616,7 +622,7 @@ function crearTrombas(L, map, h) {
     otabla.innerHTML = '<div class="ev-tw tr-otw"><table class="ev-tabla tr-ot"><thead><tr><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Respaldo</th></tr></thead><tbody>' +
       filas.map(e => `<tr data-id="${escH(e.id)}" tabindex="0" title="Ver en el mapa">` +
         `<td>${escH(new Date(e.fecha + 'T12:00:00Z').toLocaleDateString('es-CL', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, ''))}</td>` +
-        `<td>${escH(e.hora || '–')}</td><td><i class="tr-op" style="background:${COLOR_OBS[e.nivel] || '#8a97a6'};${e.tipo === 'lacustre' ? 'opacity:.35' : ''}"></i>${escH(e.lugar)}${e.region ? ', ' + escH(e.region) : ''}${e.cantidad ? ` <small>(${escH(e.cantidad)})</small>` : ''}</td>` +
+        `<td>${escH(e.hora ? fmtHora(e.hora) : '–')}</td><td><i class="tr-op" style="background:${COLOR_OBS[e.nivel] || '#8a97a6'};${e.tipo === 'lacustre' ? 'opacity:.35' : ''}"></i>${escH(e.lugar)}${e.region ? ', ' + escH(e.region) : ''}${e.cantidad ? ` <small>(${escH(e.cantidad)})</small>` : ''}</td>` +
         `<td><small>${escH(NOMBRE_OBS[e.nivel] || e.nivel)}</small></td></tr>`).join('') + '</tbody></table></div>';
     const ir = id => { const m = marcasObs.get(id); if (!m) return; if (!map.hasLayer(grupoObs)) grupoObs.addTo(map); map.flyTo(m.getLatLng(), Math.max(map.getZoom(), 8), { duration: 0.7 }); m.openPopup(); };
     otabla.querySelectorAll('tbody tr').forEach(tr => {
