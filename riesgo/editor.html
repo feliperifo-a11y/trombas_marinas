@@ -386,7 +386,19 @@ function setTab(t){
   ["plan","mapa","detalle","config","pub","metodo"].forEach(x=>$("t-"+x).classList.toggle("hidden",x!==t));
   if(t==="mapa")renderMap();if(t==="detalle")renderDetail();if(t==="config")renderConfig();if(t==="pub")renderPub();
 }
+function modoDemo(){
+  // Vista de demostración: mismo pronóstico en vivo, sin edición ni emisión (riesgo/editor.html#demo)
+  EDITABLE=false;
+  document.title="Pronóstico de riesgo meteorológico · Demostración";
+  document.querySelector(".logo .tx").textContent="Demostración · pronóstico en vivo por ciudad";
+  ["btnEmit"].forEach(id=>$(id).classList.add("hidden"));
+  document.querySelectorAll('#tabs [data-t="config"],#tabs [data-t="pub"]').forEach(b=>b.classList.add("hidden"));
+  document.querySelectorAll(".legend span").forEach(sp=>{if(/editada|Toque una celda/.test(sp.textContent))sp.remove()});
+  document.querySelector(".nav.rnav").classList.add("hidden");
+  const n=document.querySelector(".scope .in > p.note");if(n)n.textContent="Vista de demostración: valores del modelo sin revisión del pronosticador.";
+}
 function init(){
+  if(location.hash==="#demo")modoDemo();
   restore();tick();setInterval(tick,30000);
   const today=todayCL();$("fEmiDate").value=today;
   if(S.range.mode==="custom"&&S.range.b>=addDays(today,1)&&S.range.b<=addDays(today,15)){$("fStart").value=S.range.a<addDays(today,1)?addDays(today,1):S.range.a;$("fEnd").value=S.range.b}
