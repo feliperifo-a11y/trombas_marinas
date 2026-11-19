@@ -224,7 +224,9 @@ function renderMap(){
   if(typeof L==="undefined"||$("t-mapa").classList.contains("hidden"))return;
   if(!rmap){
     rmap=L.map("rmap",{zoomControl:true});
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:12,subdomains:"abcd",attribution:"© OpenStreetMap · © CARTO"}).addTo(rmap);
+    // Mismas teselas que la página de trombas (Esri), más límites y nombres de lugares
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{attribution:"Imagen © Esri",maxZoom:17,maxNativeZoom:13}).addTo(rmap);
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{attribution:"Límites © Esri",maxZoom:17,maxNativeZoom:13,opacity:.9}).addTo(rmap);
     rmapLayer=L.layerGroup().addTo(rmap);
   }
   rmapLayer.clearLayers();
@@ -233,7 +235,8 @@ function renderMap(){
     let worst=0;const rows=DATES.map(d=>{const c=CELLS[s.id]&&CELLS[s.id][d];if(!c)return"";worst=Math.max(worst,c.risk);
       return `<tr><td>${dayLabel(d,false)}</td><td><i class="dot" style="background:${RISK_HEX[c.risk]}"></i></td><td>${txtT(c)}</td><td>${txtW(c)}</td><td>${txtP(c)}</td></tr>`}).join("");
     L.circleMarker([s.lat,s.lon],{radius:9,color:"#fff",weight:2,fillColor:RISK_HEX[worst],fillOpacity:.95})
-      .bindPopup(`<b>${esc(s.nombre)}</b><br><small>${esc(s.ref)}</small><table style="font-size:12px;margin-top:4px">${rows}</table>`)
+      .bindPopup(`<b>${esc(s.nombre)}</b><br><small>${esc(s.ref)}</small><table style="font-size:12px;margin-top:4px;border-spacing:6px 2px">${rows}</table>`)
+      .bindTooltip(s.nombre,{direction:"right",offset:[8,0],className:"rtip"})
       .addTo(rmapLayer);
   });
   if(A.length) rmap.fitBounds(A.map(s=>[s.lat,s.lon]),{padding:[24,24],maxZoom:9});

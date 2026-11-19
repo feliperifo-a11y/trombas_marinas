@@ -89,7 +89,6 @@ table.grid input.w{width:170px}table.grid input.ww{width:170px}
 .login{max-width:420px;margin:40px auto;text-align:center}
 .login input{width:100%;margin:10px 0;padding:10px 12px;font-size:15px}
 .login .err{color:#ff8a7a;font-size:13px;min-height:18px}
-.leaflet-popup-content{color:#18212b}
 .nav.rnav{grid-template-columns:repeat(7,1fr)}
 .nav.rnav a.on{grid-column:auto}
 .rz .bar select{max-width:100%}
