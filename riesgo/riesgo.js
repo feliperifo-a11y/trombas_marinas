@@ -219,28 +219,90 @@ function renderPlan(){
   if(EDITABLE&&onCellClick) host.querySelectorAll(".cell").forEach(el=>el.onclick=()=>onCellClick(el.dataset.s,el.dataset.d));
 }
 
-/* ===================== Mapa ===================== */
+/* ===================== Mapa (siempre visible, a la izquierda) ===================== */
+let MARKERS={}, lastFit="";
+function worstRisk(s){let w=0;DATES.forEach(d=>{const c=CELLS[s.id]&&CELLS[s.id][d];if(c&&c.risk>w)w=c.risk});return w}
 function renderMap(){
-  if(typeof L==="undefined"||$("t-mapa").classList.contains("hidden"))return;
+  if(typeof L==="undefined"||!$("rmap"))return;
   if(!rmap){
-    rmap=L.map("rmap",{zoomControl:true});
+    rmap=L.map("rmap",{zoomControl:false,attributionControl:true}).setView([-15,-74],3);
+    L.control.zoom({position:"bottomright"}).addTo(rmap);
     // Mismas teselas que la página de trombas (Esri), más límites y nombres de lugares
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{attribution:"Imagen © Esri",maxZoom:17,maxNativeZoom:13}).addTo(rmap);
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{attribution:"Límites © Esri",maxZoom:17,maxNativeZoom:13,opacity:.9}).addTo(rmap);
     rmapLayer=L.layerGroup().addTo(rmap);
+    window.addEventListener("resize",()=>rmap.invalidateSize());
   }
-  rmapLayer.clearLayers();
+  rmapLayer.clearLayers();MARKERS={};
   const A=activeSites();
   A.forEach(s=>{
-    let worst=0;const rows=DATES.map(d=>{const c=CELLS[s.id]&&CELLS[s.id][d];if(!c)return"";worst=Math.max(worst,c.risk);
+    const worst=worstRisk(s);
+    const rows=DATES.map(d=>{const c=CELLS[s.id]&&CELLS[s.id][d];if(!c)return"";
       return `<tr><td>${dayLabel(d,false)}</td><td><i class="dot" style="background:${RISK_HEX[c.risk]}"></i></td><td>${txtT(c)}</td><td>${txtW(c)}</td><td>${txtP(c)}</td></tr>`}).join("");
-    L.circleMarker([s.lat,s.lon],{radius:9,color:"#fff",weight:2,fillColor:RISK_HEX[worst],fillOpacity:.95})
+    const m=L.circleMarker([s.lat,s.lon],{radius:9,color:"#fff",weight:2,fillColor:RISK_HEX[worst],fillOpacity:.95})
       .bindPopup(`<b>${esc(s.nombre)}</b><br><small>${esc(s.ref)}</small><table style="font-size:12px;margin-top:4px;border-spacing:6px 2px">${rows}</table>`)
-      .bindTooltip(s.nombre,{direction:"right",offset:[8,0],className:"rtip"})
+      .bindTooltip(s.nombre,{direction:"right",offset:[8,0]})
+      .on("click",()=>markCard(s.id,true))
       .addTo(rmapLayer);
+    MARKERS[s.id]=m;
   });
-  if(A.length) rmap.fitBounds(A.map(s=>[s.lat,s.lon]),{padding:[24,24],maxZoom:9});
+  const key=A.map(s=>s.id).join(",");
+  if(A.length&&key!==lastFit){rmap.fitBounds(A.map(s=>[s.lat,s.lon]),{padding:[30,30],maxZoom:9});lastFit=key}
   setTimeout(()=>rmap.invalidateSize(),60);
+}
+function focusCity(id){
+  const s=S.sites.find(x=>x.id===id),m=MARKERS[id];if(!s||!m||!rmap)return;
+  if(window.innerWidth<1100){const mc=document.querySelector(".mapCard");if(mc)mc.scrollIntoView({behavior:"smooth",block:"start"})}
+  rmap.flyTo([s.lat,s.lon],Math.max(rmap.getZoom(),7),{duration:.6});setTimeout(()=>m.openPopup(),650);
+  markCard(id,false);
+}
+function markCard(id,scroll){
+  document.querySelectorAll(".ccard.sel").forEach(e=>e.classList.remove("sel"));
+  const el=document.querySelector(`.ccard[data-s="${id}"]`);if(!el)return;
+  el.classList.add("sel");
+  if(scroll&&window.innerWidth>=1100){const t=document.querySelector('#tabs [data-t="ciudades"]');if(t&&!t.classList.contains("on"))t.click();el.scrollIntoView({behavior:"smooth",block:"nearest"})}
+}
+
+/* ===================== Lista de ciudades ordenada ===================== */
+let ORDEN=lsGet("riesgo_orden")||"pais";
+const ORDENES=[["pais","Por país (orden de la planilla)"],["ns","Norte a sur"],["riesgo","Mayor riesgo primero"],["az","Alfabético"]];
+function sortedSites(){
+  const A=activeSites().slice(),pos=id=>S.sites.findIndex(x=>x.id===id),ord={CL:0,CO:1,PE:2};
+  if(ORDEN==="ns")A.sort((a,b)=>b.lat-a.lat);
+  else if(ORDEN==="az")A.sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+  else if(ORDEN==="riesgo"){const mw=s=>Math.max(-1,...DATES.map(d=>{const c=CELLS[s.id][d];return c&&c.whi!=null?c.whi:-1}));
+    A.sort((a,b)=>worstRisk(b)-worstRisk(a)||mw(b)-mw(a)||b.lat-a.lat)}
+  else A.sort((a,b)=>ord[a.pais]-ord[b.pais]||pos(a.id)-pos(b.id));
+  return A;
+}
+function renderCities(){
+  const host=$("cityList");if(!host)return;
+  const sel=$("fOrden");
+  if(sel&&!sel.options.length){sel.innerHTML=ORDENES.map(([v,t])=>`<option value="${v}">${t}</option>`).join("");sel.value=ORDEN;
+    sel.onchange=()=>{ORDEN=sel.value;lsSet("riesgo_orden",ORDEN);renderCities()}}
+  if(!DATES.length){host.innerHTML='<div class="note">Sin datos.</div>';return}
+  const A=sortedSites();
+  if(!A.length){host.innerHTML='<div class="note">No hay ciudades seleccionadas.</div>';return}
+  let h="",grp=null;
+  A.forEach(s=>{
+    if(ORDEN==="pais"&&grp!==s.pais){grp=s.pais;h+=`<div class="cgrp">${PAIS[s.pais]}</div>`}
+    const w=worstRisk(s),why=[];
+    DATES.forEach(d=>{const c=CELLS[s.id][d];if(c&&c.risk===w&&w>0&&c.why&&c.why[0]&&why.length<2)why.push(`${dayLabel(d,false)}: ${c.why[0]}`)});
+    h+=`<div class="ccard w${w}" data-s="${s.id}">
+      <div class="ch"><span class="cn">${esc(s.nombre)}</span><span class="cr">${esc(s.ref)}${ORDEN!=="pais"?" · "+PAIS[s.pais]:""}</span><span class="badge b${w}">${RISK_TXT[w]}</span></div>
+      <div class="days" style="grid-template-columns:repeat(${DATES.length},minmax(0,1fr))">`+
+      DATES.map(d=>{const c=CELLS[s.id][d];if(!c||c.tmax==null)return`<div class="dc"><div class="dl">${dayLabel(d,false)}</div><div class="na">s/d</div></div>`;
+        return `<div class="dc r${c.risk}${EDITABLE?" ed-ok":""}" data-d="${d}" title="${esc(txtT(c)+" · "+txtW(c)+" · "+txtP(c)+(c.why&&c.why.length?" · "+c.why.join(", "):""))}">
+          <div class="dl">${dayLabel(d,false)}</div><div class="di">${iconSVG(iconKind(c.code),isWindy(c,s))}</div>
+          <div class="dt"><b>${c.tmax}°</b> <span>${c.tmin}°</span></div><div class="dw">${c.whi!=null?c.whi:"–"} <small>km/h</small></div><div class="dp">${c.phi!=null&&c.phi>=0.1?fmtMM(c.phi)+" mm":"&nbsp;"}</div>
+          ${EDITABLE&&c.edited?'<i class="edm"></i>':""}</div>`}).join("")+
+      `</div>${why.length?`<div class="cw">${esc(why.join(" · "))}</div>`:""}</div>`;
+  });
+  host.innerHTML=h;
+  host.querySelectorAll(".ccard").forEach(el=>{
+    el.querySelector(".ch").onclick=()=>focusCity(el.dataset.s);
+    el.querySelectorAll(".dc[data-d]").forEach(dc=>dc.onclick=()=>{if(EDITABLE&&onCellClick)onCellClick(el.dataset.s,dc.dataset.d);else focusCity(el.dataset.s)});
+  });
 }
 
 /* ===================== PDF ===================== */
