@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Pronóstico de riesgo meteorológico</title>
+<meta name="theme-color" content="#06121f">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="apple-touch-icon" href="../assets/ios-180.png">
+<link rel="stylesheet" href="../assets/leaflet.css">
+<link rel="stylesheet" href="../assets/sitio.css">
+<link rel="stylesheet" href="riesgo.css">
+<script src="../assets/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="top">
+  <a class="logo" href="https://meteoia.cl" title="Ir a MeteoIA"><span class="mk"><img src="../assets/logo-meteoia.png" alt="MeteoIA"></span><span><b>Pronóstico de riesgo</b><span class="tx">Riesgo meteorológico operacional por ciudad</span></span></a>
+  <div class="reloj"><div class="h" id="hora">–</div><div class="s" id="emiTop">Acceso con clave</div></div>
+</div>
+
+<div class="rz">
+  <!-- Ingreso -->
+  <section id="login" class="box login">
+    <h2>Acceso</h2>
+    <p class="note">Ingrese la clave de visualización entregada por su proveedor del pronóstico.</p>
+    <form id="fLogin" autocomplete="off">
+      <input type="password" id="lPass" placeholder="Clave" autocomplete="current-password" required>
+      <label style="display:flex;gap:6px;align-items:center;justify-content:center;font-size:12.5px;color:var(--muted)"><input type="checkbox" id="lRemember" style="width:auto;margin:0"> Recordar en este equipo</label>
+      <div class="err" id="lErr"></div>
+      <button class="pri" type="submit" id="lBtn" style="width:100%;padding:10px">Ingresar</button>
+    </form>
+  </section>
+
+  <!-- Contenido -->
+  <section id="app" class="hidden">
+    <div class="bar">
+      <label>Emisión<select id="fEmi"></select></label>
+      <div class="acts">
+        <button id="btnPdf" class="pri">Descargar PDF</button>
+        <button id="btnXls">Excel</button>
+        <button id="btnOut">Salir</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <details class="scope" id="scope">
+      <summary><span>Filtrar ciudades y días</span><span class="sum" id="scopeSum"></span></summary>
+      <div class="in">
+        <h4>Días</h4><div class="chips" id="dayChips"></div>
+        <h4>Ciudades <button class="mini" id="selAll">Todas</button><button class="mini" id="selNone">Ninguna</button></h4>
+        <div id="siteChips"></div>
+        <p class="note" style="font-size:12px;color:var(--muted);margin:10px 0 0">El PDF y el Excel incluyen solo lo seleccionado.</p>
+      </div>
+    </details>
+
+    <div class="tabs" id="tabs">
+      <button data-t="plan" class="on">Planilla</button>
+      <button data-t="mapa">Mapa</button>
+      <button data-t="crit">Criterios</button>
+    </div>
+
+    <section id="t-plan">
+      <div class="kpis" id="kpis"></div>
+      <div class="alerts hidden" id="alerts"></div>
+      <div class="legend">
+        <span><i class="sw" style="background:#1e9e57"></i>Riesgo M. Op. Bajo</span>
+        <span><i class="sw" style="background:#e8b400"></i>Riesgo M. Op. Moderado</span>
+        <span><i class="sw" style="background:#d33a2c"></i>Riesgo M. Op. Alto</span>
+      </div>
+      <div id="planTables"></div>
+    </section>
+    <section id="t-mapa" class="hidden"><div class="box"><h2>Riesgo máximo del período</h2><p class="note">Toque un punto para ver el resumen diario.</p><div id="rmap"></div></div></section>
+    <section id="t-crit" class="hidden"><div class="box"><h2>Criterios del semáforo</h2><div id="critBox"></div></div></section>
+  </section>
+</div>
+<footer class="pie"><p>Datos meteorológicos: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0), revisados y emitidos por el equipo pronosticador.</p>CF Felipe Rifo Espósito · <a href="mailto:feliperifo@gmail.com">feliperifo@gmail.com</a></footer>
+
+<script src="riesgo.js"></script>
+<script>
+"use strict";
+const LSV="riesgo_visor_v1";
+let PASS=null, SNAP=null, IDX=[], DAYS_ALL=[], DAYOFF={};
+const cfg=Object.assign({},ALMACEN_DEF);
+
+function tick(){const n=new Date();$("hora").textContent=new Intl.DateTimeFormat("es-CL",{hour:"2-digit",minute:"2-digit",timeZone:TZ.CL}).format(n)+" Chile"}
+function savePrefs(){const p=lsGet(LSV)||{};p.sel=S.sel;lsSet(LSV,p)}
+
+async function login(pass,silent){
+  $("lErr").textContent="";$("lBtn").disabled=true;$("lBtn").innerHTML='<span class="spin"></span>Verificando…';
+  try{
+    const env=await ghRead(cfg,"actual.json");
+    if(!env){$("lErr").textContent="Todavía no hay pronósticos emitidos.";return false}
+    const snap=await decryptJSON(env,pass);
+    PASS=pass;
+    try{const ei=await ghRead(cfg,"indice.json");IDX=ei?await decryptJSON(ei,pass):[]}catch(e){IDX=[]}
+    show(snap);return true;
+  }catch(e){
+    if(!silent)$("lErr").textContent=e.name==="OperationError"?"Clave incorrecta.":"No se pudo conectar: "+e.message;
+    return false;
+  }finally{$("lBtn").disabled=false;$("lBtn").textContent="Ingresar"}
+}
+function show(snap){
+  SNAP=snap;
+  S.sites=snap.sites;S.thr=snap.thr;S.pdf=snap.pdf||S.pdf;CELLS=snap.cells;EMI=snap.emision;
+  DAYS_ALL=snap.dates.slice();DAYOFF={};DATES=DAYS_ALL.slice();
+  const p=lsGet(LSV)||{};S.sel=p.sel||{};
+  $("login").classList.add("hidden");$("app").classList.remove("hidden");
+  $("emiTop").textContent="Emisión: "+longDate(EMI.fecha)+", "+EMI.hora+" Hrs (Chile)";
+  const opts=IDX.slice().reverse();
+  if(!opts.some(x=>x.id===snap.id))opts.unshift({id:snap.id,fecha:EMI.fecha,hora:EMI.hora,desde:DAYS_ALL[0],hasta:DAYS_ALL[DAYS_ALL.length-1]});
+  $("fEmi").innerHTML=opts.map((x,k)=>`<option value="${esc(x.id)}" ${x.id===snap.id?"selected":""}>${k===0?"Vigente · ":""}${longDate(x.fecha)} ${x.hora} (${dayLabel(x.desde,false)} a ${dayLabel(x.hasta,false)})</option>`).join("");
+  $("status").innerHTML=`Emitido el <b>${longDate(EMI.fecha)}</b> a las ${EMI.hora} Hrs (Chile)<br>${esc(emisionLine(EMI.fecha,EMI.hora))}`;
+  renderScope();renderAll();renderCrit();
+}
+function renderAll(){renderKpis();renderPlan();renderMap()}
+function renderScope(){
+  $("dayChips").innerHTML=DAYS_ALL.map(d=>`<span class="chip${DAYOFF[d]?"":" on"}${isWE(d)?" we":""}" data-d="${d}">${dayLabel(d,false)}</span>`).join("");
+  $("dayChips").querySelectorAll(".chip").forEach(el=>el.onclick=()=>{const d=el.dataset.d;
+    if(!DAYOFF[d]&&DAYS_ALL.filter(x=>!DAYOFF[x]).length<=1){toast("Debe quedar al menos un día");return}
+    DAYOFF[d]=!DAYOFF[d];DATES=DAYS_ALL.filter(x=>!DAYOFF[x]);renderScope();renderAll()});
+  renderSiteChips($("siteChips"),()=>{savePrefs();renderScope();renderAll()});
+  const n=activeSites().length;
+  $("scopeSum").textContent=`${n} de ${S.sites.length} ciudades · ${DATES.length} día${DATES.length===1?"":"s"}`;
+}
+function renderCrit(){
+  const T=S.thr,row=(l,a,b,u,op)=>`<tr><td class="l">${l}</td><td>${op} ${a} ${u}</td><td>${op} ${b} ${u}</td></tr>`;
+  let h=`<table class="grid"><thead><tr><th>Variable</th><th>Moderado</th><th>Alto</th></tr></thead><tbody>`;
+  Object.keys(THR_LABEL).forEach(k=>{if(T[k].on){const[l,u,op]=THR_LABEL[k];h+=row(l,T[k].A,T[k].R,u,op)}});
+  if(T.storm.on)h+=`<tr><td class="l">Tormenta eléctrica</td><td>Moderado</td><td>—</td></tr>`;
+  h+="</tbody></table>";
+  const ex=S.sites.filter(s=>s.rA!=null&&s.rA!=="");
+  if(ex.length)h+=`<p class="note">Umbrales propios de ráfaga: ${ex.map(s=>`${esc(s.nombre)} ${s.rA}/${s.rR} km/h`).join("; ")}.</p>`;
+  h+=`<p class="note">Temperatura y viento: mediana de los modelos ECMWF, GFS e ICON. Viento: medio máximo y ráfaga máxima. Precipitación: rango entre modelos. ISO 0°: altura mínima y máxima del día de la isoterma 0 °C. Los valores fueron revisados por el pronosticador antes de la emisión.</p>`;
+  $("critBox").innerHTML=h;
+}
+function setTab(t){
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  ["plan","mapa","crit"].forEach(x=>$("t-"+x).classList.toggle("hidden",x!==t));
+  if(t==="mapa")renderMap();
+}
+function logout(){try{localStorage.removeItem(LSV+"_k");sessionStorage.removeItem(LSV+"_k")}catch(e){}location.reload()}
+
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+$("fLogin").onsubmit=async ev=>{ev.preventDefault();const p=$("lPass").value;
+  if(await login(p)){try{(($("lRemember").checked)?localStorage:sessionStorage).setItem(LSV+"_k",p)}catch(e){}}};
+$("fEmi").onchange=async()=>{
+  const id=$("fEmi").value;try{const env=await ghRead(cfg,`historial/${id}.json`);if(!env)throw new Error("emisión no encontrada");show(await decryptJSON(env,PASS))}
+  catch(e){toast("No se pudo abrir la emisión: "+e.message)}};
+$("btnPdf").onclick=()=>makePdf().catch(e=>{console.error(e);toast("Error al generar PDF: "+e.message)});
+$("btnXls").onclick=makeXls;$("btnOut").onclick=logout;
+$("selAll").onclick=()=>{S.sites.forEach(s=>S.sel[s.id]=true);savePrefs();renderScope();renderAll()};
+$("selNone").onclick=()=>{S.sites.forEach(s=>S.sel[s.id]=false);savePrefs();renderScope();renderAll()};
+tick();setInterval(tick,30000);
+(async()=>{let k=null;try{k=sessionStorage.getItem(LSV+"_k")||localStorage.getItem(LSV+"_k")}catch(e){}
+  if(k)await login(k,true);})();
+</script>
+</body>
+</html>
