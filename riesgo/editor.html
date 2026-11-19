@@ -27,7 +27,12 @@
   <a class="on" href="editor.html" aria-current="page"><svg class="ic" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="10" width="34" height="44" rx="5" stroke="#e8f1fb" stroke-width="2.6"/><path d="M18 22h18M18 30h18M18 38h10" stroke="#8fa7bf" stroke-width="2.4"/><path d="M40 46l14-14 5 5-14 14h-5z" fill="#2f8cff"/></svg>Editor</a>
 </nav>
 
-<div class="rz">
+<div class="wrap rwrap">
+  <section class="mapCard" id="mapa">
+    <div id="rmap" role="application" aria-label="Mapa de riesgo por ciudad"></div>
+    <div class="leyMapa"><span><i style="background:#1e9e57"></i>Bajo</span><span><i style="background:#e8b400"></i>Moderado</span><span><i style="background:#d33a2c"></i>Alto</span><span style="color:var(--muted)">riesgo máximo del período</span></div>
+  </section>
+  <div class="col rz">
   <div class="bar">
     <label>Primer día<input type="date" id="fStart"></label>
     <label>Último día<input type="date" id="fEnd"></label>
@@ -42,7 +47,7 @@
     <div class="status" id="status">Sin datos cargados.</div>
   </div>
 
-  <details class="scope" open>
+  <details class="scope">
     <summary><span>Alcance del pronóstico</span><span class="sum" id="scopeSum"></span></summary>
     <div class="in">
       <h4>Atajos de período
@@ -61,17 +66,22 @@
   </details>
 
   <div class="tabs" id="tabs">
-    <button data-t="plan" class="on">Planilla</button>
-    <button data-t="mapa">Mapa</button>
-    <button data-t="detalle">Detalle por ciudad</button>
-    <button data-t="config">Umbrales y ciudades</button>
+    <button data-t="ciudades" class="on">Ciudades</button>
+    <button data-t="plan">Planilla</button>
+    <button data-t="detalle">Detalle</button>
+    <button data-t="config">Umbrales</button>
     <button data-t="pub">Publicación</button>
     <button data-t="metodo">Metodología</button>
   </div>
 
-  <section id="t-plan">
-    <div class="kpis" id="kpis"></div>
-    <div class="alerts hidden" id="alerts"></div>
+  <section id="t-ciudades">
+    <div class="kpis mini" id="kpis"></div>
+    <div class="ordenBar"><h2>Ciudades</h2><label>Ordenar<select id="fOrden"></select></label></div>
+    <div id="cityList"></div>
+  </section>
+
+  <section id="t-plan" class="hidden">
+        <div class="alerts hidden" id="alerts"></div>
     <div class="legend">
       <span><i class="sw" style="background:#1e9e57"></i>Riesgo M. Op. Bajo</span>
       <span><i class="sw" style="background:#e8b400"></i>Riesgo M. Op. Moderado</span>
@@ -82,7 +92,6 @@
     <div id="planTables"></div>
   </section>
 
-  <section id="t-mapa" class="hidden"><div class="box"><h2>Riesgo máximo del período</h2><p class="note">Color del punto = nivel más alto que alcanza la ciudad en los días seleccionados.</p><div id="rmap"></div></div></section>
 
   <section id="t-detalle" class="hidden">
     <div class="bar"><label>Ciudad<select id="fSite"></select></label><div class="status" id="siteInfo"></div></div>
@@ -131,6 +140,8 @@
       <p><b>Seguridad.</b> Cada emisión se guarda cifrada con AES-GCM de 256 bits; la clave se deriva de la clave de visualización con PBKDF2-SHA256 (250 000 iteraciones). El código de la página es público; los pronósticos emitidos no se pueden leer sin la clave.</p>
     </div>
   </section>
+
+  </div>
 </div>
 <footer class="pie"><p>Datos meteorológicos: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0).</p>CF Felipe Rifo Espósito · <a href="mailto:feliperifo@gmail.com">feliperifo@gmail.com</a></footer>
 <div id="modalHost"></div>
@@ -252,7 +263,7 @@ function computeAll(){
 }
 
 /* ---------- render ---------- */
-function renderAll(){renderStatus();renderKpis();renderPlan();renderMap();renderSiteSelect();renderDetail()}
+function renderAll(){renderStatus();renderKpis();renderCities();renderPlan();renderMap();renderSiteSelect();renderDetail()}
 function renderStatus(){
   if(!LOADED_AT){$("status").textContent="Sin datos cargados.";return}
   const utc=LOADED_AT.toISOString().slice(0,16).replace("T"," ")+" UTC";
@@ -383,8 +394,8 @@ async function emitir(){
 /* ---------- inicio ---------- */
 function setTab(t){
   document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
-  ["plan","mapa","detalle","config","pub","metodo"].forEach(x=>$("t-"+x).classList.toggle("hidden",x!==t));
-  if(t==="mapa")renderMap();if(t==="detalle")renderDetail();if(t==="config")renderConfig();if(t==="pub")renderPub();
+  ["ciudades","plan","detalle","config","pub","metodo"].forEach(x=>$("t-"+x).classList.toggle("hidden",x!==t));
+  if(t==="detalle")renderDetail();if(t==="config")renderConfig();if(t==="pub")renderPub();
 }
 function modoDemo(){
   // Vista de demostración: mismo pronóstico en vivo, sin edición ni emisión (riesgo/editor.html#demo)
@@ -416,7 +427,7 @@ function init(){
   $("btnEditsClear").onclick=()=>{S.edits={};save();recalc();toast("Ediciones borradas")};
   $("pTitle").onchange=e=>{S.pdf.title=e.target.value;save()};$("pAuthor").onchange=e=>{S.pdf.author=e.target.value;save()};
   $("btnCfgSave").onclick=savePub;$("btnTest").onclick=()=>{savePub();loadHist()};
-  renderScope();renderPlan();loadAll();
+  renderScope();renderMap();renderPlan();loadAll();
 }
 init();
 </script>

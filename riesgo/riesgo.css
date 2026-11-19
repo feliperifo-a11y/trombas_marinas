@@ -93,3 +93,42 @@ table.grid input.w{width:170px}table.grid input.ww{width:170px}
 .nav.rnav a.on{grid-column:auto}
 .rz .bar select{max-width:100%}
 @media(max-width:760px){.rz .bar label{width:100%}.rz .bar select{width:100%}.rz{padding:0 12px 12px}#rmap{height:420px}.rz .status{margin-left:0;text-align:left}}
+
+/* ===== Diseño tipo MeteoIA: mapa a la izquierda, panel de ciudades a la derecha ===== */
+.col.rz{padding:0;min-width:0}
+.mapCard #rmap{position:absolute;inset:0;height:auto;border:0;border-radius:0}
+.mapCard .leyMapa i{border-radius:50%}
+.rz .bar{padding:10px 12px;gap:10px}
+.rz .bar label{font-size:11.5px}
+.rz .bar input[type=date],.rz .bar input[type=time]{max-width:150px}
+.rz .tabs button{padding:6px 10px;font-size:12.5px}
+.ordenBar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;flex-wrap:wrap}
+.ordenBar h2{margin:0;font-size:14px;font-weight:800;letter-spacing:.6px;text-transform:uppercase}
+.ordenBar label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.kpis.mini{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.kpis.mini .kpi{padding:8px 10px}.kpis.mini .kpi .n{font-size:20px}.kpis.mini .kpi .l{font-size:11px;line-height:1.25}
+.cgrp{font-size:11.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin:12px 2px 6px;font-weight:700}
+.ccard{background:linear-gradient(180deg,#0f243b,#0b1c30);border:1px solid var(--line);border-left:5px solid #1e9e57;border-radius:12px;padding:9px 10px;margin-bottom:8px;transition:.15s}
+.ccard.w1{border-left-color:#e8b400}.ccard.w2{border-left-color:#d33a2c}
+.ccard.sel{border-color:#5fb0ff;box-shadow:0 0 0 1px rgba(95,176,255,.35),0 6px 18px rgba(47,140,255,.25)}
+.ccard .ch{display:flex;align-items:baseline;gap:8px;cursor:pointer;margin-bottom:7px;flex-wrap:wrap}
+.ccard .cn{font-weight:800;font-size:14px;letter-spacing:.3px}
+.ccard .cr{font-size:11.5px;color:var(--muted);flex:1}
+.badge{font-size:11px;font-weight:700;border-radius:10px;padding:2px 9px;color:#fff}
+.badge.b0{background:#1e9e57}.badge.b1{background:#e8b400;color:#1b1400}.badge.b2{background:#d33a2c}
+.days{display:grid;gap:4px}
+.dc{background:#0b1d31;border:1px solid var(--line);border-top:3px solid #1e9e57;border-radius:8px;padding:4px 2px 3px;text-align:center;position:relative;cursor:pointer;min-width:0}
+.dc.r1{border-top-color:#e8b400;background:rgba(232,180,0,.12)}.dc.r2{border-top-color:#d33a2c;background:rgba(211,58,44,.18)}
+.dc:hover{border-color:#5fb0ff}
+.dc .dl{font-size:10.5px;color:#c9d9ea;white-space:nowrap}
+.dc .di{width:30px;height:30px;margin:2px auto;background:#fff;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.dc .di svg{width:26px;height:26px}
+.dc .dt{font-size:12px;white-space:nowrap}.dc .dt span{color:var(--muted)}
+.dc .dw,.dc .dp{font-size:10.5px;color:#c9d9ea;white-space:nowrap}.dc .dw small{color:var(--muted);font-size:9px}
+.dc .dp{color:#7fc4ff}
+.dc .edm{position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:#7b5cff}
+.dc .na{font-size:11px;color:var(--muted);padding:14px 0}
+.ccard .cw{font-size:11px;color:#f2c230;margin-top:6px}.ccard.w2 .cw{color:#ff8a7a}
+#cityList{max-height:none}
+@media(max-width:1100px){.kpis.mini{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.dc .di{width:24px;height:24px}.dc .di svg{width:21px;height:21px}.dc .dl{font-size:9.5px}.dc .dt{font-size:11px}}
