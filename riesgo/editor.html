@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Pronóstico de riesgo · Editor</title>
+<meta name="theme-color" content="#06121f">
+<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
+<link rel="stylesheet" href="../assets/leaflet.css">
+<link rel="stylesheet" href="../assets/sitio.css">
+<link rel="stylesheet" href="riesgo.css">
+<script src="../assets/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="top">
+  <a class="logo" href="https://meteoia.cl" title="Ir a MeteoIA"><span class="mk"><img src="../assets/logo-meteoia.png" alt="MeteoIA"></span><span><b>Pronóstico de riesgo</b><span class="tx">Editor · elaboración y emisión</span></span></a>
+  <div class="reloj"><div class="h" id="hora">–</div><div class="s">Open-Meteo: ECMWF IFS, GFS e ICON</div></div>
+</div>
+<nav class="nav rnav">
+  <a href="../"><svg class="ic" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M13 22h37a8 8 0 0 0-2-15.7A13 13 0 0 0 24.5 5 9 9 0 0 0 13 22Z" stroke="#e8f1fb" stroke-width="2.6"/><path d="M23 22h18c-3.5 8-5.6 17-6.4 28h-5.2C28.6 39 26.5 30 23 22Z" fill="#2f8cff"/><path d="M4 56c4-3.5 8-3.5 12 0s8 3.5 12 0M36 56c4-3.5 8-3.5 12 0s8 3.5 12 0" stroke="#22c3ee" stroke-width="3.4"/></svg>Trombas</a>
+  <a href="./"><svg class="ic" viewBox="0 0 64 64" fill="none"><rect x="22" y="6" width="20" height="52" rx="7" stroke="#e8f1fb" stroke-width="2.6"/><circle cx="32" cy="18" r="5" fill="#d33a2c"/><circle cx="32" cy="32" r="5" fill="#e8b400"/><circle cx="32" cy="46" r="5" fill="#1e9e57"/></svg>Riesgo (visor)</a>
+  <a class="on" href="editor.html" aria-current="page"><svg class="ic" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="10" width="34" height="44" rx="5" stroke="#e8f1fb" stroke-width="2.6"/><path d="M18 22h18M18 30h18M18 38h10" stroke="#8fa7bf" stroke-width="2.4"/><path d="M40 46l14-14 5 5-14 14h-5z" fill="#2f8cff"/></svg>Editor</a>
+</nav>
+
+<div class="rz">
+  <div class="bar">
+    <label>Primer día<input type="date" id="fStart"></label>
+    <label>Último día<input type="date" id="fEnd"></label>
+    <label>Fecha de emisión<input type="date" id="fEmiDate"></label>
+    <label>Hora de emisión (Chile)<input type="time" id="fEmiTime" value="20:00"></label>
+    <div class="acts">
+      <button id="btnLoad" class="pri">Actualizar pronóstico</button>
+      <button id="btnEmit" class="pri" style="background:#1e9e57;border-color:#3ccf7f">Emitir pronóstico</button>
+      <button id="btnPdf">PDF</button>
+      <button id="btnXls">Excel</button>
+    </div>
+    <div class="status" id="status">Sin datos cargados.</div>
+  </div>
+
+  <details class="scope" open>
+    <summary><span>Alcance del pronóstico</span><span class="sum" id="scopeSum"></span></summary>
+    <div class="in">
+      <h4>Atajos de período
+        <button class="mini" data-pre="week">Lun–Vie próxima semana</button>
+        <button class="mini" data-pre="thisweek">Lun–Vie esta semana</button>
+        <button class="mini" data-pre="n5">Próximos 5 días</button>
+        <button class="mini" data-pre="n7">Próximos 7 días</button>
+        <button class="mini" data-pre="weekend">Próximo fin de semana</button>
+      </h4>
+      <h4>Días incluidos <span style="text-transform:none;font-weight:400">(toque para quitar o agregar; máximo 7)</span></h4>
+      <div class="chips" id="dayChips"></div>
+      <h4>Ciudades incluidas <button class="mini" id="selAll">Todas</button><button class="mini" id="selNone">Ninguna</button></h4>
+      <div id="siteChips"></div>
+      <p class="note" style="font-size:12px;color:var(--muted);margin:10px 0 0">Lo que se emite es exactamente esta selección de ciudades y días, con las correcciones hechas en la planilla.</p>
+    </div>
+  </details>
+
+  <div class="tabs" id="tabs">
+    <button data-t="plan" class="on">Planilla</button>
+    <button data-t="mapa">Mapa</button>
+    <button data-t="detalle">Detalle por ciudad</button>
+    <button data-t="config">Umbrales y ciudades</button>
+    <button data-t="pub">Publicación</button>
+    <button data-t="metodo">Metodología</button>
+  </div>
+
+  <section id="t-plan">
+    <div class="kpis" id="kpis"></div>
+    <div class="alerts hidden" id="alerts"></div>
+    <div class="legend">
+      <span><i class="sw" style="background:#1e9e57"></i>Riesgo M. Op. Bajo</span>
+      <span><i class="sw" style="background:#e8b400"></i>Riesgo M. Op. Moderado</span>
+      <span><i class="sw" style="background:#d33a2c"></i>Riesgo M. Op. Alto</span>
+      <span><i class="sw" style="background:#7b5cff"></i>Celda editada</span>
+      <span style="color:var(--muted)">Toque una celda para revisar o corregir el valor.</span>
+    </div>
+    <div id="planTables"></div>
+  </section>
+
+  <section id="t-mapa" class="hidden"><div class="box"><h2>Riesgo máximo del período</h2><p class="note">Color del punto = nivel más alto que alcanza la ciudad en los días seleccionados.</p><div id="rmap"></div></div></section>
+
+  <section id="t-detalle" class="hidden">
+    <div class="bar"><label>Ciudad<select id="fSite"></select></label><div class="status" id="siteInfo"></div></div>
+    <div class="charts"><div class="chartbox"><canvas id="chT"></canvas></div><div class="chartbox"><canvas id="chW"></canvas></div></div>
+    <div class="box" style="margin-top:12px"><h2>Comparación entre modelos</h2><p class="note">Temperatura, viento y ráfaga: mediana de ECMWF, GFS e ICON. Precipitación: mínimo y máximo entre modelos.</p><div style="overflow-x:auto" id="modelTable"></div></div>
+  </section>
+
+  <section id="t-config" class="hidden">
+    <div class="box"><h2>Umbrales de riesgo</h2><p class="note">Propuesta inicial, editable; no corresponde a una norma. Los cambios recalculan la planilla y quedan guardados en este navegador.</p>
+      <div style="overflow-x:auto"><table class="grid" id="thrTable"></table></div>
+      <div style="margin-top:10px"><button id="btnThrReset">Restablecer umbrales</button></div></div>
+    <div class="box"><h2>Ciudades</h2><p class="note">Las columnas de ráfaga permiten un umbral propio por ciudad (vacío = umbral general). Si cambia una coordenada, presione Actualizar pronóstico.</p>
+      <div style="overflow-x:auto"><table class="grid" id="siteTable"></table></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button id="btnSitesReset">Restablecer ciudades</button><button id="btnEditsClear">Borrar todas las ediciones manuales</button></div></div>
+    <div class="box"><h2>Textos del PDF</h2><div class="fg"><label>Título<input id="pTitle"></label><label>Elaborado por<input id="pAuthor"></label></div></div>
+  </section>
+
+  <section id="t-pub" class="hidden">
+    <div class="box"><h2>Publicación de emisiones</h2>
+      <p class="note">Al emitir, el pronóstico se cifra con la <b>clave de visualización</b> y se guarda en el repositorio. Los usuarios del visor solo necesitan esa clave. El token de GitHub es lo que permite publicar: guárdelo solo en equipos del equipo editor.</p>
+      <div class="fg">
+        <label>Nombre de quien emite<input id="cfgName" placeholder="Ej.: J. Ponce"></label>
+        <label>Clave de visualización (la que usan los clientes)<input id="cfgPass" type="password" autocomplete="new-password"></label>
+        <label>Token de GitHub (permiso "Contents: read and write")<input id="cfgToken" type="password" autocomplete="off"></label>
+        <label>Repositorio<input id="cfgRepo"></label>
+        <label>Rama<input id="cfgRama"></label>
+        <label>Carpeta<input id="cfgDir"></label>
+      </div>
+      <p class="note"><label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="cfgRemember"> Recordar token y clave en este navegador</label></p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="btnCfgSave" class="pri">Guardar configuración</button><button id="btnTest">Probar conexión</button><a href="./" style="align-self:center">Abrir el visor ↗</a></div>
+      <div id="pubLog" class="note" style="margin-top:10px"></div>
+    </div>
+    <div class="box"><h2>Últimas emisiones</h2><div id="histList" class="note">Use "Probar conexión" para ver el historial.</div></div>
+  </section>
+
+  <section id="t-metodo" class="hidden">
+    <div class="box"><h2>Cómo se construye cada celda</h2>
+      <p><b>Fuente.</b> API pública de Open-Meteo (licencia CC BY 4.0): <i>best match</i>, ECMWF IFS 0,25°, NCEP GFS y DWD ICON para los mismos puntos. Los días se cortan en hora local de cada país.</p>
+      <p><b>Temperatura.</b> Tmín y Tmáx diarias, mediana de ECMWF, GFS e ICON.</p>
+      <p><b>Viento.</b> Mediana del viento medio máximo a 10 m y mediana de la ráfaga máxima, en km/h.</p>
+      <p><b>Precipitación.</b> Menor y mayor acumulado diario entre modelos; el semáforo usa la mediana.</p>
+      <p><b>Isoterma 0 °C.</b> Mínimo y máximo horario del día de la altura de congelamiento de GFS (Chile).</p>
+      <p><b>Ícono.</b> Código WMO diario de <i>best match</i>.</p>
+      <p><b>Semáforo.</b> Cada variable se compara con sus umbrales; la celda toma el peor nivel. El editor puede fijar el nivel a mano.</p>
+      <p><b>Limitación.</b> Los modelos globales tienen celdas de 9 a 25 km: puntos muy cercanos (Lima y Callao) pueden recibir valores casi idénticos.</p>
+      <p><b>Seguridad.</b> Cada emisión se guarda cifrada con AES-GCM de 256 bits; la clave se deriva de la clave de visualización con PBKDF2-SHA256 (250 000 iteraciones). El código de la página es público; los pronósticos emitidos no se pueden leer sin la clave.</p>
+    </div>
+  </section>
+</div>
+<footer class="pie"><p>Datos meteorológicos: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0).</p>CF Felipe Rifo Espósito · <a href="mailto:feliperifo@gmail.com">feliperifo@gmail.com</a></footer>
+<div id="modalHost"></div>
+
+<script src="riesgo.js"></script>
+<script>
+"use strict";
+EDITABLE=true;
+const LS="riesgo_editor_v1", LSPUB="riesgo_pub_v1";
+const MODELS=[{key:"best",label:"Best match",param:null},{key:"ecmwf",label:"ECMWF IFS",param:"ecmwf_ifs025"},{key:"gfs",label:"NCEP GFS",param:"gfs_seamless"},{key:"icon",label:"DWD ICON",param:"icon_seamless"}];
+const ENS=["ecmwf","gfs","icon"];
+const DAILY="weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,precipitation_sum,precipitation_probability_max";
+const HOURLY="temperature_2m,wind_speed_10m,wind_gusts_10m,precipitation,freezing_level_height";
+const MAXD=7, MAXRANGE=16;
+let DATA={}, DATES_ALL=[], DAYOFF={}, LOADED_AT=null, MODEL_OK={}, FETCHED_SITES=[], chT=null, chW=null;
+S.edits={}; S.range={mode:"preset",k:"n5"};
+
+function save(){lsSet(LS,{sites:S.sites,thr:S.thr,sel:S.sel,pdf:S.pdf,edits:S.edits,range:S.range})}
+function restore(){const j=lsGet(LS);if(!j)return;
+  if(j.sites&&j.sites.length&&j.sites[0].id&&SITES_DEFAULT.some(d=>d.id===j.sites[0].id))S.sites=j.sites;
+  if(j.thr)S.thr=Object.assign(clone(THR_DEFAULT),j.thr); if(j.sel)S.sel=j.sel; if(j.pdf)S.pdf=Object.assign(S.pdf,j.pdf);
+  if(j.edits)S.edits=j.edits; if(j.range)S.range=j.range;}
+function pubCfg(){return Object.assign({repo:ALMACEN_DEF.repo,rama:ALMACEN_DEF.rama,carpeta:ALMACEN_DEF.carpeta,name:"",pass:"",token:"",remember:false},lsGet(LSPUB)||{},PUB_SESSION)}
+let PUB_SESSION={};
+
+/* ---------- reloj ---------- */
+function tick(){const n=new Date();$("hora").textContent=n.toISOString().slice(11,16)+" UTC · "+new Intl.DateTimeFormat("es-CL",{hour:"2-digit",minute:"2-digit",timeZone:TZ.CL}).format(n)+" Chile"}
+
+/* ---------- período ---------- */
+function rangeDates(){const a=$("fStart").value,b=$("fEnd").value;if(!a||!b||b<a)return[];const o=[];for(let d=a;d<=b&&o.length<MAXRANGE;d=addDays(d,1))o.push(d);return o}
+function applyDays(){DATES=DATES_ALL.filter(d=>!DAYOFF[d]);if(DATES.length>MAXD){DATES.slice(MAXD).forEach(d=>DAYOFF[d]=true);DATES=DATES.slice(0,MAXD)}}
+function renderScope(){
+  const rd=DATES_ALL.length?DATES_ALL:rangeDates();
+  $("dayChips").innerHTML=rd.map(d=>`<span class="chip${DAYOFF[d]?"":" on"}${isWE(d)?" we":""}" data-d="${d}">${dayLabel(d,false)}</span>`).join("")||'<span class="note">Rango no válido.</span>';
+  $("dayChips").querySelectorAll(".chip").forEach(el=>el.onclick=()=>{const d=el.dataset.d,on=rd.filter(x=>!DAYOFF[x]).length;
+    if(DAYOFF[d]){if(on>=MAXD){toast(`Máximo ${MAXD} días`);return}delete DAYOFF[d]}else{if(on<=1){toast("Debe quedar al menos un día");return}DAYOFF[d]=true}
+    applyDays();renderScope();if(DATES_ALL.length)renderAll()});
+  renderSiteChips($("siteChips"),()=>{save();renderScope();if(DATES_ALL.length)renderAll()});
+  const ds=DATES_ALL.length?DATES:rd.filter(d=>!DAYOFF[d]), n=S.sites.filter(s=>S.sel[s.id]!==false).length;
+  $("scopeSum").textContent=`${n} de ${S.sites.length} ciudades · ${ds.length} día${ds.length===1?"":"s"}${ds.length?` (${dayLabel(ds[0],false)} a ${dayLabel(ds[ds.length-1],false)})`:""}`;
+}
+function preset(k,noLoad){
+  const t=todayCL(),w=new Date(t+"T12:00:00Z").getUTCDay(); let a,b;
+  const nextMon=()=>addDays(t,((8-w)%7)||7);
+  if(k==="week"){a=nextMon();b=addDays(a,4)}
+  else if(k==="thisweek"){if(w===5||w===6){a=nextMon();b=addDays(a,4)}else{a=addDays(t,1);b=addDays(t,(5-w+7)%7||7)}}
+  else if(k==="n5"){a=addDays(t,1);b=addDays(a,4)}
+  else if(k==="n7"){a=addDays(t,1);b=addDays(a,6)}
+  else{a=addDays(t,((6-w+7)%7)||7);b=addDays(a,1)}
+  $("fStart").value=a;$("fEnd").value=b;DAYOFF={};S.range={mode:"preset",k};save();
+  document.querySelectorAll("[data-pre]").forEach(x=>x.classList.toggle("pri",x.dataset.pre===k));
+  if(!noLoad)loadAll();
+}
+let rT=null;
+function rangeChanged(){
+  const t=todayCL(),lim=addDays(t,15);
+  if($("fEnd").value<$("fStart").value)$("fEnd").value=$("fStart").value;
+  if($("fEnd").value>lim){$("fEnd").value=lim;toast("Open-Meteo pronostica hasta 16 días")}
+  S.range={mode:"custom",a:$("fStart").value,b:$("fEnd").value};save();
+  document.querySelectorAll("[data-pre]").forEach(x=>x.classList.remove("pri"));
+  renderScope();clearTimeout(rT);rT=setTimeout(loadAll,600);
+}
+
+/* ---------- descarga ---------- */
+async function fetchModel(m,sites,start,end){
+  const q=new URLSearchParams({latitude:sites.map(s=>s.lat).join(","),longitude:sites.map(s=>s.lon).join(","),daily:DAILY,hourly:HOURLY,
+    timezone:sites.map(s=>TZ[s.pais]).join(","),start_date:start,end_date:end,wind_speed_unit:"kmh"});
+  if(m.param)q.set("models",m.param);
+  const r=await fetch("https://api.open-meteo.com/v1/forecast?"+q);const j=await r.json();
+  if(!r.ok||j.error)throw new Error(j.reason||("HTTP "+r.status));
+  return Array.isArray(j)?j:[j];
+}
+async function loadAll(){
+  const rd=rangeDates();if(!rd.length){toast("Rango de fechas no válido");return}
+  const btn=$("btnLoad");btn.disabled=true;btn.innerHTML='<span class="spin"></span>Descargando…';$("status").textContent="Consultando Open-Meteo…";
+  FETCHED_SITES=S.sites.map(s=>s.id);
+  const res=await Promise.allSettled(MODELS.map(m=>fetchModel(m,S.sites,rd[0],rd[rd.length-1])));
+  DATA={};MODEL_OK={};
+  res.forEach((r,i)=>{const k=MODELS[i].key;if(r.status==="fulfilled"){DATA[k]=r.value;MODEL_OK[k]=true}else MODEL_OK[k]=String(r.reason&&r.reason.message||r.reason)});
+  btn.disabled=false;btn.textContent="Actualizar pronóstico";
+  if(!Object.values(MODEL_OK).some(v=>v===true)){$("status").innerHTML='<b style="color:#ff8a7a">No se pudo descargar ningún modelo.</b><br>'+esc(Object.values(MODEL_OK)[0]);return}
+  LOADED_AT=new Date();DATES_ALL=rd;applyDays();
+  computeAll();renderScope();renderAll();
+}
+
+/* ---------- cálculo ---------- */
+function med(a){a=a.filter(v=>v!=null&&!isNaN(v)).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2}
+function mn(a){a=a.filter(v=>v!=null&&!isNaN(v));return a.length?Math.min(...a):null}
+function mx(a){a=a.filter(v=>v!=null&&!isNaN(v));return a.length?Math.max(...a):null}
+function dayVal(k,i,v,date){const L0=DATA[k]&&DATA[k][i];if(!L0||!L0.daily)return null;const d=L0.daily.time.indexOf(date);if(d<0||!L0.daily[v])return null;const x=L0.daily[v][d];return x==null?null:x}
+function hourRange(k,i,v,date){const L0=DATA[k]&&DATA[k][i];if(!L0||!L0.hourly||!L0.hourly[v])return[null,null];const o=[];L0.hourly.time.forEach((t,h)=>{if(t.slice(0,10)===date&&L0.hourly[v][h]!=null)o.push(L0.hourly[v][h])});return[mn(o),mx(o)]}
+function computeCell(i,date){
+  const ens=ENS.filter(k=>MODEL_OK[k]===true),src=ens.length?ens:["best"],g=v=>src.map(k=>dayVal(k,i,v,date));
+  const c={tmin:med(g("temperature_2m_min")),tmax:med(g("temperature_2m_max")),wlo:med(g("wind_speed_10m_max")),whi:med(g("wind_gusts_10m_max")),
+    plo:mn(g("precipitation_sum")),phi:mx(g("precipitation_sum")),pmed:med(g("precipitation_sum")),
+    pprob:dayVal("best",i,"precipitation_probability_max",date),code:dayVal("best",i,"weather_code",date),
+    nModels:src.filter(k=>dayVal(k,i,"temperature_2m_max",date)!=null).length};
+  if(c.code==null)c.code=med(g("weather_code"));
+  let iso=hourRange("gfs",i,"freezing_level_height",date);if(iso[0]==null)iso=hourRange("best",i,"freezing_level_height",date);
+  c.isoLo=iso[0]==null?null:Math.round(iso[0]/100)*100;c.isoHi=iso[1]==null?null:Math.round(iso[1]/100)*100;
+  const r=v=>v==null?null:Math.round(v);
+  c.tmin=r(c.tmin);c.tmax=r(c.tmax);c.wlo=r(c.wlo);c.whi=r(c.whi);
+  ["plo","phi","pmed"].forEach(k=>{if(c[k]!=null)c[k]=+c[k].toFixed(1)});
+  if(c.whi!=null&&c.wlo!=null&&c.whi<c.wlo)c.whi=c.wlo;
+  return c;
+}
+function computeAll(){
+  CELLS={};
+  S.sites.forEach(s=>{
+    const i=FETCHED_SITES.indexOf(s.id); if(i<0)return;
+    CELLS[s.id]={};
+    DATES_ALL.forEach(d=>{
+      const auto=computeCell(i,d),e=S.edits[s.id+"|"+d]||null,c=Object.assign({},auto,e?e.v:{}),rk=riskOf(c,s);
+      const fixed=e&&e.risk!=null&&e.risk!=="auto";
+      c.risk=fixed?+e.risk:rk.lv;c.why=fixed?["Nivel fijado por el pronosticador"]:rk.why;c.edited=!!e;c.auto=auto;
+      CELLS[s.id][d]=c;
+    });
+  });
+}
+
+/* ---------- render ---------- */
+function renderAll(){renderStatus();renderKpis();renderPlan();renderMap();renderSiteSelect();renderDetail()}
+function renderStatus(){
+  if(!LOADED_AT){$("status").textContent="Sin datos cargados.";return}
+  const utc=LOADED_AT.toISOString().slice(0,16).replace("T"," ")+" UTC";
+  $("status").innerHTML=`Última descarga: <b>${utc}</b><br>`+MODELS.map(x=>`<span title="${esc(MODEL_OK[x.key]===true?"OK":MODEL_OK[x.key])}"><i class="dot" style="background:${MODEL_OK[x.key]===true?"#1e9e57":"#d33a2c"}"></i>${x.label}</span>`).join(" &nbsp;");
+}
+function renderSiteSelect(){const sel=$("fSite"),cur=sel.value,A=activeSites().length?activeSites():S.sites;
+  sel.innerHTML=A.map(s=>`<option value="${s.id}">${esc(s.nombre)}</option>`).join("");if(cur&&A.some(s=>s.id===cur))sel.value=cur}
+function renderDetail(){
+  if($("t-detalle").classList.contains("hidden")||!DATES.length||typeof Chart==="undefined")return;
+  const sid=$("fSite").value,s=S.sites.find(x=>x.id===sid),i=FETCHED_SITES.indexOf(sid);if(!s||i<0)return;
+  $("siteInfo").innerHTML=`${s.lat.toFixed(2)}°, ${s.lon.toFixed(2)}° · ${TZ[s.pais]}${DATA.best&&DATA.best[i]?` · elevación del modelo ${Math.round(DATA.best[i].elevation)} m`:""}`;
+  Chart.defaults.color="#c9d9ea";Chart.defaults.borderColor="#1d3a58";
+  const src=DATA.best&&DATA.best[i]&&DATA.best[i].hourly?DATA.best[i]:(DATA.gfs&&DATA.gfs[i]);
+  if(src&&src.hourly){
+    const H=src.hourly,lab=H.time.map(t=>dayLabel(t.slice(0,10),false)+" "+t.slice(11,13)+"h");
+    const ds=(l,d,c,o)=>Object.assign({label:l,data:d,borderColor:c,backgroundColor:c,pointRadius:0,borderWidth:2,tension:.25},o||{});
+    if(chT)chT.destroy();if(chW)chW.destroy();
+    chT=new Chart($("chT"),{data:{labels:lab,datasets:[ds("Temperatura (°C)",H.temperature_2m,"#ff7b72",{type:"line",yAxisID:"y"}),ds("Precipitación (mm/h)",H.precipitation,"#5fb0ff",{type:"bar",yAxisID:"y1",borderWidth:0})]},
+      options:{maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{title:{display:true,text:"Temperatura y precipitación horaria"}},
+        scales:{x:{ticks:{maxTicksLimit:10}},y:{title:{display:true,text:"°C"}},y1:{position:"right",beginAtZero:true,grid:{drawOnChartArea:false},title:{display:true,text:"mm/h"}}}}});
+    chW=new Chart($("chW"),{data:{labels:lab,datasets:[ds("Viento medio (km/h)",H.wind_speed_10m,"#5fb0ff",{type:"line"}),ds("Ráfaga (km/h)",H.wind_gusts_10m,"#f2c230",{type:"line",borderDash:[5,3]}),
+      ds("Umbral ráfaga moderado",H.time.map(()=>gustThr(s)[0]),"#e8b400",{type:"line",borderWidth:1,borderDash:[2,2]})]},
+      options:{maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{title:{display:true,text:"Viento y ráfagas a 10 m"}},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true,title:{display:true,text:"km/h"}}}}});
+  }
+  const vars=[["temperature_2m_min","Tmín °C"],["temperature_2m_max","Tmáx °C"],["wind_speed_10m_max","Viento máx km/h"],["wind_gusts_10m_max","Ráfaga máx km/h"],["precipitation_sum","Precip. mm"]];
+  let h=`<table class="grid"><thead><tr><th>Día</th><th>Variable</th>${MODELS.map(m=>`<th>${m.label}</th>`).join("")}<th>Planilla</th></tr></thead><tbody>`;
+  DATES.forEach(d=>{const c=CELLS[sid][d];vars.forEach(([v,l],k)=>{
+    const pv={temperature_2m_min:c.tmin,temperature_2m_max:c.tmax,wind_speed_10m_max:c.wlo,wind_gusts_10m_max:c.whi,precipitation_sum:txtP(c)}[v];
+    h+=`<tr>${k===0?`<td rowspan="${vars.length}"><b>${dayLabel(d,true)}</b><br><i class="dot" style="background:${RISK_HEX[c.risk]}"></i>${RISK_TXT[c.risk]}</td>`:""}<td class="l">${l}</td>${MODELS.map(m=>{const x=dayVal(m.key,i,v,d);return`<td>${x==null?"–":(+x).toFixed(v==="precipitation_sum"?1:0)}</td>`}).join("")}<td><b>${pv??"–"}</b></td></tr>`})});
+  $("modelTable").innerHTML=h+"</tbody></table>";
+}
+
+/* ---------- editor de celda ---------- */
+onCellClick=function(sid,d){
+  const s=S.sites.find(x=>x.id===sid),c=CELLS[sid][d],a=c.auto,e=S.edits[sid+"|"+d];
+  const f=(k,lab,step)=>`<label>${lab}<input type="number" step="${step||1}" id="e_${k}" value="${c[k]??""}" placeholder="modelo: ${a[k]??"–"}"></label>`;
+  $("modalHost").innerHTML=`<div class="mbg" id="mbg"><div class="modal">
+    <h3>${esc(s.nombre)} — ${dayLabel(d,true)}</h3>
+    <div class="meta">Modelo: ${txtT(a)} · ${txtW(a)} · ${txtP(a)}${s.iso&&a.isoLo!=null?" · "+txtIso(a):""} · ${a.nModels} modelos</div>
+    <div class="fg">${f("tmin","T mínima (°C)")}${f("tmax","T máxima (°C)")}${f("wlo","Viento medio máx (km/h)")}${f("whi","Ráfaga máx (km/h)")}
+      ${f("plo","Precip. mín (mm)",.1)}${f("phi","Precip. máx (mm)",.1)}${f("pmed","Precip. para semáforo (mm)",.1)}
+      <label>Ícono<select id="e_code">${[["","(automático)"],[0,"Despejado"],[1,"Mayormente despejado"],[2,"Parcial"],[3,"Nublado"],[45,"Niebla"],[53,"Llovizna"],[63,"Lluvia"],[73,"Nieve"],[95,"Tormenta"]]
+        .map(([v,t])=>`<option value="${v}" ${e&&e.v&&e.v.code!=null&&+e.v.code===v?"selected":""}>${t}</option>`).join("")}</select></label>
+      ${s.iso?f("isoLo","Isoterma 0° mín (m)",100)+f("isoHi","Isoterma 0° máx (m)",100):""}
+      <label>Nivel de riesgo<select id="e_risk"><option value="auto">Automático (${RISK_TXT[riskOf(c,s).lv]})</option>${RISK_TXT.map((t,k)=>`<option value="${k}" ${e&&e.risk!=null&&e.risk!=="auto"&&+e.risk===k?"selected":""}>${t} (fijado)</option>`).join("")}</select></label>
+    </div>
+    <div class="btns"><button id="eReset">Volver al modelo</button><button id="eCancel">Cancelar</button><button id="eSave" class="pri">Guardar</button></div></div></div>`;
+  const close=()=>$("modalHost").innerHTML="";
+  $("mbg").onclick=ev=>{if(ev.target.id==="mbg")close()};$("eCancel").onclick=close;
+  $("eReset").onclick=()=>{delete S.edits[sid+"|"+d];save();computeAll();renderAll();close()};
+  $("eSave").onclick=()=>{const v={};
+    ["tmin","tmax","wlo","whi","plo","phi","pmed","isoLo","isoHi"].forEach(k=>{const el=$("e_"+k);if(el&&el.value!==""&&+el.value!==a[k])v[k]=+el.value});
+    const code=$("e_code").value;if(code!=="")v.code=+code;const risk=$("e_risk").value;
+    if(!Object.keys(v).length&&risk==="auto")delete S.edits[sid+"|"+d];else S.edits[sid+"|"+d]={v,risk};
+    save();computeAll();renderAll();close();toast("Celda actualizada")};
+};
+
+/* ---------- configuración ---------- */
+function recalc(){if(DATES_ALL.length){computeAll();renderAll()}}
+function renderConfig(){
+  const T=S.thr;let h=`<thead><tr><th>Activo</th><th>Variable</th><th>Moderado</th><th>Alto</th><th>Unidad</th></tr></thead><tbody>`;
+  Object.keys(THR_LABEL).forEach(k=>{const[l,u,op]=THR_LABEL[k];h+=`<tr><td><input type="checkbox" data-k="${k}" data-f="on" ${T[k].on?"checked":""}></td><td class="l">${l}</td><td>${op} <input type="number" step="0.5" data-k="${k}" data-f="A" value="${T[k].A}"></td><td>${op} <input type="number" step="0.5" data-k="${k}" data-f="R" value="${T[k].R}"></td><td>${u}</td></tr>`});
+  h+=`<tr><td><input type="checkbox" data-k="storm" data-f="on" ${T.storm.on?"checked":""}></td><td class="l">Tormenta eléctrica (WMO 95–99)</td><td colspan="2">Moderado</td><td>—</td></tr></tbody>`;
+  $("thrTable").innerHTML=h;
+  $("thrTable").querySelectorAll("input").forEach(el=>el.onchange=()=>{S.thr[el.dataset.k][el.dataset.f]=el.dataset.f==="on"?el.checked:+el.value;save();recalc()});
+  let s=`<thead><tr><th>Nombre</th><th>Región</th><th>País</th><th>Latitud</th><th>Longitud</th><th>Isoterma 0°</th><th>Ráfaga mod.</th><th>Ráfaga alto</th></tr></thead><tbody>`;
+  S.sites.forEach((x,i)=>{s+=`<tr><td><input class="w" data-i="${i}" data-f="nombre" value="${esc(x.nombre)}"></td><td><input class="ww" data-i="${i}" data-f="ref" value="${esc(x.ref)}"></td><td>${x.pais}</td>
+    <td><input data-i="${i}" data-f="lat" type="number" step="0.01" value="${x.lat}"></td><td><input data-i="${i}" data-f="lon" type="number" step="0.01" value="${x.lon}"></td>
+    <td><input type="checkbox" data-i="${i}" data-f="iso" ${x.iso?"checked":""}></td>
+    <td><input data-i="${i}" data-f="rA" type="number" value="${x.rA??""}" placeholder="${S.thr.gust.A}"></td><td><input data-i="${i}" data-f="rR" type="number" value="${x.rR??""}" placeholder="${S.thr.gust.R}"></td></tr>`});
+  $("siteTable").innerHTML=s+"</tbody>";
+  $("siteTable").querySelectorAll("input").forEach(el=>el.onchange=()=>{const x=S.sites[+el.dataset.i],f=el.dataset.f;
+    if(f==="iso")x.iso=el.checked;else if(f==="lat"||f==="lon"){x[f]=+el.value;toast("Coordenada cambiada: presione Actualizar pronóstico")}
+    else if(f==="rA"||f==="rR")x[f]=el.value===""?null:+el.value;else x[f]=el.value;save();recalc();renderScope()});
+  $("pTitle").value=S.pdf.title;$("pAuthor").value=S.pdf.author;
+}
+function renderPub(){const c=pubCfg();$("cfgName").value=c.name||"";$("cfgPass").value=c.pass||"";$("cfgToken").value=c.token||"";
+  $("cfgRepo").value=c.repo;$("cfgRama").value=c.rama;$("cfgDir").value=c.carpeta;$("cfgRemember").checked=!!c.remember}
+function readPubForm(){return{name:$("cfgName").value.trim(),pass:$("cfgPass").value,token:$("cfgToken").value.trim(),repo:$("cfgRepo").value.trim(),rama:$("cfgRama").value.trim()||"main",carpeta:$("cfgDir").value.trim().replace(/^\/|\/$/g,""),remember:$("cfgRemember").checked}}
+function savePub(){
+  const c=readPubForm();PUB_SESSION={pass:c.pass,token:c.token};
+  const keep={repo:c.repo,rama:c.rama,carpeta:c.carpeta,name:c.name,remember:c.remember};
+  if(c.remember){keep.pass=c.pass;keep.token=c.token}
+  lsSet(LSPUB,keep);toast("Configuración guardada");
+}
+async function loadHist(){
+  const c=pubCfg();const log=$("histList");
+  if(!c.pass){log.textContent="Falta la clave de visualización.";return}
+  log.textContent="Leyendo…";
+  try{
+    const env=await ghRead(c,"indice.json",c.token);
+    if(!env){log.textContent="Conexión correcta. Aún no hay emisiones publicadas.";return true}
+    const idx=await decryptJSON(env,c.pass);
+    log.innerHTML=`<table class="grid"><thead><tr><th>Emisión</th><th>Período</th><th>Ciudades</th><th>Emitió</th></tr></thead><tbody>`+
+      idx.slice().reverse().slice(0,15).map(x=>`<tr><td>${longDate(x.fecha)} ${x.hora}</td><td>${dayLabel(x.desde,false)} a ${dayLabel(x.hasta,false)}</td><td>${x.n}</td><td>${esc(x.por||"")}</td></tr>`).join("")+"</tbody></table>";
+    return true;
+  }catch(e){log.textContent=e.name==="OperationError"?"La clave de visualización no coincide con la de las emisiones ya publicadas.":"Error: "+e.message;return false}
+}
+
+/* ---------- emitir ---------- */
+async function emitir(){
+  if(!DATES.length){toast("Primero descargue el pronóstico");return}
+  const A=activeSites();if(!A.length){toast("No hay ciudades seleccionadas");return}
+  const c=pubCfg();
+  if(!c.pass||!c.token){setTab("pub");toast("Complete la clave de visualización y el token");return}
+  const btn=$("btnEmit");btn.disabled=true;btn.innerHTML='<span class="spin"></span>Emitiendo…';
+  const log=$("pubLog");
+  try{
+    const now=new Date(), id=now.toISOString().replace(/[-:]/g,"").slice(0,15)+"Z";
+    const keep=["tmin","tmax","wlo","whi","plo","phi","pmed","pprob","code","isoLo","isoHi","risk","why"];
+    const cells={};A.forEach(s=>{cells[s.id]={};DATES.forEach(d=>{const x=CELLS[s.id][d];cells[s.id][d]=Object.fromEntries(keep.map(k=>[k,x[k]]))})});
+    const snap={v:1,id,emitido:now.toISOString(),por:c.name,emision:{fecha:$("fEmiDate").value,hora:$("fEmiTime").value||"20:00"},
+      pdf:clone(S.pdf),thr:clone(S.thr),dates:DATES.slice(),sites:clone(A),cells};
+    // índice: confirma que la clave coincide antes de escribir
+    let idx=[];const envIdx=await ghRead(c,"indice.json",c.token);
+    if(envIdx){try{idx=await decryptJSON(envIdx,c.pass)}catch(e){throw new Error("La clave de visualización no coincide con la de las emisiones ya publicadas. No se publicó nada.")}}
+    const enc=await encryptJSON(snap,c.pass);
+    await ghWrite(c,`historial/${id}.json`,enc,c.token,`Riesgo meteorológico: emisión ${id}`);
+    await ghWrite(c,"actual.json",enc,c.token,`Riesgo meteorológico: emisión vigente ${id}`);
+    idx.push({id,fecha:snap.emision.fecha,hora:snap.emision.hora,desde:DATES[0],hasta:DATES[DATES.length-1],n:A.length,por:c.name});
+    await ghWrite(c,"indice.json",await encryptJSON(idx.slice(-300),c.pass),c.token,`Riesgo meteorológico: índice ${id}`);
+    log.innerHTML=`<b style="color:#3ccf7f">Emisión publicada</b> (${esc(id)}): ${A.length} ciudades, ${dayLabel(DATES[0],false)} a ${dayLabel(DATES[DATES.length-1],false)}.`;
+    toast("Pronóstico emitido");loadHist();
+  }catch(e){log.innerHTML=`<b style="color:#ff8a7a">No se pudo emitir.</b> ${esc(e.message)}`;setTab("pub");toast("Error al emitir")}
+  finally{btn.disabled=false;btn.textContent="Emitir pronóstico"}
+}
+
+/* ---------- inicio ---------- */
+function setTab(t){
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  ["plan","mapa","detalle","config","pub","metodo"].forEach(x=>$("t-"+x).classList.toggle("hidden",x!==t));
+  if(t==="mapa")renderMap();if(t==="detalle")renderDetail();if(t==="config")renderConfig();if(t==="pub")renderPub();
+}
+function modoDemo(){
+  // Vista de demostración: mismo pronóstico en vivo, sin edición ni emisión (riesgo/editor.html#demo)
+  EDITABLE=false;
+  document.title="Pronóstico de riesgo meteorológico · Demostración";
+  document.querySelector(".logo .tx").textContent="Demostración · pronóstico en vivo por ciudad";
+  ["btnEmit"].forEach(id=>$(id).classList.add("hidden"));
+  document.querySelectorAll('#tabs [data-t="config"],#tabs [data-t="pub"]').forEach(b=>b.classList.add("hidden"));
+  document.querySelectorAll(".legend span").forEach(sp=>{if(/editada|Toque una celda/.test(sp.textContent))sp.remove()});
+  document.querySelector(".nav.rnav").classList.add("hidden");
+  const n=document.querySelector(".scope .in > p.note");if(n)n.textContent="Vista de demostración: valores del modelo sin revisión del pronosticador.";
+}
+function init(){
+  if(location.hash==="#demo")modoDemo();
+  restore();tick();setInterval(tick,30000);
+  const today=todayCL();$("fEmiDate").value=today;
+  if(S.range.mode==="custom"&&S.range.b>=addDays(today,1)&&S.range.b<=addDays(today,15)){$("fStart").value=S.range.a<addDays(today,1)?addDays(today,1):S.range.a;$("fEnd").value=S.range.b}
+  else preset(S.range.mode==="preset"?S.range.k:"n5",true);
+  document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+  document.querySelectorAll("[data-pre]").forEach(b=>b.onclick=()=>preset(b.dataset.pre));
+  $("fStart").onchange=$("fEnd").onchange=rangeChanged;
+  $("btnLoad").onclick=loadAll;$("btnEmit").onclick=emitir;
+  $("btnPdf").onclick=()=>{EMI={fecha:$("fEmiDate").value,hora:$("fEmiTime").value||"20:00"};makePdf().catch(e=>{console.error(e);toast("Error al generar PDF: "+e.message)})};
+  $("btnXls").onclick=makeXls;$("fSite").onchange=renderDetail;
+  $("selAll").onclick=()=>{S.sites.forEach(s=>S.sel[s.id]=true);save();renderScope();if(DATES_ALL.length)renderAll()};
+  $("selNone").onclick=()=>{S.sites.forEach(s=>S.sel[s.id]=false);save();renderScope();if(DATES_ALL.length)renderAll()};
+  $("btnThrReset").onclick=()=>{S.thr=clone(THR_DEFAULT);save();renderConfig();recalc()};
+  $("btnSitesReset").onclick=()=>{S.sites=clone(SITES_DEFAULT);save();renderConfig();toast("Ciudades restablecidas: presione Actualizar")};
+  $("btnEditsClear").onclick=()=>{S.edits={};save();recalc();toast("Ediciones borradas")};
+  $("pTitle").onchange=e=>{S.pdf.title=e.target.value;save()};$("pAuthor").onchange=e=>{S.pdf.author=e.target.value;save()};
+  $("btnCfgSave").onclick=savePub;$("btnTest").onclick=()=>{savePub();loadHist()};
+  renderScope();renderPlan();loadAll();
+}
+init();
+</script>
+</body>
+</html>
