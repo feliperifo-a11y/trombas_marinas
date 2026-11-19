@@ -37,7 +37,7 @@ jobs:
     timeout-minutes: 80
     environment:
       name: github-pages
-      url: ${{ steps.publicar.outputs.page_url }}
+      url: ${{ steps.publicar.outputs.page_url || steps.publicar2.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -114,4 +114,14 @@ jobs:
           path: _site
 
       - id: publicar
+        # GitHub Pages a veces falla de forma transitoria al leer el artefacto; se reintenta una vez en la misma corrida
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+
+      - name: Esperar antes de reintentar la publicación
+        if: steps.publicar.outcome == 'failure'
+        run: sleep 60
+
+      - id: publicar2
+        if: steps.publicar.outcome == 'failure'
         uses: actions/deploy-pages@v4

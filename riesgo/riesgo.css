@@ -38,7 +38,7 @@ td.site .ref{display:block;font-weight:400;font-size:11px;color:var(--muted);mar
 .cell.r0{border-left-color:#1e9e57;background:rgba(30,158,87,.13)}
 .cell.r1{border-left-color:#e8b400;background:rgba(232,180,0,.16)}
 .cell.r2{border-left-color:#d33a2c;background:rgba(211,58,44,.22)}
-.cell .ic{width:42px;height:42px;flex:none;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.cell .ic{width:42px;height:42px;flex:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:8px;display:flex;align-items:center;justify-content:center}
 .cell .ic svg{width:36px;height:36px}
 .cell .v{font-size:12px;line-height:1.45}
 .cell .v .t{font-weight:700;font-size:13px}
@@ -121,8 +121,8 @@ table.grid input.w{width:170px}table.grid input.ww{width:170px}
 .dc.r1{border-top-color:#e8b400;background:rgba(232,180,0,.12)}.dc.r2{border-top-color:#d33a2c;background:rgba(211,58,44,.18)}
 .dc:hover{border-color:#5fb0ff}
 .dc .dl{font-size:10.5px;color:#c9d9ea;white-space:nowrap}
-.dc .di{width:30px;height:30px;margin:2px auto;background:#fff;border-radius:7px;display:flex;align-items:center;justify-content:center}
-.dc .di svg{width:26px;height:26px}
+.dc .di{width:32px;height:32px;margin:1px auto;display:flex;align-items:center;justify-content:center}
+.dc .di svg{width:30px;height:30px}
 .dc .dt{font-size:12px;white-space:nowrap}.dc .dt span{color:var(--muted)}
 .dc .dw,.dc .dp{font-size:10.5px;color:#c9d9ea;white-space:nowrap}.dc .dw small{color:var(--muted);font-size:9px}
 .dc .dp{color:#7fc4ff}
@@ -131,4 +131,4 @@ table.grid input.w{width:170px}table.grid input.ww{width:170px}
 .ccard .cw{font-size:11px;color:#f2c230;margin-top:6px}.ccard.w2 .cw{color:#ff8a7a}
 #cityList{max-height:none}
 @media(max-width:1100px){.kpis.mini{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:760px){.dc .di{width:24px;height:24px}.dc .di svg{width:21px;height:21px}.dc .dl{font-size:9.5px}.dc .dt{font-size:11px}}
+@media(max-width:760px){.dc .di{width:26px;height:26px}.dc .di svg{width:24px;height:24px}.dc .dl{font-size:9.5px}.dc .dt{font-size:11px}}

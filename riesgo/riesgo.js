@@ -118,33 +118,39 @@ function riskOf(c,s){
 }
 function isWindy(c,s){return c.whi!=null&&c.whi>=gustThr(s)[0]}
 
-/* ===================== Íconos (SVG propio) ===================== */
+/* ===================== Íconos ===================== */
+/* Íconos con el mismo estilo de MeteoIA (meteoia.cl: ICO_NUB, ICO.gota, ICO.viento): planos, rellenos, cuadrícula 24×24.
+   Despejado, Parcial, Nublado y Cubierto son los de MeteoIA; llovizna, lluvia, tormenta, niebla y nieve siguen el mismo trazo. */
+const NUB={
+  Despejado:'<circle cx="12" cy="12" r="5" fill="#f2b705"/><g stroke="#f2b705" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g>',
+  Parcial:'<circle cx="9" cy="9" r="4.5" fill="#f2b705"/><path d="M8 20h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.6 1.5A3.3 3.3 0 0 0 8 20Z" fill="#b8c2cc"/>',
+  Nublado:'<path d="M6 19h12a4.5 4.5 0 0 0 .6-9 6 6 0 0 0-11.5 1.6A3.8 3.8 0 0 0 6 19Z" fill="#8a96a3"/>',
+  Cubierto:'<path d="M4 15h10a3.5 3.5 0 0 0 .4-7 4.7 4.7 0 0 0-9 1.3A2.9 2.9 0 0 0 4 15Z" fill="#a9b3bd"/><path d="M8 21h11a4 4 0 0 0 .5-8 5.3 5.3 0 0 0-10.2 1.4A3.3 3.3 0 0 0 8 21Z" fill="#5b6673"/>'
+};
+const NUBE_ALTA=(f)=>`<path d="M6 14h12a4.5 4.5 0 0 0 .6-9 6 6 0 0 0-11.5 1.6A3.8 3.8 0 0 0 6 14Z" fill="${f||"#8a96a3"}"/>`;
+const GOTA=(x,y)=>`<path d="M${x} ${y}s1.6 1.9 1.6 3a1.6 1.6 0 0 1-3.2 0c0-1.1 1.6-3 1.6-3Z" fill="#5fb0ff"/>`;
 function iconKind(code){
   if(code==null)return"na";
   if(code>=95)return"storm"; if((code>=71&&code<=77)||code===85||code===86)return"snow";
   if((code>=61&&code<=67)||(code>=80&&code<=82))return"rain"; if(code>=51&&code<=57)return"drizzle";
   if(code===45||code===48)return"fog"; if(code===3)return"cloud"; if(code===2)return"partly"; if(code===1)return"mostlysun"; return"sun";
 }
-const SUN=(cx,cy,r)=>{let s=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#f6b51e" stroke="#e08e0b" stroke-width="1.5"/>`;
-  for(let k=0;k<8;k++){const a=k*Math.PI/4,x1=cx+Math.cos(a)*(r+3),y1=cy+Math.sin(a)*(r+3),x2=cx+Math.cos(a)*(r+7),y2=cy+Math.sin(a)*(r+7);
-  s+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#e08e0b" stroke-width="2" stroke-linecap="round"/>`}return s};
-const CLOUD=(dx,dy,fill)=>`<path transform="translate(${dx},${dy})" d="M14 38h26a9 9 0 0 0 0-18 12 12 0 0 0-23-3A9 9 0 0 0 14 38z" fill="${fill||'#eef2f7'}" stroke="#6f8196" stroke-width="2" stroke-linejoin="round"/>`;
-function iconSVG(kind,windy){
+function iconSVG(kind,windy,claro){
   let b="";
   switch(kind){
-    case"sun":b=SUN(32,30,11);break;
-    case"mostlysun":b=SUN(30,28,11)+CLOUD(14,14,'#fff');break;
-    case"partly":b=SUN(24,22,9)+CLOUD(6,10);break;
-    case"cloud":b=CLOUD(4,4,'#dde4ec')+CLOUD(0,10);break;
-    case"fog":b=CLOUD(0,2)+[44,50,56].map((y,k)=>`<line x1="${12+k*3}" y1="${y}" x2="${52-k*3}" y2="${y}" stroke="#8a99aa" stroke-width="2.5" stroke-linecap="round"/>`).join("");break;
-    case"drizzle":b=CLOUD(0,0)+[18,30,42].map(x=>`<circle cx="${x}" cy="48" r="2.2" fill="#2b7bd0"/>`).join("");break;
-    case"rain":b=CLOUD(0,0)+[18,30,42].map(x=>`<line x1="${x}" y1="44" x2="${x-4}" y2="56" stroke="#2b7bd0" stroke-width="2.6" stroke-linecap="round"/>`).join("");break;
-    case"snow":b=CLOUD(0,0)+[18,30,42].map(x=>`<text x="${x-4}" y="56" font-size="13" fill="#5aa0e0" font-family="Arial">*</text>`).join("");break;
-    case"storm":b=CLOUD(0,0,'#cfd8e3')+`<path d="M30 40l-7 11h6l-4 10 11-14h-6l4-7z" fill="#f6b51e" stroke="#c98a00" stroke-width="1"/>`;break;
-    default:b=`<text x="32" y="38" text-anchor="middle" font-size="16" fill="#8a99aa" font-family="Arial">s/d</text>`;
+    case"sun":b=NUB.Despejado;break;
+    case"mostlysun":b=NUB.Despejado;break;
+    case"partly":b=NUB.Parcial;break;
+    case"cloud":b=NUB.Cubierto;break;
+    case"fog":b=NUBE_ALTA("#a9b3bd")+'<g stroke="#8a96a3" stroke-width="1.8" stroke-linecap="round"><path d="M4 17.5h16M6 21h12"/></g>';break;
+    case"drizzle":b=NUBE_ALTA()+'<g fill="#5fb0ff"><circle cx="8" cy="18" r="1.1"/><circle cx="12" cy="20.5" r="1.1"/><circle cx="16" cy="18" r="1.1"/></g>';break;
+    case"rain":b=NUBE_ALTA("#5b6673")+GOTA(7.5,16.2)+GOTA(12,18.2)+GOTA(16.5,16.2);break;
+    case"snow":b=NUBE_ALTA("#a9b3bd")+'<g stroke="#cfe2f5" stroke-width="1.5" stroke-linecap="round"><path d="M8 16.5v4M6.3 17.5l3.4 2M6.3 19.5l3.4-2M16 16.5v4M14.3 17.5l3.4 2M14.3 19.5l3.4-2"/></g>'.replace(/#cfe2f5/g,claro?"#7aa7d6":"#cfe2f5");break;
+    case"storm":b=NUBE_ALTA("#5b6673")+'<path d="M12.5 13.5 9 19h3l-1.5 4.5L15.5 17h-3l1.5-3.5Z" fill="#f2b705"/>';break;
+    default:b='<circle cx="12" cy="12" r="4" fill="#8a96a3"/>';
   }
-  if(windy) b+=`<g stroke="#4f5f72" stroke-width="2.2" fill="none" stroke-linecap="round"><path d="M4 8h18a4 4 0 1 0-4-4"/><path d="M4 14h12"/></g>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${b}</svg>`;
+  if(windy) b=`<g transform="translate(6 -0.5) scale(.75)">${b}</g><path d="M1 18.5h8.5a1.8 1.8 0 1 0-1.8-1.8M1 21.8h11a1.8 1.8 0 1 1-1.8 1.8" fill="none" stroke="${claro?"#3d7fc4":"#9fd0ff"}" stroke-width="1.5" stroke-linecap="round"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">${b}</svg>`;
 }
 
 /* ===================== Selección de ciudades ===================== */
@@ -319,7 +325,7 @@ async function makePdf(){
   const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"letter"});
   const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), M=24;
   const icons={};
-  for(const k of["sun","mostlysun","partly","cloud","fog","drizzle","rain","snow","storm","na"])for(const w of[0,1])icons[k+w]=await svgToPng(iconSVG(k,!!w),96);
+  for(const k of["sun","mostlysun","partly","cloud","fog","drizzle","rain","snow","storm","na"])for(const w of[0,1])icons[k+w]=await svgToPng(iconSVG(k,!!w,true),96);
   const navy=[23,58,94], head=[42,90,140];
   const emi=longDate(EMI.fecha), emiL=emisionLine(EMI.fecha,EMI.hora);
   const title=S.pdf.title||PDF_TITLE_DEF;
