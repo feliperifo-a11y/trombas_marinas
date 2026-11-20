@@ -141,3 +141,11 @@ table.grid input.w{width:170px}table.grid input.ww{width:170px}
 .firmaPie img{height:30px;background:#fff;border-radius:8px;padding:3px 8px;box-sizing:content-box}
 .loginLogo{height:64px;display:block;margin:0 auto 12px;background:#fff;border-radius:12px;padding:6px 14px;box-sizing:content-box}
 @media(max-width:760px){.firmaTop{margin-left:0;order:3}.firmaTop img{height:36px}.firmaTop .fl{max-width:none}}
+
+/* ===== Portal: barra de usuario y administración ===== */
+.ubar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;font-size:12.5px;color:#c9d9ea;margin:0 0 10px}
+.ubar .usr{margin-right:auto}
+.ubar a{color:#7fc4ff}
+.utbl td .chip{padding:2px 8px;font-size:11px;cursor:default}
+.pill{display:inline-block;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700}
+.pill.on{background:#1e9e57;color:#fff}.pill.off{background:#5b6673;color:#fff}

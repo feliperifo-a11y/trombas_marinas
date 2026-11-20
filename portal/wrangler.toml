@@ -1,0 +1,13 @@
+# Portal del pronóstico de riesgo meteorológico (Cloudflare Worker con páginas estáticas)
+name = "riesgo-apoyomet"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = true      # el Worker revisa la sesión antes de entregar cualquier página
+
+[[kv_namespaces]]
+binding = "RIESGO"
+id = "__KV_ID__"             # lo completa el workflow de despliegue (crea el espacio KV si no existe)
