@@ -136,8 +136,8 @@ table.grid input.w{width:170px}table.grid input.ww{width:170px}
 /* ===== Firma ApoyoMet ===== */
 .firmaTop{display:flex;align-items:center;gap:10px;margin-left:auto}
 .firmaTop .fl{font-size:11.5px;color:var(--muted);text-align:right;line-height:1.2;max-width:90px}
-.firmaTop img{height:56px;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))}
+.firmaTop img{height:46px;display:block;background:#fff;border-radius:10px;padding:4px 10px;box-sizing:content-box}
 .firmaPie{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;color:#d5e2ef}
-.firmaPie img{height:38px}
-.loginLogo{height:84px;display:block;margin:0 auto 10px}
-@media(max-width:760px){.firmaTop{margin-left:0;order:3}.firmaTop img{height:44px}.firmaTop .fl{max-width:none}}
+.firmaPie img{height:30px;background:#fff;border-radius:8px;padding:3px 8px;box-sizing:content-box}
+.loginLogo{height:64px;display:block;margin:0 auto 12px;background:#fff;border-radius:12px;padding:6px 14px;box-sizing:content-box}
+@media(max-width:760px){.firmaTop{margin-left:0;order:3}.firmaTop img{height:36px}.firmaTop .fl{max-width:none}}

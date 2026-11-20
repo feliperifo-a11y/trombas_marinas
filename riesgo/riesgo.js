@@ -51,7 +51,7 @@ const RISK_RGB = [[30,158,87],[232,180,0],[211,58,44]];
 const RISK_HEX = ["#1e9e57","#e8b400","#d33a2c"];
 const PDF_TITLE_DEF = "PRONÓSTICO DE RIESGO METEOROLÓGICO";
 const FIRMA = "ApoyoMet – Asesorías Marítimas y Portuarias";
-const LOGO_URL = "apoyomet.png", LOGO_RATIO = 187/128;   // firma en todas las salidas
+const LOGO_URL = "apoyomet.png", LOGO_RATIO = 900/366;   // firma en todas las salidas
 
 /* Estado común: cada página lo llena (el editor desde los modelos, el visor desde la emisión). */
 let S = {sites:clone(SITES_DEFAULT), thr:clone(THR_DEFAULT), sel:{}, pdf:{title:PDF_TITLE_DEF, author:FIRMA}};
@@ -360,7 +360,7 @@ async function makePdf(){
   const header=(first)=>{
     doc.setTextColor(...navy);doc.setFont("helvetica","bold");
     if(first){
-      if(logo)doc.addImage(logo,"PNG",M,12,62*LOGO_RATIO,62);
+      if(logo)doc.addImage(logo,"PNG",M,16,48*LOGO_RATIO,48);
       doc.setFontSize(15);doc.text(title,W/2,36,{align:"center"});
       doc.setFontSize(10);doc.text("Fecha de emisión",W/2,54,{align:"center"});
       doc.setFont("helvetica","normal");doc.setTextColor(40);
@@ -368,16 +368,16 @@ async function makePdf(){
       doc.setFontSize(8.5);doc.text(`Período: ${longDate(DATES[0])} al ${longDate(DATES[DATES.length-1])}`,M,96);
       legend(W-M-372,96);
     }else{
-      if(logo)doc.addImage(logo,"PNG",M,10,28*LOGO_RATIO,28);
-      doc.setFontSize(10);doc.text(title,M+28*LOGO_RATIO+8,30);
+      if(logo)doc.addImage(logo,"PNG",M,12,24*LOGO_RATIO,24);
+      doc.setFontSize(10);doc.text(title,M+24*LOGO_RATIO+10,30);
       doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(60);
       doc.text(`Emisión: ${emi}, ${EMI.hora} Hrs (Chile)`,W-M,30,{align:"right"});
     }
   };
   const footer=()=>{
     doc.setFontSize(7);doc.setTextColor(90);doc.setFont("helvetica","normal");
-    if(logo)doc.addImage(logo,"PNG",M,H-25,16*LOGO_RATIO,16);
-    doc.text(`Elaborado por: ${autorTxt()} · Fuente de datos: Open-Meteo.com (CC BY 4.0) · Modelos ECMWF IFS 0,25°, NCEP GFS, DWD ICON`,M+16*LOGO_RATIO+6,H-14);
+    if(logo)doc.addImage(logo,"PNG",M,H-24,14*LOGO_RATIO,14);
+    doc.text(`Elaborado por: ${autorTxt()} · Fuente de datos: Open-Meteo.com (CC BY 4.0) · Modelos ECMWF IFS 0,25°, NCEP GFS, DWD ICON`,M+14*LOGO_RATIO+6,H-14);
     doc.text(`Página ${doc.internal.getNumberOfPages()} de {total}`,W-M,H-14,{align:"right"});
   };
   const colW=(W-2*M-92)/DATES.length;
@@ -472,7 +472,7 @@ async function makeDocx(){
   body.push(new Table({width:{size:USABLE,type:WidthType.DXA},columnWidths:[2200,USABLE-4400,2200],layout:TableLayoutType.FIXED,
     borders:{top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE},insideHorizontal:{style:BorderStyle.NONE},insideVertical:{style:BorderStyle.NONE}},
     rows:[new TableRow({children:[
-      new TableCell({width:{size:2200,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,children:[new Paragraph({children:logoB?[new ImageRun({data:logoB,transformation:{width:Math.round(60*LOGO_RATIO),height:60}})]:[]})]}),
+      new TableCell({width:{size:2200,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,children:[new Paragraph({children:logoB?[new ImageRun({data:logoB,transformation:{width:Math.round(52*LOGO_RATIO),height:52}})]:[]})]}),
       new TableCell({width:{size:USABLE-4400,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,children:[
         new Paragraph({alignment:AlignmentType.CENTER,children:[T(title,{bold:true,size:30,color:NAVY})]}),
         new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:80},children:[T("Fecha de emisión",{bold:true,size:20,color:NAVY})]}),
@@ -512,7 +512,7 @@ async function makeDocx(){
   body.push(new Paragraph({spacing:{before:200},children:[T("Criterios del semáforo (moderado / alto)",{bold:true,size:16,color:NAVY})]}));
   body.push(new Paragraph({children:[T(critText(),{size:15,color:"323232"})]}));
   const footer=new Footer({children:[new Paragraph({children:[
-    ...(logoB?[new ImageRun({data:logoB,transformation:{width:Math.round(22*LOGO_RATIO),height:22}}),T("  ")]:[]),
+    ...(logoB?[new ImageRun({data:logoB,transformation:{width:Math.round(18*LOGO_RATIO),height:18}}),T("  ")]:[]),
     T(`Elaborado por: ${autorTxt()} · Fuente de datos: Open-Meteo.com (CC BY 4.0) · Modelos ECMWF IFS 0,25°, NCEP GFS, DWD ICON     Página `,{size:13,color:"5A5A5A"}),
     new TextRun({children:[PageNumber.CURRENT],font:F,size:13,color:"5A5A5A"}),T(" de ",{size:13,color:"5A5A5A"}),new TextRun({children:[PageNumber.TOTAL_PAGES],font:F,size:13,color:"5A5A5A"})]})]});
   const doc=new Document({creator:autorTxt(),title,description:"Pronóstico de riesgo meteorológico por ciudad",
