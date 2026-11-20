@@ -50,9 +50,11 @@ const RISK_TXT = ["Bajo","Moderado","Alto"];
 const RISK_RGB = [[30,158,87],[232,180,0],[211,58,44]];
 const RISK_HEX = ["#1e9e57","#e8b400","#d33a2c"];
 const PDF_TITLE_DEF = "PRONÓSTICO DE RIESGO METEOROLÓGICO";
+const FIRMA = "ApoyoMet – Asesorías Marítimas y Portuarias";
+const LOGO_URL = "apoyomet.png", LOGO_RATIO = 187/128;   // firma en todas las salidas
 
 /* Estado común: cada página lo llena (el editor desde los modelos, el visor desde la emisión). */
-let S = {sites:clone(SITES_DEFAULT), thr:clone(THR_DEFAULT), sel:{}, pdf:{title:PDF_TITLE_DEF, author:"CF Felipe Rifo Espósito"}};
+let S = {sites:clone(SITES_DEFAULT), thr:clone(THR_DEFAULT), sel:{}, pdf:{title:PDF_TITLE_DEF, author:FIRMA}};
 let DATES = [], CELLS = {}, EMI = {fecha:"", hora:"20:00"};
 let EDITABLE = false, onCellClick = null;
 let rmap = null, rmapLayer = null;
@@ -311,6 +313,30 @@ function renderCities(){
   });
 }
 
+/* ===================== Firma (logo ApoyoMet) ===================== */
+let LOGO_DATA=null;
+async function logoData(){
+  if(LOGO_DATA)return LOGO_DATA;
+  try{const r=await fetch(LOGO_URL);const b=await r.blob();
+    LOGO_DATA=await new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.onerror=()=>res(null);f.readAsDataURL(b)});
+  }catch(e){LOGO_DATA=null}
+  return LOGO_DATA;
+}
+function autorTxt(){const a=(S.pdf.author||"").trim();return a&&a!=="CF Felipe Rifo Espósito"?a:FIRMA}
+function fileBase(){return `Pronostico_Riesgo_Meteorologico_${DATES[0]}_al_${DATES[DATES.length-1]}`}
+function critText(){
+  const T=S.thr,parts=[];
+  if(T.gust.on)parts.push(`ráfaga >= ${T.gust.A} / ${T.gust.R} km/h`);
+  if(T.wind.on)parts.push(`viento medio >= ${T.wind.A} / ${T.wind.R} km/h`);
+  if(T.pp.on)parts.push(`precipitación >= ${T.pp.A} / ${T.pp.R} mm/día`);
+  if(T.tmax.on)parts.push(`Tmáx >= ${T.tmax.A} / ${T.tmax.R} °C`);
+  if(T.tmin.on)parts.push(`Tmín <= ${T.tmin.A} / ${T.tmin.R} °C`);
+  if(T.storm.on)parts.push("tormenta eléctrica = moderado");
+  const ex=activeSites().filter(s=>s.rA!=null&&s.rA!=="").map(s=>`${s.nombre}: ráfaga ${s.rA}/${s.rR} km/h`);
+  return parts.join(" · ")+(ex.length?". Umbrales propios: "+ex.join("; ")+".":".")+
+    " Temperatura y viento: mediana de los modelos. Precipitación: rango mínimo-máximo entre modelos. Viento: medio máximo - ráfaga máxima. ISO 0°: altura mínima-máxima del día de la isoterma 0 °C (GFS).";
+}
+
 /* ===================== PDF ===================== */
 async function svgToPng(svg,px){
   return new Promise(res=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");c.width=c.height=px;
@@ -328,12 +354,13 @@ async function makePdf(){
   for(const k of["sun","mostlysun","partly","cloud","fog","drizzle","rain","snow","storm","na"])for(const w of[0,1])icons[k+w]=await svgToPng(iconSVG(k,!!w,true),96);
   const navy=[23,58,94], head=[42,90,140];
   const emi=longDate(EMI.fecha), emiL=emisionLine(EMI.fecha,EMI.hora);
-  const title=S.pdf.title||PDF_TITLE_DEF;
+  const title=S.pdf.title||PDF_TITLE_DEF, logo=await logoData();
   const legend=(x,y)=>{doc.setFontSize(8);[0,1,2].forEach(k=>{doc.setFillColor(...RISK_RGB[k]);doc.rect(x+k*124,y-7,9,9,"F");
     doc.setTextColor(50);doc.text("Riesgo M. Op. "+RISK_TXT[k],x+k*124+12,y)})};
   const header=(first)=>{
     doc.setTextColor(...navy);doc.setFont("helvetica","bold");
     if(first){
+      if(logo)doc.addImage(logo,"PNG",M,12,62*LOGO_RATIO,62);
       doc.setFontSize(15);doc.text(title,W/2,36,{align:"center"});
       doc.setFontSize(10);doc.text("Fecha de emisión",W/2,54,{align:"center"});
       doc.setFont("helvetica","normal");doc.setTextColor(40);
@@ -341,14 +368,16 @@ async function makePdf(){
       doc.setFontSize(8.5);doc.text(`Período: ${longDate(DATES[0])} al ${longDate(DATES[DATES.length-1])}`,M,96);
       legend(W-M-372,96);
     }else{
-      doc.setFontSize(10);doc.text(title,M,30);
+      if(logo)doc.addImage(logo,"PNG",M,10,28*LOGO_RATIO,28);
+      doc.setFontSize(10);doc.text(title,M+28*LOGO_RATIO+8,30);
       doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(60);
       doc.text(`Emisión: ${emi}, ${EMI.hora} Hrs (Chile)`,W-M,30,{align:"right"});
     }
   };
   const footer=()=>{
     doc.setFontSize(7);doc.setTextColor(90);doc.setFont("helvetica","normal");
-    doc.text(`Fuente de datos: Open-Meteo.com (CC BY 4.0) · Modelos ECMWF IFS 0,25°, NCEP GFS, DWD ICON · Elaborado por: ${S.pdf.author}`,M,H-14);
+    if(logo)doc.addImage(logo,"PNG",M,H-25,16*LOGO_RATIO,16);
+    doc.text(`Elaborado por: ${autorTxt()} · Fuente de datos: Open-Meteo.com (CC BY 4.0) · Modelos ECMWF IFS 0,25°, NCEP GFS, DWD ICON`,M+16*LOGO_RATIO+6,H-14);
     doc.text(`Página ${doc.internal.getNumberOfPages()} de {total}`,W-M,H-14,{align:"right"});
   };
   const colW=(W-2*M-92)/DATES.length;
@@ -393,20 +422,11 @@ async function makePdf(){
     y=doc.lastAutoTable.finalY+14;
   }
   if(y>H-90){doc.addPage();header(false);footer();y=48}
-  const T=S.thr, parts=[];
-  if(T.gust.on)parts.push(`ráfaga >= ${T.gust.A} / ${T.gust.R} km/h`);
-  if(T.wind.on)parts.push(`viento medio >= ${T.wind.A} / ${T.wind.R} km/h`);
-  if(T.pp.on)parts.push(`precipitación >= ${T.pp.A} / ${T.pp.R} mm/día`);
-  if(T.tmax.on)parts.push(`Tmáx >= ${T.tmax.A} / ${T.tmax.R} °C`);
-  if(T.tmin.on)parts.push(`Tmín <= ${T.tmin.A} / ${T.tmin.R} °C`);
-  if(T.storm.on)parts.push("tormenta eléctrica = moderado");
-  const ex=activeSites().filter(s=>s.rA!=null&&s.rA!=="").map(s=>`${s.nombre}: ráfaga ${s.rA}/${s.rR} km/h`);
   doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(...navy);doc.text("Criterios del semáforo (moderado / alto)",M,y);
   doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.setTextColor(50);
-  doc.text(doc.splitTextToSize(parts.join(" · ")+(ex.length?". Umbrales propios: "+ex.join("; ")+".":".")+
-    " Temperatura y viento: mediana de los modelos. Precipitación: rango mínimo-máximo entre modelos. Viento: medio máximo - ráfaga máxima. ISO 0°: altura mínima-máxima del día de la isoterma 0 °C (GFS).",W-2*M),M,y+11);
+  doc.text(doc.splitTextToSize(critText(),W-2*M),M,y+11);
   doc.putTotalPages("{total}");
-  doc.save(`Pronostico_Riesgo_Meteorologico_${DATES[0]}_al_${DATES[DATES.length-1]}.pdf`);
+  doc.save(fileBase()+".pdf");
   toast("PDF generado");
 }
 
@@ -421,8 +441,88 @@ function makeXls(){
     "Precip mín mm":c.plo,"Precip máx mm":c.phi,"Precip mediana mm":c.pmed,"Prob. precip %":c.pprob,
     "ISO 0° mín m":s.iso?c.isoLo:null,"ISO 0° máx m":s.iso?c.isoHi:null,"Código WMO":c.code,
     "Riesgo":RISK_TXT[c.risk],"Motivo":(c.why||[]).join("; ")})}));
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Pronóstico");
-  XLSX.writeFile(wb,`Pronostico_Riesgo_Meteorologico_${DATES[0]}_al_${DATES[DATES.length-1]}.xlsx`);
+  const ws=XLSX.utils.aoa_to_sheet([[S.pdf.title||PDF_TITLE_DEF],[`Emisión: ${longDate(EMI.fecha)}, ${EMI.hora} Hrs (Chile)`],[`Elaborado por: ${autorTxt()}`],[]]);
+  XLSX.utils.sheet_add_json(ws,rows,{origin:"A5"});
+  ws["!cols"]=[{wch:26},{wch:18},{wch:10},{wch:11},{wch:10}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Pronóstico");
+  XLSX.writeFile(wb,fileBase()+".xlsx");
+}
+
+/* ===================== Word (.docx, editable) ===================== */
+function dataUrlBytes(u){return Uint8Array.from(atob(u.split(",")[1]),c=>c.charCodeAt(0))}
+const hex=rgb=>rgb.map(v=>v.toString(16).padStart(2,"0")).join("");
+async function makeDocx(){
+  if(!DATES.length){toast("No hay pronóstico cargado");return}
+  if(!activeSites().length){toast("No hay ciudades seleccionadas");return}
+  if(!window.docx){toast("No se cargó la librería Word (revise la conexión)");return}
+  const D=window.docx, logo=await logoData();
+  const {Document,Packer,Paragraph,TextRun,ImageRun,Table,TableRow,TableCell,WidthType,AlignmentType,ShadingType,BorderStyle,
+    VerticalAlign,PageOrientation,Header,Footer,PageNumber,TableLayoutType}=D;
+  const icons={};
+  for(const k of["sun","mostlysun","partly","cloud","fog","drizzle","rain","snow","storm","na"])for(const w of[0,1]){const u=await svgToPng(iconSVG(k,!!w,true),96);icons[k+w]=u?dataUrlBytes(u):null}
+  const logoB=logo?dataUrlBytes(logo):null;
+  const NAVY="173A5E",HEAD="2A5A8C",CITY="DFE8F3",F="Arial";
+  const tint=rgb=>hex(rgb.map(v=>Math.round(v+(255-v)*.85)));
+  const T=(t,o)=>new TextRun(Object.assign({text:t,font:F,size:16},o||{}));
+  const thin={style:BorderStyle.SINGLE,size:4,color:"C8D2DE"};
+  const PAGE_W=15840,MARG=720,USABLE=PAGE_W-2*MARG,CITYW=1800,DAYW=Math.floor((USABLE-CITYW)/DATES.length);
+  const title=S.pdf.title||PDF_TITLE_DEF;
+  const body=[];
+  // Encabezado del informe
+  body.push(new Table({width:{size:USABLE,type:WidthType.DXA},columnWidths:[2200,USABLE-4400,2200],layout:TableLayoutType.FIXED,
+    borders:{top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE},insideHorizontal:{style:BorderStyle.NONE},insideVertical:{style:BorderStyle.NONE}},
+    rows:[new TableRow({children:[
+      new TableCell({width:{size:2200,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,children:[new Paragraph({children:logoB?[new ImageRun({data:logoB,transformation:{width:Math.round(60*LOGO_RATIO),height:60}})]:[]})]}),
+      new TableCell({width:{size:USABLE-4400,type:WidthType.DXA},verticalAlign:VerticalAlign.CENTER,children:[
+        new Paragraph({alignment:AlignmentType.CENTER,children:[T(title,{bold:true,size:30,color:NAVY})]}),
+        new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:80},children:[T("Fecha de emisión",{bold:true,size:20,color:NAVY})]}),
+        new Paragraph({alignment:AlignmentType.CENTER,children:[T(longDate(EMI.fecha),{size:20})]}),
+        new Paragraph({alignment:AlignmentType.CENTER,children:[T(emisionLine(EMI.fecha,EMI.hora),{size:20})]})]}),
+      new TableCell({width:{size:2200,type:WidthType.DXA},children:[new Paragraph("")]})]})]}));
+  body.push(new Paragraph({spacing:{before:120,after:80},children:[
+    T(`Período: ${longDate(DATES[0])} al ${longDate(DATES[DATES.length-1])}     `,{size:17}),
+    ...[0,1,2].flatMap(k=>[T("■ ",{color:hex(RISK_RGB[k]),size:22}),T(`Riesgo M. Op. ${RISK_TXT[k]}    `,{size:17})])]}));
+  // Tablas por grupo
+  for(const g of groups()){
+    if(!g.sites.length)continue;
+    body.push(new Paragraph({shading:{type:ShadingType.CLEAR,fill:NAVY,color:"auto"},alignment:AlignmentType.CENTER,spacing:{before:120},keepNext:true,
+      children:[T(g.t,{bold:true,color:"FFFFFF",size:20})]}));
+    const head=new TableRow({tableHeader:true,cantSplit:true,children:[
+      new TableCell({width:{size:CITYW,type:WidthType.DXA},shading:{type:ShadingType.CLEAR,fill:HEAD,color:"auto"},verticalAlign:VerticalAlign.CENTER,
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[T("CIUDAD",{bold:true,color:"FFFFFF",size:17})]})]}),
+      ...DATES.map(d=>new TableCell({width:{size:DAYW,type:WidthType.DXA},shading:{type:ShadingType.CLEAR,fill:HEAD,color:"auto"},verticalAlign:VerticalAlign.CENTER,
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[T(dayLabel(d,true),{bold:true,color:"FFFFFF",size:17})]})]}))]});
+    const rows=g.sites.map(s=>new TableRow({cantSplit:true,children:[
+      new TableCell({width:{size:CITYW,type:WidthType.DXA},shading:{type:ShadingType.CLEAR,fill:CITY,color:"auto"},verticalAlign:VerticalAlign.CENTER,
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[T(s.nombre,{bold:true,size:16,color:"17283C"})]})]}),
+      ...DATES.map(d=>{
+        const c=CELLS[s.id][d];
+        if(!c||c.tmax==null)return new TableCell({width:{size:DAYW,type:WidthType.DXA},children:[new Paragraph({children:[T("Sin datos",{size:14,color:"777777"})]})]});
+        const im=icons[iconKind(c.code)+(isWindy(c,s)?1:0)];
+        const lines=[T(txtT(c).replace(" a ","-"),{bold:true,size:15}),T(txtW(c),{break:1,size:14}),T(txtP(c),{break:1,size:14})];
+        if(s.iso&&c.isoLo!=null)lines.push(T(txtIso(c),{break:1,size:12,color:"464646"}));
+        if(c.risk>0&&c.why&&c.why.length)lines.push(T(c.why[0],{break:1,size:12,color:c.risk===2?"961E00":"785500"}));
+        return new TableCell({width:{size:DAYW,type:WidthType.DXA},shading:{type:ShadingType.CLEAR,fill:tint(RISK_RGB[c.risk]),color:"auto"},verticalAlign:VerticalAlign.CENTER,
+          margins:{left:70,right:50,top:10,bottom:10},
+          borders:{left:{style:BorderStyle.SINGLE,size:36,color:hex(RISK_RGB[c.risk])},top:thin,bottom:thin,right:thin},
+          children:[new Paragraph({spacing:{before:0,after:0},children:[...(im?[new ImageRun({data:im,transformation:{width:22,height:22}}),T("  ")]:[]),...lines]})]});
+      })]}));
+    body.push(new Table({width:{size:USABLE,type:WidthType.DXA},columnWidths:[CITYW,...DATES.map(()=>DAYW)],layout:TableLayoutType.FIXED,rows:[head,...rows]}));
+  }
+  body.push(new Paragraph({spacing:{before:200},children:[T("Criterios del semáforo (moderado / alto)",{bold:true,size:16,color:NAVY})]}));
+  body.push(new Paragraph({children:[T(critText(),{size:15,color:"323232"})]}));
+  const footer=new Footer({children:[new Paragraph({children:[
+    ...(logoB?[new ImageRun({data:logoB,transformation:{width:Math.round(22*LOGO_RATIO),height:22}}),T("  ")]:[]),
+    T(`Elaborado por: ${autorTxt()} · Fuente de datos: Open-Meteo.com (CC BY 4.0) · Modelos ECMWF IFS 0,25°, NCEP GFS, DWD ICON     Página `,{size:13,color:"5A5A5A"}),
+    new TextRun({children:[PageNumber.CURRENT],font:F,size:13,color:"5A5A5A"}),T(" de ",{size:13,color:"5A5A5A"}),new TextRun({children:[PageNumber.TOTAL_PAGES],font:F,size:13,color:"5A5A5A"})]})]});
+  const doc=new Document({creator:autorTxt(),title,description:"Pronóstico de riesgo meteorológico por ciudad",
+    styles:{default:{document:{run:{font:F,size:16}}}},
+    sections:[{properties:{page:{size:{orientation:PageOrientation.LANDSCAPE,width:12240,height:15840},margin:{top:560,bottom:640,left:MARG,right:MARG,footer:280}}},
+      footers:{default:footer},children:body}]});
+  const blob=await Packer.toBlob(doc);
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fileBase()+".docx";document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);
+  toast("Word generado");
 }
 
 /* ===================== Cifrado ===================== */
