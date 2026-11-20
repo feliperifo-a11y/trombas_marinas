@@ -10,7 +10,7 @@ en cada miembro calcula STP (hemisferio sur), SHERBE y NST sobre los mismos punt
 Cuadro "F" (trombas_ens.seleccionar, con la grilla de 0,25° del ENS).
 
 Probabilidad = porcentaje de miembros en que al menos un punto de la zona supera el umbral; por plazo y por día
-(hora de Chile). Los campos son globales, así que cada plazo baja unos 2 000 mensajes (≈ 1 GB); se recortan al
+(hora de Chile), con el criterio combinado "alguno" y la probabilidad en cada punto de mar (te.resumir). Los campos son globales, así que cada plazo baja unos 2 000 mensajes (≈ 1 GB); se recortan al
 recuadro de las zonas al decodificarlos. Estimación experimental: no constituye aviso. Solo corre con corrida nueva.
 """
 import json
@@ -29,7 +29,7 @@ import trombas_ens as te       # noqa: E402  (zonas, umbrales y selección de pu
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 SALIDA = DATA / "trombas_prob_ecmwf.json"
-VERSION = 1
+VERSION = 2
 NORTE, SUR, OESTE, ESTE = -32, -48.5, -81.5, -71
 NIVELES = [1000, 925, 850, 700, 500, 250, 200]
 FHRS = list(range(0, 73, 6))
@@ -94,7 +94,7 @@ def main():
         print("Trombas ENS ECMWF: sin corrida nueva", tag); return
     t0, errores = time.time(), []
     areas = flat = pos = None
-    banderas = {}      # banderas[miembro][area][indice][plazo]
+    pts, hechos = {}, {}   # pts[miembro][criterio] = plazos × puntos; hechos[miembro] = plazos calculados
     fallidos = set()
     for k, fhr in enumerate(FHRS):
         if time.time() - t0 > PRESUPUESTO:
@@ -110,6 +110,8 @@ def main():
             pos, ini = {}, 0
             for a, v in areas.items():
                 pos[a] = inv[ini:ini + len(v["i"])]; ini += len(v["i"])
+            lat_p, lon_p = la1[flat // lo1.size], lo1[flat % lo1.size]
+            paso = round(float(abs(la1[1] - la1[0])), 3)
         for m, campos in por.items():
             if m in fallidos:
                 continue
@@ -119,14 +121,12 @@ def main():
                 ln = traceback.extract_tb(e.__traceback__)[-1]
                 errores.append(f"m{m} +{fhr} h: {type(e).__name__}: {e} ({Path(ln.filename).name}:{ln.lineno})"[:300])
                 fallidos.add(m); continue
-            ex = {"stp": q["stp"] <= te.UMBRAL["stp"], "hslc": q["hslc"], "nst": q["nst"] > te.UMBRAL["nst"]}
-            fm = banderas.setdefault(m, {})
-            for a in areas:
-                for ind, f in ex.items():
-                    fm.setdefault(a, {}).setdefault(ind, [None] * len(FHRS))[k] = bool(f[pos[a]].any())
+            fm = pts.setdefault(m, {ind: np.zeros((len(FHRS), len(flat)), bool) for ind in te.CRITERIOS})
+            for ind, f in te.excedencias(q).items():
+                fm[ind][k] = f
+            hechos.setdefault(m, set()).add(k)
         print(f"  +{fhr:02d} h: {len(por)} miembros ({time.time() - t0:.0f} s)")
-    ok = sorted(m for m in banderas if m not in fallidos
-                and all(None not in banderas[m][a][i] for a in areas for i in te.UMBRAL))
+    ok = sorted(m for m in pts if m not in fallidos and len(hechos[m]) == len(FHRS))
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if len(ok) < MIN_MIEMBROS:
         print(f"Trombas ENS ECMWF: solo {len(ok)} miembros completos; se conserva el archivo anterior")
@@ -137,23 +137,11 @@ def main():
                                           "errores": errores[:8]}, ensure_ascii=False), encoding="utf-8")
         return
     validas = [c + timedelta(hours=f) for f in FHRS]
-    dias = sorted({v.astimezone(te.TZ).date().isoformat() for v in validas})
-    prob, prob_dia = {}, {}
-    for a in areas:
-        prob[a], prob_dia[a] = {}, {}
-        for ind in te.UMBRAL:
-            mat = np.array([banderas[m][a][ind] for m in ok])          # miembros × plazos
-            prob[a][ind] = [round(100 * float(x)) for x in mat.mean(0)]
-            prob_dia[a][ind] = {}
-            for d in dias:
-                cols = [j for j, v in enumerate(validas) if v.astimezone(te.TZ).date().isoformat() == d]
-                prob_dia[a][ind][d] = round(100 * float(mat[:, cols].any(1).mean()))
     salida = {"version": VERSION, "modelo": "ecmwf", "corrida": tag, "generado": gen, "completo": True,
               "fuente": f"ECMWF ENS 0,25° ({len(ok)} miembros, datos abiertos, CC-BY-4.0)", "miembros": len(ok), "umbrales": te.UMBRAL,
-              "validas": [v.strftime("%Y-%m-%dT%H:%MZ") for v in validas], "dias": dias,
               "areas": [{"id": a, "nombre": f"Zona {a} · {areas[a]['nombre']}", "puntos": [[round(float(la), 2), round(float(lo), 2)]
                          for la, lo in zip(areas[a]["lat"], areas[a]["lon"])]} for a in areas],
-              "prob": prob, "prob_dia": prob_dia, "errores": errores[:8]}
+              **te.resumir(pts, ok, areas, pos, lat_p, lon_p, validas, paso), "errores": errores[:8]}
     SALIDA.write_text(json.dumps(salida, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"Trombas ENS ECMWF: corrida {tag}, {len(ok)} miembros, {time.time() - t0:.0f} s")
 

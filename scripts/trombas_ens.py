@@ -8,7 +8,9 @@ puntos de mar de las zonas III (Valparaíso a Constitución), IV (Constitución 
 Puerto Montt) y VI (Puerto Montt a San Pedro) del Cuadro "F" (data/geo/metarea.json), con salida libre al océano (sin canales ni aguas interiores).
 
 Probabilidad = porcentaje de miembros en que al menos un punto del área supera el umbral del índice
-(STP ≤ −0,1; ambiente HSLC; NST > 1; ver UMBRAL). Por plazo y por día (hora de Chile: al menos una vez en el día).
+(STP ≤ −0,1; ambiente HSLC; NST > 1; ver UMBRAL), más el criterio combinado "alguno" (cualquiera de los tres).
+Por plazo y por día (hora de Chile: al menos una vez en el día). Además, la misma probabilidad en cada punto de mar
+(prob_punto y prob_punto_dia), para dibujarla en el mapa.
 Limitaciones: el GEFS 0,5° (pgrb2a) solo tiene 1000, 925 y 850 hPa bajo 700 hPa (y 500, 250, 200 arriba), por lo que el SRH 0–500 m y el
 gradiente 0–1 km quedan más suavizados que en el GFS 0,25°. Los umbrales no están calibrados para trombas.
 Estimación experimental: no constituye aviso. Solo corre con corrida nueva; nunca hace fallar el flujo.
@@ -31,7 +33,7 @@ import geo as va            # noqa: E402  (polígonos de tierra de data/geo/land
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 SALIDA = DATA / "trombas_prob.json"
-VERSION = 3
+VERSION = 4
 TZ = ZoneInfo("America/Santiago")
 CAB = {"User-Agent": "dashboard-meteo-publico/1.0 (trombas GEFS)"}
 NORTE, SUR, OESTE, ESTE = -32, -48.5, -81.5, -71
@@ -49,6 +51,7 @@ PRESUPUESTO = 540    # s: tope de descarga para no exceder el tiempo del flujo; 
 #   HSLC:      MUCAPE 0–1000 J/kg, EBSMU > 18 m/s y SHERBE ≥ 1 (definición de Marín et al., 2026, Atmos. Res. 344).
 #   NST > 1:   SPC/NWS; sin validación en Chile (referencia para trombas de buen tiempo).
 UMBRAL = {"stp": -0.1, "hslc": True, "nst": 1.0}
+CRITERIOS = ("stp", "hslc", "nst", "alguno")   # "alguno" = se cumple cualquiera de los tres umbrales
 COD = {"gh": (0, 3, 5), "t": (0, 0, 0), "r": (0, 1, 1), "u": (0, 2, 2), "v": (0, 2, 3), "sp": (0, 3, 0)}
 TIPO = {"isobaricInhPa": 100, "surface": 1, "heightAboveGround": 103}
 
@@ -167,6 +170,39 @@ def indices(campos, lat, lon, flat_idx):
     return q
 
 
+def excedencias(q):
+    """Puntos que cumplen cada criterio (arreglos booleanos)."""
+    ex = {"stp": np.asarray(q["stp"] <= UMBRAL["stp"], bool), "hslc": np.asarray(q["hslc"], bool),
+          "nst": np.asarray(q["nst"] > UMBRAL["nst"], bool)}
+    ex["alguno"] = ex["stp"] | ex["hslc"] | ex["nst"]
+    return ex
+
+
+def resumir(pts, ok, areas, pos, lat_p, lon_p, validas, paso):
+    """pts[miembro][criterio] = booleano (plazos × puntos). Devuelve los campos de probabilidad del archivo de salida:
+    por zona (algún punto de la zona) y por punto, cada 6 h y por día de Chile (al menos una vez en el día)."""
+    dias = sorted({v.astimezone(TZ).date().isoformat() for v in validas})
+    cols = {d: [k for k, v in enumerate(validas) if v.astimezone(TZ).date().isoformat() == d] for d in dias}
+    pct = lambda x: [int(v) for v in np.rint(100 * x)]
+    prob, prob_dia, pp, ppd = {a: {} for a in areas}, {a: {} for a in areas}, {}, {}
+    for ind in CRITERIOS:
+        cubo = np.stack([pts[m][ind] for m in ok])                     # miembros × plazos × puntos
+        for a in areas:
+            mat = cubo[:, :, pos[a]].any(2)                            # miembros × plazos
+            prob[a][ind] = pct(mat.mean(0))
+            prob_dia[a][ind] = {d: pct(mat[:, cols[d]].any(1).mean(keepdims=True))[0] for d in dias}
+        pp[ind] = [pct(cubo[:, k].mean(0)) for k in range(len(validas))]
+        ppd[ind] = {d: pct(cubo[:, cols[d]].any(1).mean(0)) for d in dias}
+    zona = [""] * len(lat_p)
+    for a in areas:
+        for k in pos[a]:
+            zona[k] = zona[k] or a
+    return {"validas": [v.strftime("%Y-%m-%dT%H:%MZ") for v in validas], "dias": dias,
+            "prob": prob, "prob_dia": prob_dia,
+            "grilla": {"paso": paso, "puntos": [[round(float(la), 2), round(float(lo), 2)] for la, lo in zip(lat_p, lon_p)], "zona": zona},
+            "prob_punto": pp, "prob_punto_dia": ppd}
+
+
 def main():
     previo = leer(SALIDA, {})
     c = elegir_corrida()
@@ -177,8 +213,8 @@ def main():
         print("Trombas GEFS: sin corrida nueva", tag); return
     t0 = time.time()
     areas, flat = None, None
-    # banderas[miembro][area][indice][plazo]
-    banderas, errores, ok_miembros = {}, [], []
+    # pts[miembro][criterio] = plazos × puntos de mar (booleano)
+    pts, errores, ok_miembros = {}, [], []
     # Descarga en paralelo (HILOS) con tope de tiempo: en serie los 403 archivos tardaban más que el flujo completo.
     from concurrent.futures import ThreadPoolExecutor
     def bajar_con_tope(args):
@@ -190,7 +226,7 @@ def main():
         futuros = {(m, fhr): ex.submit(bajar_con_tope, (m, fhr)) for m in MIEMBROS for fhr in FHRS}
     print(f"  descargas terminadas ({time.time() - t0:.0f} s)")
     for m in MIEMBROS:
-        fm = {}
+        fm = None
         try:
             for k, fhr in enumerate(FHRS):
                 campos, lat, lon = leer_grib(futuros[(m, fhr)].result())
@@ -202,17 +238,19 @@ def main():
                     pos, ini = {}, 0
                     for a, v in areas.items():
                         pos[a] = inv[ini:ini + len(v["i"])]; ini += len(v["i"])
+                    lat_p, lon_p = lat1[flat // lon.shape[1]], lon1[flat % lon.shape[1]]
+                    paso = round(float(abs(lat1[1] - lat1[0])), 3)
                 q = indices(campos, lat, lon, flat)
-                ex = {"stp": q["stp"] <= UMBRAL["stp"], "hslc": q["hslc"], "nst": q["nst"] > UMBRAL["nst"]}
-                for a in areas:
-                    for ind, f in ex.items():
-                        fm.setdefault(a, {}).setdefault(ind, [False] * len(FHRS))[k] = bool(f[pos[a]].any())
-            banderas[m] = fm; ok_miembros.append(m)
+                if fm is None:
+                    fm = {ind: np.zeros((len(FHRS), len(flat)), bool) for ind in CRITERIOS}
+                for ind, f in excedencias(q).items():
+                    fm[ind][k] = f
+            pts[m] = fm; ok_miembros.append(m)
         except Exception as e:
             ln = traceback.extract_tb(e.__traceback__)[-1]
             errores.append(f"{m}: {type(e).__name__}: {e} ({Path(ln.filename).name}:{ln.lineno})"[:300])
             print("  " + errores[-1])
-        print(f"  {m}: {'ok' if m in banderas else 'error'} ({time.time() - t0:.0f} s)")
+        print(f"  {m}: {'ok' if m in pts else 'error'} ({time.time() - t0:.0f} s)")
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if len(ok_miembros) < MIN_MIEMBROS:
         print(f"Trombas GEFS: solo {len(ok_miembros)} miembros; se conserva el archivo anterior")
@@ -221,24 +259,12 @@ def main():
                                           "errores": errores[:8]}, ensure_ascii=False), encoding="utf-8")
         return
     validas = [c + timedelta(hours=f) for f in FHRS]
-    dias = sorted({v.astimezone(TZ).date().isoformat() for v in validas})
     n = len(ok_miembros)
-    prob, prob_dia = {}, {}
-    for a in areas:
-        prob[a], prob_dia[a] = {}, {}
-        for ind in UMBRAL:
-            mat = np.array([banderas[m][a][ind] for m in ok_miembros])          # miembros × plazos
-            prob[a][ind] = [round(100 * float(x)) for x in mat.mean(0)]
-            prob_dia[a][ind] = {}
-            for d in dias:
-                cols = [k for k, v in enumerate(validas) if v.astimezone(TZ).date().isoformat() == d]
-                prob_dia[a][ind][d] = round(100 * float(mat[:, cols].any(1).mean()))
     salida = {"version": VERSION, "corrida": tag, "generado": gen, "completo": True,
               "fuente": f"NOAA GEFS 0,5° ({n} miembros, filtro NOMADS)", "miembros": n, "umbrales": UMBRAL,
-              "validas": [v.strftime("%Y-%m-%dT%H:%MZ") for v in validas], "dias": dias,
               "areas": [{"id": a, "nombre": f"Zona {a} · {areas[a]['nombre']}", "puntos": [[round(float(la), 2), round(float(lo), 2)]
                          for la, lo in zip(areas[a]["lat"], areas[a]["lon"])]} for a in areas],
-              "prob": prob, "prob_dia": prob_dia, "errores": errores[:8]}
+              **resumir(pts, ok_miembros, areas, pos, lat_p, lon_p, validas, paso), "errores": errores[:8]}
     SALIDA.write_text(json.dumps(salida, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"Trombas GEFS: corrida {tag}, {n} miembros, {time.time() - t0:.0f} s")
 

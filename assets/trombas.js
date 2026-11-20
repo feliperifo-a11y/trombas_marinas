@@ -14,7 +14,10 @@ function crearTrombas(L, map, h) {
   let datos = null, sel = null, cargado = 0;
   // Probabilidad por zona (GEFS, data/trombas_prob.json)
   const grupoZona = L.layerGroup();
-  let prob = null, indProb = 'stp', celdaProb = null;
+  let prob = null, indProb = 'alguno', celdaProb = null, plazoProb = null;   // plazoProb: índice del plazo de 6 h en el mapa (null = día completo)
+  // Vista del mapa: probabilidad del ensamble por punto o celdas sobre umbral de una corrida
+  let vista = 'prob';
+  const COLOR_P = { p1: '#ffe08a', p2: '#ffb347', p3: '#f26b1d', p4: '#c62828' }, OPAC_P = { p1: 0.35, p2: 0.6, p3: 0.72, p4: 0.8 };
   // Modelos disponibles: mismo cálculo y mismo formato de archivo para comparar
   const MODELOS = {
     gfs: { det: 'data/trombas.json', prob: 'data/trombas_prob.json', nDet: 'GFS 0,25°', nProb: 'ensamble GEFS', viejoH: 15, viejoProbH: 22,
@@ -46,7 +49,7 @@ function crearTrombas(L, map, h) {
   const capaCampos = L.layerGroup(), capaFlechas = L.layerGroup();
   // Grupo que el usuario enciende o apaga desde "Capas"; el cambio de modelo solo vacía o llena su contenido
   const grupoMonan = L.layerGroup().addTo(map);
-  const NOMBRE_IND = { stp: 'STP ≤ −0,1', hslc: 'Alto cizalle y CAPE bajo', nst: 'NST > 1 (sin validar en Chile)' };
+  const NOMBRE_IND = { alguno: 'Cualquiera de los tres', stp: 'STP ≤ −0,1', hslc: 'Alto cizalle y CAPE bajo', nst: 'NST > 1 (sin validar en Chile)' };
   const claseP = v => v == null ? '' : v >= 80 ? 'p4' : v >= 50 ? 'p3' : v >= 20 ? 'p2' : v > 0 ? 'p1' : 'p0';
   const diaLargo = f => new Date(f + 'T12:00:00Z').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).replace('.', '');
   const card = document.createElement('section');
@@ -65,12 +68,12 @@ function crearTrombas(L, map, h) {
       <div class="tr-cley"></div>
       <p class="mar-ayuda" style="margin:4px 0 0">Toca cualquier punto del dominio de MONAN para ver todos sus parámetros en el plazo elegido.</p>
     </div>
-    <h3 class="tr-h">Probabilidad por zona · <span class="tr-nprob"></span></h3>
+    <h3 class="tr-h">Probabilidad de que se cumplan los parámetros · <span class="tr-nprob"></span></h3>
     <p class="mar-sub tr-psub" aria-live="polite">Cargando…</p>
-    <div class="ev-tabs tr-ptabs" role="tablist">${Object.entries(NOMBRE_IND).map(([k, t]) => `<button type="button" role="tab" data-i="${k}" aria-selected="${k === 'stp'}">${t}</button>`).join('')}</div>
+    <div class="ev-tabs tr-ptabs" role="tablist">${Object.entries(NOMBRE_IND).map(([k, t]) => `<button type="button" role="tab" data-i="${k}" aria-selected="${k === indProb}">${t}</button>`).join('')}</div>
     <div class="tr-ptabla"></div>
     <div class="mar-ley tr-pley"><span><i class="tr-p0"></i>0 %</span><span><i class="tr-p1"></i>1–19</span><span><i class="tr-p2"></i>20–49</span><span><i class="tr-p3"></i>50–79</span><span><i class="tr-p4"></i>80–100 %</span></div>
-    <div class="mar-det tr-pdet" aria-live="polite"><p class="mar-ayuda">Porcentaje de los miembros del ensamble en que al menos un punto de la zona supera el umbral durante el día (hora de Chile). Selecciona una casilla para ver el detalle cada 6 h.</p></div>
+    <div class="mar-det tr-pdet" aria-live="polite"><p class="mar-ayuda">Tabla: porcentaje de los miembros del ensamble en que al menos un punto de la zona cumple el umbral durante el día (hora de Chile). Mapa: el mismo porcentaje en cada punto de mar. Selecciona una casilla para ver el día en el mapa y el detalle cada 6 h.</p></div>
     <h3 class="tr-h">Detalle por celda · <span class="tr-ndet"></span> (una corrida, sin probabilidad)</h3>
     <p class="mar-sub tr-sub" aria-live="polite">Cargando…</p>
     <div class="tr-tira"></div>
@@ -261,11 +264,26 @@ function crearTrombas(L, map, h) {
     card.querySelectorAll('.tr-ptabs button').forEach(x => x.setAttribute('aria-selected', x === b));
     if (prob) pintarProb();
   });
+  // Leyenda flotante del mapa: cambia con la vista
+  const leyMapa = document.querySelector('.leyMapa');
+  const LEY_CELDAS = leyMapa ? leyMapa.innerHTML : '';
+  function mostrarVista(v) {
+    vista = v;
+    if (v === 'prob') { if (map.hasLayer(grupo)) map.removeLayer(grupo); if (!map.hasLayer(grupoZona)) grupoZona.addTo(map); }
+    else { if (map.hasLayer(grupoZona)) map.removeLayer(grupoZona); if (datos && !map.hasLayer(grupo)) grupo.addTo(map); }
+    if (!leyMapa) return;
+    if (v === 'prob' && prob && prob.grilla) {
+      const t = plazoProb != null && prob.validas[plazoProb] ? `${hhChile(prob.validas[plazoProb])} h` : celdaProb ? 'día completo' : '';
+      leyMapa.innerHTML = `<span><b>Probabilidad · ${escH(NOMBRE_IND[indProb])}${t ? ' · ' + escH(t) : ''}</b></span>` +
+        Object.entries({ p1: '1–19 %', p2: '20–49 %', p3: '50–79 %', p4: '80–100 %' }).map(([k, x]) => `<span><i style="background:${COLOR_P[k]}"></i>${x}</span>`).join('');
+    } else leyMapa.innerHTML = LEY_CELDAS;
+  }
 
   async function cargarProb() {
     if (!MODELOS[modelo].prob) {
       prob = null; ptabla.innerHTML = ''; grupoZona.clearLayers();
       psub.textContent = MODELOS[modelo].sinProb;
+      mostrarVista('celdas');
       return;
     }
     try {
@@ -275,10 +293,12 @@ function crearTrombas(L, map, h) {
     } catch (e) {
       prob = null; ptabla.innerHTML = ''; grupoZona.clearLayers();
       psub.textContent = 'Aún no hay una corrida del ensamble procesada. ' + MODELOS[modelo].sinProb;
+      mostrarVista('celdas');
       return;
     }
     if (!prob.prob) { psub.innerHTML = 'La última corrida del ensamble no se pudo procesar; se reintenta en la próxima ejecución.'; ptabla.innerHTML = ''; return; }
     pintarProb();
+    if (prob.grilla) mostrarVista('prob');
   }
 
   function pintarProb() {
@@ -287,24 +307,60 @@ function crearTrombas(L, map, h) {
     psub.innerHTML = `Corrida ${escH(d.corrida.replace('T', ' ').replace('Z', ' UTC'))} · ${escH(d.fuente)} · procesada ${escH(horaChile(d.generado))} (hora Chile)${Date.now() - new Date(d.generado) > (MODELOS[modelo].viejoProbH || 22) * 3600e3 ? ' · <b class="mar-viejo">corrida antigua</b>' : ''}`;
     ptabla.innerHTML = `<div class="ev-tw"><table class="ev-tabla tr-pt"><thead><tr><th>Zona</th>${dias.map(f => `<th>${escH(diaLargo(f))}</th>`).join('')}</tr></thead><tbody>` +
       d.areas.map(a => `<tr><th title="${escH(a.nombre)}">${escH(a.nombre.replace(/^Zona (\S+) · /, '$1 · '))}</th>` +
-        dias.map(f => { const v = d.prob_dia[a.id][indProb][f]; return `<td><button type="button" class="tr-pc tr-${claseP(v)}${celdaProb && celdaProb[0] === a.id && celdaProb[1] === f ? ' sel' : ''}" data-a="${a.id}" data-f="${f}">${v == null ? '–' : v + ' %'}</button></td>`; }).join('') + '</tr>').join('') +
+        dias.map(f => { const v = d.prob_dia[a.id][indProb]?.[f]; return `<td><button type="button" class="tr-pc tr-${claseP(v)}${celdaProb && celdaProb[0] === a.id && celdaProb[1] === f ? ' sel' : ''}" data-a="${a.id}" data-f="${f}">${v == null ? '–' : v + ' %'}</button></td>`; }).join('') + '</tr>').join('') +
       '</tbody></table></div>';
     ptabla.querySelectorAll('.tr-pc').forEach(b => b.onclick = () => elegirProb(b.dataset.a, b.dataset.f));
-    if (celdaProb) elegirProb(...celdaProb, true);
+    if (celdaProb && dias.includes(celdaProb[1])) elegirProb(...celdaProb, true);
+    else if (dias.length) {   // de entrada: el día más cercano con mayor probabilidad y la zona donde ocurre
+      let mejor = [d.areas[0].id, dias[0]], vmax = -1;
+      for (const f of dias.slice(0, 2)) for (const a of d.areas) { const v = d.prob_dia[a.id][indProb]?.[f] ?? -1; if (v > vmax) { vmax = v; mejor = [a.id, f]; } }
+      plazoProb = null; elegirProb(...mejor, true);
+    }
   }
 
   function elegirProb(id, f, silencioso) {
+    if (!celdaProb || celdaProb[1] !== f) plazoProb = null;
     celdaProb = [id, f];
     ptabla.querySelectorAll('.tr-pc').forEach(b => b.classList.toggle('sel', b.dataset.a === id && b.dataset.f === f));
     const d = prob, a = d.areas.find(x => x.id === id); if (!a) return;
-    const filas = d.validas.map((v, k) => [v, d.prob[id][indProb][k]]).filter(([v]) => new Date(v).toLocaleDateString('en-CA', { timeZone: 'America/Santiago' }) === f);
+    const serie = d.prob[id][indProb] || [];
+    const filas = d.validas.map((v, k) => [v, serie[k], k]).filter(([v]) => new Date(v).toLocaleDateString('en-CA', { timeZone: 'America/Santiago' }) === f);
+    const conMapa = !!d.grilla;
     pdet.innerHTML = `<h3>${escH(a.nombre)} · ${escH(diaLargo(f))}</h3>
-      <p class="mar-ayuda">${escH(NOMBRE_IND[indProb])}: porcentaje de ${d.miembros} miembros, cada 6 h (hora de Chile).</p>
-      <div class="tr-6h">${filas.map(([v, x]) => `<span class="tr-${claseP(x)}"><b>${escH(hhChile(v))} h</b>${x} %</span>`).join('')}</div>`;
+      <p class="mar-ayuda">${escH(NOMBRE_IND[indProb])}: porcentaje de ${d.miembros} miembros, cada 6 h (hora de Chile).${conMapa ? ' Toca una hora para verla en el mapa.' : ''}</p>
+      <div class="tr-6h">${conMapa ? `<button type="button" class="tr-6b${plazoProb == null ? ' sel' : ''}" data-k="">Día</button>` : ''}${filas.map(([v, x, k]) => conMapa
+        ? `<button type="button" class="tr-6b tr-${claseP(x)}${plazoProb === k ? ' sel' : ''}" data-k="${k}"><b>${escH(hhChile(v))} h</b>${x ?? '–'} %</button>`
+        : `<span class="tr-${claseP(x)}"><b>${escH(hhChile(v))} h</b>${x ?? '–'} %</span>`).join('')}</div>`;
+    pdet.querySelectorAll('.tr-6b').forEach(b => b.onclick = () => { plazoProb = b.dataset.k === '' ? null : +b.dataset.k; elegirProb(id, f, true); mostrarVista('prob'); });
+    pintarMapaProb(a);
+    if (!silencioso) { mostrarVista('prob'); map.fitBounds(L.latLngBounds(a.puntos).pad(0.2), { maxZoom: 7 }); }
+    else if (vista === 'prob') mostrarVista('prob');
+  }
+
+  // Mapa de probabilidad: un cuadro por punto de mar del ensamble, coloreado por el porcentaje de miembros
+  // que cumplen el criterio elegido (en el plazo de 6 h elegido o al menos una vez en el día).
+  function pintarMapaProb(a) {
     grupoZona.clearLayers();
-    for (const [la, lo] of a.puntos) L.circleMarker([la, lo], { radius: 4, color: '#18212b', weight: 1, fillColor: '#ffffff', fillOpacity: 0.7 }).addTo(grupoZona);
-    if (!map.hasLayer(grupoZona)) grupoZona.addTo(map);
-    if (!silencioso) map.fitBounds(L.latLngBounds(a.puntos).pad(0.2), { maxZoom: 7 });
+    const d = prob, f = celdaProb && celdaProb[1];
+    if (!d.grilla || !d.prob_punto_dia?.[indProb]) {   // archivo anterior: solo los puntos de la zona elegida
+      for (const [la, lo] of a.puntos) L.circleMarker([la, lo], { radius: 4, color: '#18212b', weight: 1, fillColor: '#ffffff', fillOpacity: 0.7 }).addTo(grupoZona);
+      return;
+    }
+    const vals = plazoProb != null ? d.prob_punto[indProb][plazoProb] : d.prob_punto_dia[indProb][f];
+    if (!vals) return;
+    const m = d.grilla.paso / 2, cuando = plazoProb != null ? horaChile(d.validas[plazoProb]) : diaLargo(f) + ' (al menos una vez en el día)';
+    d.grilla.puntos.forEach(([la, lo], i) => {
+      const v = vals[i], z = d.grilla.zona[i], enZona = z === a.id;
+      if (!v && !enZona) return;
+      const k = claseP(v);
+      L.rectangle([[la - m, lo - m], [la + m, lo + m]], {
+        color: enZona ? '#ffffff' : '#18212b', weight: enZona ? 0.8 : 0.3, opacity: enZona ? 0.7 : 0.5,
+        fillColor: COLOR_P[k] || '#ffffff', fillOpacity: v ? OPAC_P[k] : 0.04 })
+        .bindPopup(`<div class="pp"><div class="ppT">${dm(la, 'N', 'S')} · ${dm(lo, 'E', 'W')}</div><table>` +
+          `<tr><th>Probabilidad</th><td><b>${v} %</b> de ${d.miembros} miembros</td></tr><tr><th>Criterio</th><td>${escH(NOMBRE_IND[indProb])}</td></tr>` +
+          `<tr><th>Cuándo</th><td>${escH(cuando)}</td></tr><tr><th>Zona</th><td>${escH(z || '–')}</td></tr></table></div>`)
+        .addTo(grupoZona);
+    });
   }
 
   async function cargar() {
@@ -336,7 +392,7 @@ function crearTrombas(L, map, h) {
       html += `<button type="button" class="tr-p${k ? ' tr-' + k : ''}${sel === p.fhr ? ' sel' : ''}" data-f="${p.fhr}" title="Válido ${escH(horaChile(p.valida))} · +${p.fhr} h"><b>${escH(hhChile(p.valida))}</b><small>${n || '·'}</small></button>`;
     }
     tira.innerHTML = (html ? html + '</div>' : '<p class="mar-nota">Sin plazos vigentes en la corrida disponible.</p>');
-    tira.querySelectorAll('.tr-p').forEach(b => b.onclick = () => elegir(+b.dataset.f));
+    tira.querySelectorAll('.tr-p').forEach(b => b.onclick = () => { elegir(+b.dataset.f); mostrarVista('celdas'); });
     if (sel == null) { const p = pasos.find(x => x.celdas.length) || pasos[0]; if (p) elegir(p.fhr); }
     else elegir(sel);
   }
@@ -363,7 +419,7 @@ function crearTrombas(L, map, h) {
           `<tr><th>ΔT (TSM − T850)</th><td>${nf(c[i.dT])} °C</td></tr><tr><th>ΔZ (EL − LCL)</th><td>${nf(c[i.dZ_km])} km</td></tr><tr><th>Viento 850 hPa</th><td>${nf(c[i.w850_kt], 0)} kt</td></tr></table></div>`)
         .addTo(grupo);
     }
-    if (!map.hasLayer(grupo)) grupo.addTo(map);
+    if (vista === 'celdas' && !map.hasLayer(grupo)) grupo.addTo(map);
     pintarCampo();
     const e = p.extremos;
     det.innerHTML = `<h3>${escH(horaChile(p.valida))} <small>(+${p.fhr} h)</small></h3>
@@ -372,7 +428,8 @@ function crearTrombas(L, map, h) {
       <dt>NST máximo</dt><dd>${nf(e.nst, 2)} · ${p.n.nst} celdas &gt; 1 (sin validar en Chile)</dd>
       <dt>VGP máximo</dt><dd>${nf(e.vgp, 2)} m/s² (referencia, sin umbral chileno)</dd>
       <dt>ΔT máximo</dt><dd>${nf(e.dT)} °C (TSM − T850)</dd></dl>
-      <p class="mar-ayuda">${p.celdas.length ? 'Toca una celda en el mapa para ver sus valores.' : 'Ninguna celda supera los umbrales en este plazo.'} Evaluados ${p.n.puntos} puntos de océano.</p>`;
+      <p class="mar-ayuda">${p.celdas.length ? 'Toca una celda en el mapa para ver sus valores.' : 'Ninguna celda supera los umbrales en este plazo.'} Evaluados ${p.n.puntos} puntos de océano.${prob && prob.grilla ? ' <button type="button" class="tr-volverp">Volver al mapa de probabilidad</button>' : ''}</p>`;
+    const vp = det.querySelector('.tr-volverp'); if (vp) vp.onclick = () => mostrarVista('prob');
   }
 
   // ---- Campos de MONAN en el mapa
