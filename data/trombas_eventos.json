@@ -1,7 +1,7 @@
 {
  "version": 1,
- "actualizado": "2026-11-15",
- "_ayuda": "Trombas marinas y lacustres OBSERVADAS en Chile (no avisos). Une el catálogo científico de Bastías-Curivil et al. (versión 5, hasta mayo de 2025) con registros de prensa de 2021 a 2026. Fecha y hora en hora de Chile; 'hora' nula = la fuente no la da; puede ser un rango. Posición aproximada del lugar, válida para una grilla de 0,25°. 'tipo': marina o lacustre (para calibrar sobre el mar se usan solo las marinas). 'nivel': catalogo = revisada por los analistas del catálogo; confirmada = una autoridad (Armada, Gobernación Marítima, Senapred) la confirma; registro = video o testigos citados por prensa; dudosa = la fuente la pone en duda o no consta que tocara el agua. 'catalogo' = identificador en el catálogo científico. 'toco_tierra' = verdadero si el catálogo la registra además como tornado o la fuente dice que entró a tierra. 'en_aviso' = cae dentro de un aviso del archivo (desde 2025-09). Se incluyen del catálogo las filas con Waterspout = 1 y tres en que el comentario dice que se formaron sobre el agua (CL0046, CL0047, CL0084).",
+ "actualizado": "2026-11-20",
+ "_ayuda": "Trombas marinas y lacustres OBSERVADAS en Chile (no avisos). Une el catálogo científico de Bastías-Curivil et al. (versión 5, hasta mayo de 2025) con registros de prensa de 2021 a 2026 y con la lista en línea del mismo catálogo (tornadoschile.cl, revisada el 2026-11-20), que extiende la numeración CL hasta octubre de 2026. Fecha y hora en hora de Chile; 'hora' nula = la fuente no la da; puede ser un rango. Posición aproximada del lugar, válida para una grilla de 0,25°. 'tipo': marina o lacustre (para calibrar sobre el mar se usan solo las marinas). 'nivel': catalogo = revisada por los analistas del catálogo; confirmada = una autoridad (Armada, Gobernación Marítima, Senapred) la confirma; registro = video o testigos citados por prensa; dudosa = la fuente la pone en duda o no consta que tocara el agua. 'catalogo' = identificador en el catálogo científico. 'toco_tierra' = verdadero si el catálogo la registra además como tornado o la fuente dice que entró a tierra. 'en_aviso' = cae dentro de un aviso del archivo (desde 2025-09). Se incluyen del catálogo las filas con Waterspout = 1 y tres en que el comentario dice que se formaron sobre el agua (CL0046, CL0047, CL0084).",
  "base_cientifica": {
   "cita": "Bastías-Curivil, C., Rondanelli, R., Vicencio, J., Matus, F., Caballero, V., Muñoz, F., Barraza, J., Campos, D., Valenzuela, R., de la Maza, A., Campos, J. y Trobok, I. (2025). Tornadoes and Waterspouts in Chile / Tornados y Trombas en Chile [conjunto de datos]. figshare, versión 5.",
   "doi": "https://doi.org/10.6084/m9.figshare.25119566",
@@ -10,18 +10,15 @@
   "licencia_url": "https://creativecommons.org/licenses/by/4.0/",
   "licencia_verificada": "2026-11-15, en la página del conjunto de datos en figshare",
   "financiamiento": "FONDAP/ANID 1523A0002",
-  "estado": "Integrado desde la versión 5 (copia entregada por el usuario el 2026-11-14). La licencia CC BY 4.0 permite el uso con atribución: la atribución va en este archivo, en el README y al pie de la página. Correcciones propias anotadas en cada evento (CL0085, CL0099). Los eventos 2025-06 en adelante salen de prensa y son aporte propio."
+  "estado": "Integrado desde la versión 5 (copia entregada por el usuario el 2026-11-14). La licencia CC BY 4.0 permite el uso con atribución: la atribución va en este archivo, en el README y al pie de la página. Correcciones propias anotadas en cada evento (CL0085, CL0099). Los eventos 2025-06 en adelante salen de prensa y son aporte propio. Desde el 2026-11-20 los eventos de 2026 llevan además el identificador CL de la lista en línea del catálogo (https://tornadoschile.cl/lista-de-tornados/), que reemplaza las citas a Wikipedia."
  },
  "pendientes": [
-  "Tromba en la Región de Aysén, marzo de 2026 (citada por Meteored, sin fecha ni lugar).",
-  "Tromba de Antofagasta del 18-ago-2026: falta localidad y hora.",
   "Registros propios del CMM Talcahuano y de las capitanías de puerto (llamados al 137), que no están en prensa.",
-  "Los dos registros de Coronel del 21-oct-2026 pueden ser la misma tromba.",
-  "Sesgo de observación: 43 de las 51 trombas marinas posteriores a 1940 son de 2010 en adelante, y casi todas de día y frente a lugares poblados.",
-  "Episodio del 28 y 29 de agosto de 2026: Meteored cuenta 13 trombas y 3 tornados; el catálogo tiene 9 trombas. Faltan la de la Región de Los Lagos y las que no llegaron a la prensa.",
-  "Conseguir el informe final de la Red Geocientífica de Chile sobre los episodios tornádicos del 28 al 30 de agosto de 2026, que es la fuente primaria del episodio.",
-  "Cuatro eventos del episodio de agosto vienen de Wikipedia, una fuente terciaria: conviene reemplazarlos por la fuente original cuando se consiga el informe.",
-  "Senapred confirmó tres trombas frente a Cobquecura el 29 de agosto; el catálogo tiene dos."
+  "Sesgo de observación: casi todas las trombas marinas son de 2010 en adelante, de día y frente a lugares poblados.",
+  "Tromba de Antofagasta del 18-ago-2026: sin hora (antes de las 17:58).",
+  "Curanipe, 22-oct-2026: Emol dice que había aviso previo del CMM Talcahuano, pero el aviso archivado terminaba el 21 a las 23:00. Revisar si hubo una extensión que falta en el archivo.",
+  "Pichilemu, 18-jul-2026, y Golfo de Penas, 16-mar-2026: el catálogo en línea no publica hora.",
+  "Conseguir el informe final de la Red Geocientífica de Chile sobre el episodio del 28 al 31 de agosto de 2026, si se publica."
  ],
  "eventos": [
   {
@@ -529,27 +526,6 @@
    "revisado": "2026-11-14"
   },
   {
-   "id": "TM-20170714-025",
-   "fecha": "2017-07-14",
-   "hora": null,
-   "lugar": "Ponotro, Tirúa",
-   "region": "Biobío",
-   "lat": -38.28,
-   "lon": -73.5,
-   "tipo": "marina",
-   "nivel": "catalogo",
-   "respaldo": "Catálogo de tornados y trombas de Chile (CL0045, analista 0)",
-   "toco_tierra": null,
-   "ef": "1",
-   "catalogo": "CL0045",
-   "en_aviso": null,
-   "urls": [
-    "https://doi.org/10.6084/m9.figshare.25119566",
-    "https://www.soychile.cl/Concepcion/Sociedad/2017/07/14/475773/Vecinos-reportaron-que-tromba-marina-derribo-arboles-en-carretera-de-Tirua.aspx"
-   ],
-   "revisado": "2026-11-14"
-  },
-  {
    "id": "TM-20170714-026",
    "fecha": "2017-07-14",
    "hora": "09:30",
@@ -570,6 +546,27 @@
    ],
    "revisado": "2026-11-14",
    "nota": "El comentario del catálogo dice que se formó como tromba a 6–7 km de la costa; el catálogo no marca la columna Waterspout."
+  },
+  {
+   "id": "TM-20170714-025",
+   "fecha": "2017-07-14",
+   "hora": null,
+   "lugar": "Ponotro, Tirúa",
+   "region": "Biobío",
+   "lat": -38.28,
+   "lon": -73.5,
+   "tipo": "marina",
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de tornados y trombas de Chile (CL0045, analista 0)",
+   "toco_tierra": null,
+   "ef": "1",
+   "catalogo": "CL0045",
+   "en_aviso": null,
+   "urls": [
+    "https://doi.org/10.6084/m9.figshare.25119566",
+    "https://www.soychile.cl/Concepcion/Sociedad/2017/07/14/475773/Vecinos-reportaron-que-tromba-marina-derribo-arboles-en-carretera-de-Tirua.aspx"
+   ],
+   "revisado": "2026-11-14"
   },
   {
    "id": "TM-20170717-027",
@@ -1186,6 +1183,29 @@
    "nota": "Tomado del archivo de avisos (data/trombas_avisos_historicos.json)."
   },
   {
+   "id": "TM-20260316-070",
+   "fecha": "2026-03-16",
+   "hora": null,
+   "lugar": "Golfo de Penas",
+   "region": "Aysén",
+   "lat": -47.1,
+   "lon": -74.9,
+   "tipo": "marina",
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0140)",
+   "toco_tierra": false,
+   "ef": null,
+   "catalogo": "CL0140",
+   "en_aviso": null,
+   "urls": [
+    "https://tornadoschile.cl/cat0-asterisco/",
+    "https://tornadoschile.cl/estadisticas-de-tornados/",
+    "https://www.meteored.cl/noticias/actualidad/un-episodio-sin-precedentes-experto-analiza-los-16-tornados-y-trombas-registrados-en-chile-en-solo-48-horas.html"
+   ],
+   "revisado": "2026-11-20",
+   "nota": "Es la tromba de Aysén de marzo que citaba Meteored. El catálogo la da como la tromba más austral de 2026 (47,1° S); la longitud es aproximada. Fuera del dominio de calibración (34° a 42,5° S) y del período abril a octubre."
+  },
+  {
    "id": "TM-20260620-055",
    "fecha": "2026-06-20",
    "hora": "16:20",
@@ -1198,58 +1218,105 @@
    "respaldo": "Senapred",
    "toco_tierra": null,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0107",
    "en_aviso": false,
    "urls": [
     "https://www.latercera.com/nacional/noticia/registran-tromba-marina-frente-a-puerto-montt-en-medio-de-sistema-frontal-que-afecta-a-la-region-de-los-lagos/",
-    "https://www.meteored.cl/noticias/actualidad/un-episodio-sin-precedentes-experto-analiza-los-16-tornados-y-trombas-registrados-en-chile-en-solo-48-horas.html"
+    "https://www.meteored.cl/noticias/actualidad/un-episodio-sin-precedentes-experto-analiza-los-16-tornados-y-trombas-registrados-en-chile-en-solo-48-horas.html",
+    "https://tornadoschile.cl/lista-de-tornados/"
    ],
-   "revisado": "2026-11-14",
+   "revisado": "2026-11-20",
    "nota": "La nota dice «este sábado» y alerta vigente desde el 17 de junio; el año y el día se deducen de eso y de la lista de Meteored (junio de 2026, estuario de Reloncaví)."
   },
   {
    "id": "TM-20260718-056",
    "fecha": "2026-07-18",
    "hora": null,
-   "lugar": "Sector El Pangal, Pichilemu",
+   "lugar": "Sector Pangal, al sur de Cáhuil, Pichilemu",
    "region": "O'Higgins",
-   "lat": -34.39,
-   "lon": -72.0,
+   "lat": -34.5,
+   "lon": -72.02,
    "tipo": "marina",
-   "nivel": "registro",
-   "respaldo": "Video en redes (prensa)",
-   "toco_tierra": null,
-   "ef": null,
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de Tornados de Chile, lista en línea tornadoschile.cl; video en redes (prensa)",
+   "toco_tierra": true,
+   "ef": "EF0",
    "catalogo": null,
    "en_aviso": false,
    "urls": [
     "https://www.meganoticias.cl/nacional/527286-tromba-marina-sorprende-pichilemu-en-medio-del-sistema-frontal-18-07-2026.html",
-    "https://www.meteored.cl/noticias/actualidad/un-episodio-sin-precedentes-experto-analiza-los-16-tornados-y-trombas-registrados-en-chile-en-solo-48-horas.html"
+    "https://www.meteored.cl/noticias/actualidad/un-episodio-sin-precedentes-experto-analiza-los-16-tornados-y-trombas-registrados-en-chile-en-solo-48-horas.html",
+    "https://tornadoschile.cl/lista-de-tornados/"
    ],
-   "revisado": "2026-11-14",
-   "nota": "En la tarde, sin hora exacta. Posición: Pichilemu (no se ubicó El Pangal con precisión)."
+   "revisado": "2026-11-20",
+   "nota": "En la tarde, sin hora exacta. La lista en línea del catálogo la ubica en el sector Pangal, al sur de Cáhuil, con calificación EF0 (con daño evaluable), por lo que se marca que tocó tierra. La lista no publica su identificador CL."
+  },
+  {
+   "id": "TM-20260724-071",
+   "fecha": "2026-07-24",
+   "hora": "17:16",
+   "lugar": "Lago Llanquihue frente a Puerto Octay (vista desde playa Centinela hacia Frutillar)",
+   "region": "Los Lagos",
+   "lat": -41.03,
+   "lon": -72.93,
+   "tipo": "lacustre",
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0117); testigo (prensa)",
+   "toco_tierra": false,
+   "ef": null,
+   "catalogo": "CL0117",
+   "en_aviso": null,
+   "urls": [
+    "https://www.diariodepuertomontt.cl/noticia/actualidad/2026/07/tromba-marina-lago-llanquihue-puerto-octay-frutilla",
+    "https://tornadoschile.cl/lista-de-tornados/"
+   ],
+   "revisado": "2026-11-20",
+   "nota": "La nota se publicó el viernes 24 a las 20:15 y dice \"la tarde de este viernes\". Sin daños informados."
   },
   {
    "id": "TM-20260818-057",
    "fecha": "2026-08-18",
    "hora": null,
-   "lugar": "Costa de la Región de Antofagasta (sin localidad)",
+   "lugar": "Frente a la ciudad de Antofagasta",
    "region": "Antofagasta",
-   "lat": null,
-   "lon": null,
+   "lat": -23.62,
+   "lon": -70.42,
    "tipo": "marina",
-   "nivel": "registro",
-   "respaldo": "Videos de televidentes (prensa)",
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0120); videos de televidentes (prensa)",
    "toco_tierra": false,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0120",
    "en_aviso": null,
    "urls": [
     "https://www.meganoticias.cl/nacional/529670-captan-impactante-tromba-marina-costa-antofagasta-videos-18-08-2026.html",
-    "https://www.meteored.cl/noticias/actualidad/un-episodio-sin-precedentes-experto-analiza-los-16-tornados-y-trombas-registrados-en-chile-en-solo-48-horas.html"
+    "https://www.meteored.cl/noticias/actualidad/un-episodio-sin-precedentes-experto-analiza-los-16-tornados-y-trombas-registrados-en-chile-en-solo-48-horas.html",
+    "https://tornadoschile.cl/cat0-asterisco/"
    ],
-   "revisado": "2026-11-14",
-   "nota": "La nota no nombra localidad ni hora. Sin posición no sirve para calibrar hasta ubicarla."
+   "revisado": "2026-11-20",
+   "nota": "Sin hora: la nota de Mega se publicó a las 17:58 y habla de las últimas horas. El catálogo dice que se vieron de una a tres trombas frente a la costa, que no salieron del agua, asociadas a una baja segregada; registra aparte una posible tromba o tornado en el interior (La Negra?, CL0121), que no se incluye. Posición: frente a la ciudad.",
+   "cantidad": "1 a 3"
+  },
+  {
+   "id": "TM-20260828-072",
+   "fecha": "2026-08-28",
+   "hora": "08:44",
+   "lugar": "Talcahuano, sector Tumbes–Taiguén",
+   "region": "Biobío",
+   "lat": -36.66,
+   "lon": -73.1,
+   "tipo": "marina",
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0127), con hora y lugar de la meteoróloga Macarena Donoso",
+   "toco_tierra": null,
+   "ef": null,
+   "catalogo": "CL0127",
+   "en_aviso": true,
+   "urls": [
+    "https://tornadoschile.cl/brote-agosto-2026/"
+   ],
+   "revisado": "2026-11-20",
+   "nota": "Distinta de la de la costanera de Talcahuano (08:58, CL0128). Trayectoria corta hacia el este-sureste."
   },
   {
    "id": "TM-20260828-058",
@@ -1260,18 +1327,18 @@
    "lat": -36.7,
    "lon": -73.11,
    "tipo": "marina",
-   "nivel": "registro",
-   "respaldo": "Citado por Meteored (Catálogo de Tornados de Chile); Lista de la oleada de agosto de 2026 en Wikipedia (fuente terciaria)",
+   "nivel": "catalogo",
+   "respaldo": "Gobernación Marítima; Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0128)",
    "toco_tierra": true,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0128",
    "en_aviso": true,
    "urls": [
     "https://www.meteored.cl/noticias/actualidad/un-episodio-sin-precedentes-experto-analiza-los-16-tornados-y-trombas-registrados-en-chile-en-solo-48-horas.html",
-    "https://es.wikipedia.org/wiki/Oleada_de_tornados_de_Chile_de_agosto_de_2026"
+    "https://tornadoschile.cl/brote-agosto-2026/"
    ],
-   "revisado": "2026-11-15",
-   "nota": "Tromba marina que se debilitó al ingresar al continente; el catálogo de Wikipedia la clasifica EF0. Otra lista de Wikipedia da 07:50 y viento de 53 kt para el mismo evento: la hora queda con una incerteza de alrededor de una hora."
+   "revisado": "2026-11-20",
+   "nota": "Tromba que se debilitó al ingresar al continente. Hora 08:58 del catálogo; la meteoróloga Macarena Donoso informa además una nube embudo a las 07:50 sobre Talcahuano, que el catálogo no cuenta como tromba. Reemplaza la cita a Wikipedia (página ya no disponible)."
   },
   {
    "id": "TM-20260828-059",
@@ -1286,80 +1353,84 @@
    "respaldo": "Gobernación Marítima",
    "toco_tierra": false,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0129",
    "en_aviso": true,
    "urls": [
-    "https://www.biobiochile.cl/noticias/nacional/region-del-bio-bio/2026/08/28/videos-tromba-marina-se-registro-en-las-costas-de-tome.shtml"
+    "https://www.biobiochile.cl/noticias/nacional/region-del-bio-bio/2026/08/28/videos-tromba-marina-se-registro-en-las-costas-de-tome.shtml",
+    "https://tornadoschile.cl/brote-agosto-2026/",
+    "https://www.tomealdia.com/2026/08/multiples-trombas-marinas-en-tome.html"
    ],
-   "revisado": "2026-11-14"
+   "revisado": "2026-11-20",
+   "nota": "El catálogo da 13:00 y una trayectoria de unos 12 km hacia el sureste; la prensa, alrededor de las 12:30 (se mantiene). El catálogo tiene además \"Tomé\" (CL0125) sin hora y marcado como posible duplicado de este evento: no se agrega."
   },
   {
    "id": "TM-20260828-060",
    "fecha": "2026-08-28",
-   "hora": "16:00",
+   "hora": "16:30",
    "lugar": "Frente a caleta Pellines, Constitución",
    "region": "Maule",
    "lat": -35.47,
    "lon": -72.52,
    "tipo": "marina",
-   "nivel": "registro",
+   "nivel": "catalogo",
    "respaldo": "Videos (prensa)",
    "toco_tierra": false,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0124",
    "en_aviso": true,
    "urls": [
     "https://www.biobiochile.cl/noticias/nacional/region-del-maule/2026/08/28/videos-se-registra-tromba-marina-en-sector-costero-de-constitucion-en-maule.shtml",
-    "https://es.wikipedia.org/wiki/Oleada_de_tornados_de_Chile_de_agosto_de_2026"
+    "https://tornadoschile.cl/brote-agosto-2026/"
    ],
-   "revisado": "2026-11-14",
-   "nota": "Wikipedia da 16:30; la prensa, 16:00."
-  },
-  {
-   "id": "TM-20260829-061",
-   "fecha": "2026-08-29",
-   "hora": null,
-   "lugar": "La Achira, Cobquecura",
-   "region": "Ñuble",
-   "lat": -36.21,
-   "lon": -72.81,
-   "tipo": "marina",
-   "nivel": "registro",
-   "respaldo": "Video de televidente (prensa)",
-   "toco_tierra": null,
-   "ef": null,
-   "catalogo": null,
-   "en_aviso": true,
-   "urls": [
-    "https://www.meganoticias.cl/nacional/530486-video-nuevas-trombas-marinas-intensas-granizadas-inestabilidad-atmosferica-dcv-29-08-2026.html"
-   ],
-   "revisado": "2026-11-14",
-   "nota": "Sin hora; publicado el sábado 29 a las 11:36."
+   "revisado": "2026-11-20",
+   "nota": "La prensa da 16:00; el catálogo, 16:30 (se adopta la del catálogo)."
   },
   {
    "id": "TM-20260829-062",
    "fecha": "2026-08-29",
-   "hora": "08:30",
+   "hora": "10:15",
    "lugar": "Playa Perales, Coelemu",
    "region": "Ñuble",
    "lat": -36.47,
    "lon": -72.87,
    "tipo": "marina",
-   "nivel": "registro",
+   "nivel": "catalogo",
    "respaldo": "Al menos ocho videos de una vecina (prensa); citado por Meteored",
    "toco_tierra": null,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0130",
    "en_aviso": true,
    "urls": [
     "https://www.meganoticias.cl/nacional/530529-mujer-capto-cerca-de-10-trombas-marinas-frente-a-su-casa-en-coelemu-videos-30-08-2026.html",
     "https://www.meganoticias.cl/nacional/530486-video-nuevas-trombas-marinas-intensas-granizadas-inestabilidad-atmosferica-dcv-29-08-2026.html",
     "https://www.meteored.cl/noticias/actualidad/un-episodio-sin-precedentes-experto-analiza-los-16-tornados-y-trombas-registrados-en-chile-en-solo-48-horas.html",
-    "https://es.wikipedia.org/wiki/Oleada_de_tornados_de_Chile_de_agosto_de_2026"
+    "https://tornadoschile.cl/brote-agosto-2026/"
    ],
-   "revisado": "2026-11-14",
+   "revisado": "2026-11-20",
    "cantidad": "9 a 10",
-   "nota": "Sucesión de trombas: «al menos nueve» según el periodista de Mega, «probablemente diez» según la testigo. La hora 08:30 es la que da Meteored. Wikipedia sitúa esta tromba a las 10:15; se mantiene la hora de Meteored (08:30) y queda anotada la discrepancia."
+   "nota": "Sucesión de trombas: \"al menos nueve\" según el periodista de Mega, \"probablemente diez\" según la testigo; el catálogo las cuenta como un evento. Hora 10:15 del catálogo; Meteored daba 08:30 y BioBioChile, \"sábado por la mañana\"."
+  },
+  {
+   "id": "TM-20260829-061",
+   "fecha": "2026-08-29",
+   "hora": "11:01",
+   "lugar": "La Achira, Santa Rita, Cobquecura",
+   "region": "Ñuble",
+   "lat": -36.21,
+   "lon": -72.81,
+   "tipo": "marina",
+   "nivel": "catalogo",
+   "respaldo": "Video de televidente (prensa)",
+   "toco_tierra": null,
+   "ef": null,
+   "catalogo": "CL0131",
+   "en_aviso": true,
+   "urls": [
+    "https://www.meganoticias.cl/nacional/530486-video-nuevas-trombas-marinas-intensas-granizadas-inestabilidad-atmosferica-dcv-29-08-2026.html",
+    "https://tornadoschile.cl/brote-agosto-2026/"
+   ],
+   "revisado": "2026-11-20",
+   "nota": "Hora del catálogo. Con Rinconada de Taucú y playa Perales, son las tres trombas que Senapred informó frente a Cobquecura y Coelemu."
   },
   {
    "id": "TM-20260829-063",
@@ -1370,18 +1441,18 @@
    "lat": -36.1,
    "lon": -72.8,
    "tipo": "marina",
-   "nivel": "registro",
-   "respaldo": "Senapred (confirmó tres trombas frente a Cobquecura); Lista de la oleada de agosto de 2026 en Wikipedia (fuente terciaria)",
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0132); Senapred (confirmó tres trombas frente a Cobquecura)",
    "toco_tierra": false,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0132",
    "en_aviso": null,
    "urls": [
     "https://radio.uchile.cl/2026/08/29/tornado-y-tres-trombas-marinas-en-nuble-fenomeno-climatico-deja-a-10-familias-damnificadas/",
-    "https://es.wikipedia.org/wiki/Oleada_de_tornados_de_Chile_de_agosto_de_2026"
+    "https://tornadoschile.cl/brote-agosto-2026/"
    ],
-   "revisado": "2026-11-15",
-   "nota": "Segunda tromba reportada en el mismo sector ese día; sin contacto con tierra. Senapred confirmó tres trombas frente a Cobquecura, de las que el catálogo tiene dos: esta y La Achira."
+   "revisado": "2026-11-20",
+   "nota": "Segunda tromba en el mismo sector ese día; sin contacto con tierra. Las tres trombas que informó Senapred son, en el catálogo, La Achira (CL0131), esta y playa Perales en Coelemu (CL0130), que está junto al límite comunal."
   },
   {
    "id": "TM-20260829-064",
@@ -1392,18 +1463,18 @@
    "lat": -36.62,
    "lon": -73.08,
    "tipo": "marina",
-   "nivel": "registro",
-   "respaldo": "Videos citados por prensa; Lista de la oleada de agosto de 2026 en Wikipedia (fuente terciaria)",
+   "nivel": "catalogo",
+   "respaldo": "Videos (BioBioChile, 29-ago 12:49); Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0134)",
    "toco_tierra": false,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0134",
    "en_aviso": null,
    "urls": [
     "https://www.biobiochile.cl/noticias/nacional/region-del-bio-bio/2026/08/29/videos-reportan-avistamientos-de-trombas-marinas-en-las-costas-de-nuble-y-bio-bio.shtml",
-    "https://es.wikipedia.org/wiki/Oleada_de_tornados_de_Chile_de_agosto_de_2026"
+    "https://tornadoschile.cl/brote-agosto-2026/"
    ],
-   "revisado": "2026-11-15",
-   "nota": "Desplazamiento de noroeste a sureste por la bahía de Concepción. La otra de las dos trombas simultáneas de las 12:30."
+   "revisado": "2026-11-20",
+   "nota": "Avanzó de noroeste a sureste por la bahía de Concepción. Simultánea con la de Coliumo (12:30)."
   },
   {
    "id": "TM-20260829-065",
@@ -1414,58 +1485,106 @@
    "lat": -36.53,
    "lon": -72.95,
    "tipo": "marina",
-   "nivel": "registro",
-   "respaldo": "Lista de la oleada de agosto de 2026 en Wikipedia (fuente terciaria)",
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0133); vecinos de Dichato y Coliumo (prensa local)",
    "toco_tierra": false,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0133",
    "en_aviso": null,
    "urls": [
-    "https://es.wikipedia.org/wiki/Oleada_de_tornados_de_Chile_de_agosto_de_2026"
+    "https://tornadoschile.cl/brote-agosto-2026/",
+    "https://www.tomealdia.com/2026/08/multiples-trombas-marinas-en-tome.html"
    ],
-   "revisado": "2026-11-15",
-   "nota": "Desplazamiento hacia el nor-noroeste. Wikipedia la describe como una de dos trombas observadas casi simultáneamente en el Biobío a esa hora."
+   "revisado": "2026-11-20",
+   "nota": "Observada hacia el nor-noroeste desde Coliumo. La prensa local habla de \"nubes de embudo\" sobre Dichato y Coliumo en la tarde; el catálogo la registra como tromba a las 12:30."
   },
   {
    "id": "TM-20260829-066",
    "fecha": "2026-08-29",
    "hora": "15:11",
-   "lugar": "Frente a Pingueral, Tomé",
+   "lugar": "Frente a playa Pingueral, al norte de Dichato, Tomé",
    "region": "Biobío",
    "lat": -36.56,
    "lon": -72.93,
    "tipo": "marina",
-   "nivel": "registro",
-   "respaldo": "Lista de la oleada de agosto de 2026 en Wikipedia (fuente terciaria)",
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0135); Red Geocientífica de Chile (imágenes); Armada y seguridad municipal (según prensa local)",
    "toco_tierra": false,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0135",
    "en_aviso": null,
    "urls": [
-    "https://es.wikipedia.org/wiki/Oleada_de_tornados_de_Chile_de_agosto_de_2026"
+    "https://tornadoschile.cl/brote-agosto-2026/",
+    "https://www.tomealdia.com/2026/08/multiples-trombas-marinas-en-tome.html"
    ],
-   "revisado": "2026-11-15"
+   "revisado": "2026-11-20",
+   "nota": "Se desplazó hacia playa Villarrica y se disipó al llegar a la costa, sin convertirse en tornado."
   },
   {
-   "id": "TM-20261021-067",
-   "fecha": "2026-10-21",
-   "hora": null,
-   "lugar": "Frente a Coronel (segundo registro)",
-   "region": "Biobío",
-   "lat": -37.02,
-   "lon": -73.18,
+   "id": "TM-20260829-074",
+   "fecha": "2026-08-29",
+   "hora": "16:00",
+   "lugar": "Queilén, isla Grande de Chiloé",
+   "region": "Los Lagos",
+   "lat": -42.89,
+   "lon": -73.45,
    "tipo": "marina",
-   "nivel": "registro",
-   "respaldo": "testigos (prensa, publicado 22-oct 07:56)",
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0138); Senapred Los Lagos (según BioBioChile)",
    "toco_tierra": null,
    "ef": null,
-   "catalogo": null,
-   "en_aviso": true,
+   "catalogo": "CL0138",
+   "en_aviso": null,
    "urls": [
-    "https://www.chilevision.cl/noticias/nacional/video-captan-nuevo-registro-de-tromba-marina-frente-a-costas-de-coronel-en-medio-de-intenso-sistema-frontal"
+    "https://tornadoschile.cl/brote-agosto-2026/",
+    "https://www.biobiochile.cl/noticias/nacional/region-de-los-lagos/2026/09/02/alertan-por-posibles-tornados-o-trombas-marinas-tras-registros-de-nubes-embudos-en-region-de-los-lagos.shtml"
    ],
-   "revisado": "2026-11-06",
-   "nota": "Tomado del archivo de avisos (data/trombas_avisos_historicos.json)."
+   "revisado": "2026-11-20",
+   "nota": "Hora aproximada del catálogo. Es la tromba de Los Lagos que Meteored contaba en el episodio del 28 y 29 de agosto. Queda apenas al sur del último tramo de calibración (42,5° S)."
+  },
+  {
+   "id": "TM-20260829-073",
+   "fecha": "2026-08-29",
+   "hora": null,
+   "lugar": "Morguilla, Lebu",
+   "region": "Biobío",
+   "lat": -37.65,
+   "lon": -73.67,
+   "tipo": "marina",
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0137)",
+   "toco_tierra": null,
+   "ef": null,
+   "catalogo": "CL0137",
+   "en_aviso": null,
+   "urls": [
+    "https://tornadoschile.cl/brote-agosto-2026/"
+   ],
+   "revisado": "2026-11-20",
+   "nota": "Sin hora; el catálogo la escribe \"Morhuilla\". Sin hora no sirve para comparar con el ambiente horario, pero sí por tramo-día."
+  },
+  {
+   "id": "TM-20260831-075",
+   "fecha": "2026-08-31",
+   "hora": "16:56",
+   "lugar": "Lago Llanquihue, frente a Puerto Varas",
+   "region": "Los Lagos",
+   "lat": -41.27,
+   "lon": -72.95,
+   "tipo": "lacustre",
+   "nivel": "catalogo",
+   "respaldo": "Catálogo de Tornados de Chile, lista en línea tornadoschile.cl (CL0149); Red Geocientífica de Chile",
+   "toco_tierra": false,
+   "ef": null,
+   "catalogo": "CL0149",
+   "en_aviso": null,
+   "urls": [
+    "https://fmmass.wordpress.com/2026/08/31/continuan-los-episodios-tornadicos-en-chile-se-registran-nubes-embudo-y-tromba-lacustre-en-la-zona-sur/",
+    "https://www.biobiochile.cl/noticias/nacional/region-de-los-lagos/2026/09/02/alertan-por-posibles-tornados-o-trombas-marinas-tras-registros-de-nubes-embudos-en-region-de-los-lagos.shtml",
+    "https://tornadoschile.cl/lista-de-tornados/"
+   ],
+   "revisado": "2026-11-20",
+   "nota": "La Red Geocientífica informa una tromba sobre el lago a las 16:56, simultánea con una nube embudo en Puerto Varas. El meteorólogo A. Sepúlveda habla de dos nubes embudo que \"no habrían tocado superficie\", y Senapred dice que no se las informaron. El catálogo la incluye como EF0* (vórtice que tocó la superficie, sin daño)."
   },
   {
    "id": "TM-20261021-068",
@@ -1480,13 +1599,16 @@
    "respaldo": "Armada (hora aproximada: \"en la tarde\")",
    "toco_tierra": null,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0156",
    "en_aviso": true,
    "urls": [
-    "https://www.biobiochile.cl/noticias/nacional/region-del-bio-bio/2026/10/21/armada-confirma-tromba-marina-en-coronel-y-nube-embudo-en-talcahuano.shtml"
+    "https://www.biobiochile.cl/noticias/nacional/region-del-bio-bio/2026/10/21/armada-confirma-tromba-marina-en-coronel-y-nube-embudo-en-talcahuano.shtml",
+    "https://www.chilevision.cl/noticias/nacional/video-captan-nuevo-registro-de-tromba-marina-frente-a-costas-de-coronel-en-medio-de-intenso-sistema-frontal",
+    "https://www.pagina7.cl/redes-sociales/videos-muestran-tromba-marina-en-coronel-y-nube-embudo-en-talcahuano/",
+    "https://tornadoschile.cl/cat0-asterisco/"
    ],
-   "revisado": "2026-11-06",
-   "nota": "Tomado del archivo de avisos (data/trombas_avisos_historicos.json)."
+   "revisado": "2026-11-20",
+   "nota": "Tomado del archivo de avisos (data/trombas_avisos_historicos.json). Se fusiona con el \"segundo registro\" (antes TM-20261021-067): la Armada y la prensa hablan de una sola tromba frente a Coronel, y el catálogo la registra una vez (CL0156). Ese día hubo además una nube embudo en Talcahuano que no tocó el agua."
   },
   {
    "id": "TM-20261022-069",
@@ -1501,13 +1623,14 @@
    "respaldo": "Armada (según Emol); primer reporte de la Red Geocientífica de Chile",
    "toco_tierra": false,
    "ef": null,
-   "catalogo": null,
+   "catalogo": "CL0157",
    "en_aviso": false,
    "urls": [
     "https://www.chilevision.cl/noticias/nacional/video-reportan-tromba-marina-frente-a-las-costas-de-la-region-del-maule/",
-    "https://www.emol.com/noticias/Nacional/2026/10/23/1214989/tornado-tromba-granizo-sistema-frontal.html"
+    "https://www.emol.com/noticias/Nacional/2026/10/23/1214989/tornado-tromba-granizo-sistema-frontal.html",
+    "https://tornadoschile.cl/cat0-asterisco/"
    ],
-   "revisado": "2026-11-14",
+   "revisado": "2026-11-20",
    "nota": "En la tarde, antes de las 17:37 (hora de la primera nota). Emol dice que había aviso previo del CMM Talcahuano, pero el aviso archivado (20 y 21 de octubre) terminaba el 21 a las 23:00: revisar si hubo una extensión que falta en el archivo."
   }
  ]

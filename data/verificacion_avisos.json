@@ -1,5 +1,5 @@
 {
- "generado": "2026-11-15T16:10Z",
+ "generado": "2026-11-20T21:56Z",
  "_ayuda": "Verificación de los avisos de trombas contra las trombas observadas. NO incluye tasa de falsa alarma: un aviso sin tromba observada no es una falsa alarma, porque el registro de trombas depende de que alguien mire. 'esperado_por_azar' es el POD que daría un aviso puesto al azar con la misma cobertura en la latitud de cada evento, y 'p_azar' la probabilidad de alcanzar el POD observado por casualidad.",
  "periodo": {
   "desde": "2025-09-10T00:00Z",
@@ -13,6 +13,12 @@
  },
  "fuera_del_alcance": [
   {
+   "id": "TM-20260316-070",
+   "fecha": "2026-03-16",
+   "lugar": "Golfo de Penas",
+   "lat": -47.1
+  },
+  {
    "id": "TM-20260620-055",
    "fecha": "2026-06-20",
    "lugar": "Estuario de Reloncaví, frente a Caleta La Arena–Puelche",
@@ -21,17 +27,29 @@
   {
    "id": "TM-20260718-056",
    "fecha": "2026-07-18",
-   "lugar": "Sector El Pangal, Pichilemu",
-   "lat": -34.39
+   "lugar": "Sector Pangal, al sur de Cáhuil, Pichilemu",
+   "lat": -34.5
+  },
+  {
+   "id": "TM-20260818-057",
+   "fecha": "2026-08-18",
+   "lugar": "Frente a la ciudad de Antofagasta",
+   "lat": -23.62
+  },
+  {
+   "id": "TM-20260829-074",
+   "fecha": "2026-08-29",
+   "lugar": "Queilén, isla Grande de Chiloé",
+   "lat": -42.89
   }
  ],
  "deteccion": {
-  "trombas": 15,
-  "capturadas": 13,
-  "pod": 0.867,
+  "trombas": 16,
+  "capturadas": 14,
+  "pod": 0.875,
   "ic95": [
-   0.621,
-   0.963
+   0.64,
+   0.965
   ],
   "esperado_por_azar": 0.039,
   "p_azar": 0.0
@@ -52,8 +70,8 @@
   {
    "region": "Biobío",
    "cobertura": 0.0421,
-   "trombas": 10,
-   "capturadas": 9
+   "trombas": 11,
+   "capturadas": 10
   },
   {
    "region": "La Araucanía",
@@ -115,6 +133,21 @@
    "cobertura_en_su_latitud": 0.0372
   },
   {
+   "id": "TM-20260316-070",
+   "fecha": "2026-03-16",
+   "hora": null,
+   "hora_exacta": false,
+   "lugar": "Golfo de Penas",
+   "lat": -47.1,
+   "nivel": "catalogo",
+   "en_aviso": false,
+   "aviso": null,
+   "anticipacion_h": null,
+   "motivo": "fuera del tramo de costa que cubren los avisos archivados",
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0
+  },
+  {
    "id": "TM-20260620-055",
    "fecha": "2026-06-20",
    "hora": "16:20",
@@ -134,9 +167,9 @@
    "fecha": "2026-07-18",
    "hora": null,
    "hora_exacta": false,
-   "lugar": "Sector El Pangal, Pichilemu",
-   "lat": -34.39,
-   "nivel": "registro",
+   "lugar": "Sector Pangal, al sur de Cáhuil, Pichilemu",
+   "lat": -34.5,
+   "nivel": "catalogo",
    "en_aviso": false,
    "aviso": null,
    "anticipacion_h": null,
@@ -145,13 +178,43 @@
    "cobertura_en_su_latitud": 0.0
   },
   {
+   "id": "TM-20260818-057",
+   "fecha": "2026-08-18",
+   "hora": null,
+   "hora_exacta": false,
+   "lugar": "Frente a la ciudad de Antofagasta",
+   "lat": -23.62,
+   "nivel": "catalogo",
+   "en_aviso": false,
+   "aviso": null,
+   "anticipacion_h": null,
+   "motivo": "fuera del tramo de costa que cubren los avisos archivados",
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0
+  },
+  {
+   "id": "TM-20260828-072",
+   "fecha": "2026-08-28",
+   "hora": "08:44",
+   "hora_exacta": true,
+   "lugar": "Talcahuano, sector Tumbes–Taiguén",
+   "lat": -36.66,
+   "nivel": "catalogo",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-08-27T18Z",
+   "anticipacion_h": 17.7,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0415
+  },
+  {
    "id": "TM-20260828-058",
    "fecha": "2026-08-28",
    "hora": "08:58",
    "hora_exacta": true,
    "lugar": "Costanera de Talcahuano",
    "lat": -36.7,
-   "nivel": "registro",
+   "nivel": "catalogo",
    "en_aviso": true,
    "aviso": "Prensa · 2026-08-27T18Z",
    "anticipacion_h": 18.0,
@@ -177,47 +240,62 @@
   {
    "id": "TM-20260828-060",
    "fecha": "2026-08-28",
-   "hora": "16:00",
+   "hora": "16:30",
    "hora_exacta": true,
    "lugar": "Frente a caleta Pellines, Constitución",
    "lat": -35.47,
-   "nivel": "registro",
+   "nivel": "catalogo",
    "en_aviso": true,
    "aviso": "Prensa · 2026-08-27T18Z",
-   "anticipacion_h": 25.0,
+   "anticipacion_h": 25.5,
    "motivo": null,
    "brecha_h": null,
    "cobertura_en_su_latitud": 0.0315
   },
   {
-   "id": "TM-20260829-061",
+   "id": "TM-20260829-073",
    "fecha": "2026-08-29",
    "hora": null,
    "hora_exacta": false,
-   "lugar": "La Achira, Cobquecura",
-   "lat": -36.21,
-   "nivel": "registro",
+   "lugar": "Morguilla, Lebu",
+   "lat": -37.65,
+   "nivel": "catalogo",
    "en_aviso": true,
    "aviso": "Prensa · 2026-08-27T18Z",
    "anticipacion_h": null,
    "motivo": null,
    "brecha_h": null,
-   "cobertura_en_su_latitud": 0.0321
+   "cobertura_en_su_latitud": 0.0424
   },
   {
    "id": "TM-20260829-062",
    "fecha": "2026-08-29",
-   "hora": "08:30",
+   "hora": "10:15",
    "hora_exacta": true,
    "lugar": "Playa Perales, Coelemu",
    "lat": -36.47,
-   "nivel": "registro",
+   "nivel": "catalogo",
    "en_aviso": true,
    "aviso": "Prensa · 2026-08-27T18Z",
-   "anticipacion_h": 41.5,
+   "anticipacion_h": 43.2,
    "motivo": null,
    "brecha_h": null,
    "cobertura_en_su_latitud": 0.0415
+  },
+  {
+   "id": "TM-20260829-061",
+   "fecha": "2026-08-29",
+   "hora": "11:01",
+   "hora_exacta": true,
+   "lugar": "La Achira, Santa Rita, Cobquecura",
+   "lat": -36.21,
+   "nivel": "catalogo",
+   "en_aviso": true,
+   "aviso": "Prensa · 2026-08-27T18Z",
+   "anticipacion_h": 44.0,
+   "motivo": null,
+   "brecha_h": null,
+   "cobertura_en_su_latitud": 0.0321
   },
   {
    "id": "TM-20260829-063",
@@ -226,7 +304,7 @@
    "hora_exacta": true,
    "lugar": "Rinconada de Taucú, Cobquecura",
    "lat": -36.1,
-   "nivel": "registro",
+   "nivel": "catalogo",
    "en_aviso": true,
    "aviso": "Prensa · 2026-08-27T18Z",
    "anticipacion_h": 44.5,
@@ -241,7 +319,7 @@
    "hora_exacta": true,
    "lugar": "Caleta Tumbes, Talcahuano",
    "lat": -36.62,
-   "nivel": "registro",
+   "nivel": "catalogo",
    "en_aviso": true,
    "aviso": "Prensa · 2026-08-27T18Z",
    "anticipacion_h": 45.5,
@@ -256,7 +334,7 @@
    "hora_exacta": true,
    "lugar": "Frente a Coliumo, Tomé",
    "lat": -36.53,
-   "nivel": "registro",
+   "nivel": "catalogo",
    "en_aviso": true,
    "aviso": "Prensa · 2026-08-27T18Z",
    "anticipacion_h": 45.5,
@@ -269,9 +347,9 @@
    "fecha": "2026-08-29",
    "hora": "15:11",
    "hora_exacta": true,
-   "lugar": "Frente a Pingueral, Tomé",
+   "lugar": "Frente a playa Pingueral, al norte de Dichato, Tomé",
    "lat": -36.56,
-   "nivel": "registro",
+   "nivel": "catalogo",
    "en_aviso": false,
    "aviso": null,
    "anticipacion_h": null,
@@ -280,19 +358,19 @@
    "cobertura_en_su_latitud": 0.0415
   },
   {
-   "id": "TM-20261021-067",
-   "fecha": "2026-10-21",
-   "hora": null,
-   "hora_exacta": false,
-   "lugar": "Frente a Coronel (segundo registro)",
-   "lat": -37.02,
-   "nivel": "registro",
-   "en_aviso": true,
-   "aviso": "Prensa · 2026-10-20T09Z",
+   "id": "TM-20260829-074",
+   "fecha": "2026-08-29",
+   "hora": "16:00",
+   "hora_exacta": true,
+   "lugar": "Queilén, isla Grande de Chiloé",
+   "lat": -42.89,
+   "nivel": "catalogo",
+   "en_aviso": false,
+   "aviso": null,
    "anticipacion_h": null,
-   "motivo": null,
+   "motivo": "fuera del tramo de costa que cubren los avisos archivados",
    "brecha_h": null,
-   "cobertura_en_su_latitud": 0.0424
+   "cobertura_en_su_latitud": 0.0
   },
   {
    "id": "TM-20261021-068",
