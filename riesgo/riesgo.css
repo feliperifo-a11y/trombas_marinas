@@ -132,3 +132,12 @@ table.grid input.w{width:170px}table.grid input.ww{width:170px}
 #cityList{max-height:none}
 @media(max-width:1100px){.kpis.mini{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.dc .di{width:26px;height:26px}.dc .di svg{width:24px;height:24px}.dc .dl{font-size:9.5px}.dc .dt{font-size:11px}}
+
+/* ===== Firma ApoyoMet ===== */
+.firmaTop{display:flex;align-items:center;gap:10px;margin-left:auto}
+.firmaTop .fl{font-size:11.5px;color:var(--muted);text-align:right;line-height:1.2;max-width:90px}
+.firmaTop img{height:56px;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))}
+.firmaPie{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;color:#d5e2ef}
+.firmaPie img{height:38px}
+.loginLogo{height:84px;display:block;margin:0 auto 10px}
+@media(max-width:760px){.firmaTop{margin-left:0;order:3}.firmaTop img{height:44px}.firmaTop .fl{max-width:none}}

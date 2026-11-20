@@ -15,16 +15,19 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 </head>
 <body>
 <div class="top">
   <a class="logo" href="https://meteoia.cl" title="Ir a MeteoIA"><span class="mk"><img src="../assets/logo-meteoia.png" alt="MeteoIA"></span><span><b>Pronóstico de riesgo</b><span class="tx">Riesgo meteorológico operacional por ciudad</span></span></a>
+  <div class="firmaTop"><span class="fl">Pronóstico elaborado por</span><img src="apoyomet.png" alt="ApoyoMet – Asesorías Marítimas y Portuarias"></div>
   <div class="reloj"><div class="h" id="hora">–</div><div class="s" id="emiTop">Acceso con clave</div></div>
 </div>
 
 <div class="rz">
   <!-- Ingreso -->
   <section id="login" class="box login">
+    <img src="apoyomet.png" alt="ApoyoMet – Asesorías Marítimas y Portuarias" class="loginLogo">
     <h2>Acceso</h2>
     <p class="note">Ingrese la clave de visualización entregada por su proveedor del pronóstico.</p>
     <form id="fLogin" autocomplete="off">
@@ -46,6 +49,7 @@
       <label>Emisión<select id="fEmi"></select></label>
       <div class="acts">
         <button id="btnPdf" class="pri">Descargar PDF</button>
+        <button id="btnDocx">Word</button>
         <button id="btnXls">Excel</button>
         <button id="btnOut">Salir</button>
       </div>
@@ -84,7 +88,7 @@
     <section id="t-crit" class="hidden"><div class="box"><h2>Criterios del semáforo</h2><div id="critBox"></div></div></section>
   </div>
 </div>
-<footer class="pie"><p>Datos meteorológicos: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0), revisados y emitidos por el equipo pronosticador.</p>CF Felipe Rifo Espósito · <a href="mailto:feliperifo@gmail.com">feliperifo@gmail.com</a></footer>
+<footer class="pie"><div class="firmaPie"><img src="apoyomet.png" alt="ApoyoMet"><span>Pronóstico elaborado por <b>ApoyoMet</b> – Asesorías Marítimas y Portuarias</span></div><p>Datos meteorológicos: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (CC BY 4.0).</p>Desarrollo: CF Felipe Rifo Espósito · <a href="mailto:feliperifo@gmail.com">feliperifo@gmail.com</a></footer>
 
 <script src="riesgo.js"></script>
 <script>
@@ -157,7 +161,7 @@ $("fEmi").onchange=async()=>{
   const id=$("fEmi").value;try{const env=await ghRead(cfg,`historial/${id}.json`);if(!env)throw new Error("emisión no encontrada");show(await decryptJSON(env,PASS))}
   catch(e){toast("No se pudo abrir la emisión: "+e.message)}};
 $("btnPdf").onclick=()=>makePdf().catch(e=>{console.error(e);toast("Error al generar PDF: "+e.message)});
-$("btnXls").onclick=makeXls;$("btnOut").onclick=logout;
+$("btnXls").onclick=makeXls;$("btnDocx").onclick=()=>makeDocx().catch(e=>{console.error(e);toast("Error al generar Word: "+e.message)});$("btnOut").onclick=logout;
 $("selAll").onclick=()=>{S.sites.forEach(s=>S.sel[s.id]=true);savePrefs();renderScope();renderAll()};
 $("selNone").onclick=()=>{S.sites.forEach(s=>S.sel[s.id]=false);savePrefs();renderScope();renderAll()};
 tick();setInterval(tick,30000);
