@@ -491,8 +491,10 @@ function crearTrombas(L, map, h) {
     let n = 0;
     polysM.forEach((p, i) => {
       const v = valorM(campoSel, t, i);
-      if (v == null || (c.min != null && v < c.min)) { p.setStyle({ fillOpacity: 0 }); return; }
-      n++; p.setStyle({ fillColor: colorM(c, v), fillOpacity: camposM.borde[i] ? 0.25 : 0.6 });
+      // Zona de borde: el modelo se amarra ahí al GFS y sus valores no son representativos (p. ej. lluvia convectiva
+      // de cientos de mm en las filas externas); no se pinta, aunque la celda sigue tocable para ver su ficha.
+      if (v == null || camposM.borde[i] || (c.min != null && v < c.min)) { p.setStyle({ fillOpacity: 0 }); return; }
+      n++; p.setStyle({ fillColor: colorM(c, v), fillOpacity: 0.6 });
     });
     camposM._sinDato = n === 0 && campoSel !== 'precip';
 
