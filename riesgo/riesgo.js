@@ -568,3 +568,46 @@ async function ghWrite(cfg,path,obj,token,msg){
   const p=await fetch(url,{method:"PUT",headers:Object.assign({"Content-Type":"application/json"},h),body:JSON.stringify(body)});
   if(!p.ok){let m="";try{m=(await p.json()).message}catch(e){}throw new Error(`GitHub respondió ${p.status} al guardar ${path}${m?": "+m:""}`)}
 }
+
+/* ===================== Portal con usuarios (Cloudflare Worker) ===================== */
+/* Si la página la sirve el portal, /api/sesion responde; en GitHub Pages no existe y se usa el modo con clave única. */
+let PORTAL=null;   // null: modo GitHub; {usuario,nombre,rol,ciudades}: portal con sesión
+async function detectarPortal(){
+  try{
+    const r=await fetch("api/sesion",{cache:"no-store",credentials:"same-origin"});
+    if(r.status===401){location.replace("login.html");return "fuera"}
+    if(r.ok&&(r.headers.get("Content-Type")||"").includes("json")){PORTAL=await r.json();return "portal"}
+  }catch(e){}
+  return "estatico";
+}
+async function api(path,opts){
+  const r=await fetch("api/"+path,Object.assign({cache:"no-store",credentials:"same-origin"},opts||{},
+    opts&&opts.body?{headers:{"Content-Type":"application/json"},body:JSON.stringify(opts.body)}:{}));
+  if(r.status===401){location.replace("login.html");throw new Error("Sesión vencida")}
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||("HTTP "+r.status));
+  return j;
+}
+async function salirPortal(){try{await api("logout",{method:"POST"})}catch(e){}location.replace("login.html")}
+function cambiarClave(){
+  const host=document.getElementById("modalHost")||document.body.appendChild(Object.assign(document.createElement("div"),{id:"modalHost"}));
+  host.innerHTML=`<div class="mbg" id="cbg"><div class="modal"><h3>Cambiar mi clave</h3>
+    <div class="meta">Usuario ${esc(PORTAL.usuario)}${PORTAL.nombre?" · "+esc(PORTAL.nombre):""}</div>
+    <div class="fg"><label>Clave actual<input type="password" id="kA" autocomplete="current-password"></label><span></span>
+    <label>Clave nueva (mínimo 6)<input type="password" id="kN" autocomplete="new-password"></label><label>Repetir clave nueva<input type="password" id="kR" autocomplete="new-password"></label></div>
+    <div class="err" id="kE" style="color:#ff8a7a;font-size:13px;margin-top:8px"></div>
+    <div class="btns"><button id="kC">Cancelar</button><button id="kG" class="pri">Guardar</button></div></div></div>`;
+  const close=()=>host.innerHTML="";
+  $("kC").onclick=close;$("cbg").onclick=e=>{if(e.target.id==="cbg")close()};
+  $("kG").onclick=async()=>{
+    if($("kN").value!==$("kR").value){$("kE").textContent="Las claves nuevas no coinciden";return}
+    try{await api("clave",{method:"POST",body:{actual:$("kA").value,nueva:$("kN").value}});close();toast("Clave actualizada")}
+    catch(e){$("kE").textContent=e.message}
+  };
+}
+function barraUsuario(host,extra){
+  host.innerHTML=`<span class="usr">👤 <b>${esc(PORTAL.usuario)}</b>${PORTAL.nombre?" · "+esc(PORTAL.nombre):""}</span>
+    ${extra||""}${PORTAL.rol!=="admin"?'<button class="mini" id="uClave">Cambiar clave</button>':""}<button class="mini" id="uSalir">Salir</button>`;
+  if($("uClave"))$("uClave").onclick=cambiarClave;
+  $("uSalir").onclick=salirPortal;
+}

@@ -1,0 +1,89 @@
+# Despliega el portal del pronóstico de riesgo (usuario + clave) en Cloudflare Workers.
+# Secretos del repositorio necesarios: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, ADMIN_USUARIO, ADMIN_CLAVE.
+name: Portal de riesgo (Cloudflare)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "riesgo/*.html"
+      - "riesgo/*.js"
+      - "riesgo/*.css"
+      - "riesgo/*.png"
+      - "portal/**"
+      - ".github/workflows/portal.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: portal-riesgo
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Revisar secretos
+        id: chk
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "Faltan los secretos CLOUDFLARE_API_TOKEN y/o CLOUDFLARE_ACCOUNT_ID: no se despliega." >> "$GITHUB_STEP_SUMMARY"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.chk.outputs.ok == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.chk.outputs.ok == 'true'
+        with:
+          node-version: "20"
+
+      - name: Armar páginas del portal
+        if: steps.chk.outputs.ok == 'true'
+        run: bash portal/build.sh
+
+      - name: Instalar wrangler
+        if: steps.chk.outputs.ok == 'true'
+        run: npm install -g wrangler@4
+
+      - name: Espacio KV (se crea la primera vez)
+        if: steps.chk.outputs.ok == 'true'
+        working-directory: portal
+        run: |
+          buscar() { wrangler kv namespace list | jq -r '.[] | select(.title | test("RIESGO_PORTAL$")) | .id' | head -1; }
+          ID=$(buscar)
+          if [ -z "$ID" ]; then
+            wrangler kv namespace create RIESGO_PORTAL
+            ID=$(buscar)
+          fi
+          [ -n "$ID" ] || { echo "No se pudo obtener el espacio KV"; exit 1; }
+          sed -i "s/__KV_ID__/$ID/" wrangler.toml
+          echo "Espacio KV: $ID" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Desplegar Worker
+        if: steps.chk.outputs.ok == 'true'
+        working-directory: portal
+        run: |
+          wrangler deploy | tee despliegue.log
+          URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' despliegue.log | head -1 || true)
+          echo "Portal publicado: ${URL:-revise el panel de Cloudflare}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Clave del administrador
+        if: steps.chk.outputs.ok == 'true'
+        working-directory: portal
+        env:
+          ADMIN_USUARIO: ${{ secrets.ADMIN_USUARIO }}
+          ADMIN_CLAVE: ${{ secrets.ADMIN_CLAVE }}
+        run: |
+          if [ -n "$ADMIN_USUARIO" ] && [ -n "$ADMIN_CLAVE" ]; then
+            printf '%s' "$ADMIN_USUARIO" | wrangler secret put ADMIN_USUARIO
+            printf '%s' "$ADMIN_CLAVE" | wrangler secret put ADMIN_CLAVE
+          else
+            echo "Sin ADMIN_USUARIO/ADMIN_CLAVE: el administrador no podrá ingresar." >> "$GITHUB_STEP_SUMMARY"
+          fi

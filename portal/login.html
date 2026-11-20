@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Pronóstico de riesgo meteorológico · Ingreso</title>
+<meta name="theme-color" content="#06121f">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/ios-180.png">
+<link rel="stylesheet" href="assets/sitio.css">
+<link rel="stylesheet" href="riesgo.css">
+</head>
+<body>
+<div class="rz">
+  <section class="box login" style="margin-top:8vh">
+    <img src="apoyomet.png" alt="ApoyoMet – Asesorías Marítimas y Portuarias" class="loginLogo">
+    <h2>Pronóstico de riesgo meteorológico</h2>
+    <p class="note">Ingrese con el número de usuario y la clave que le entregó ApoyoMet.</p>
+    <form id="f" autocomplete="on">
+      <input id="u" name="username" placeholder="Número de usuario" autocomplete="username" inputmode="text" required>
+      <input id="c" name="password" type="password" placeholder="Clave" autocomplete="current-password" required>
+      <div class="err" id="err"></div>
+      <button class="pri" type="submit" id="b" style="width:100%;padding:10px">Ingresar</button>
+    </form>
+    <p class="note" style="margin-top:14px">¿Olvidó su clave? Escriba a ApoyoMet para que se la restablezcan.</p>
+  </section>
+</div>
+<footer class="pie"><div class="firmaPie"><img src="apoyomet.png" alt="ApoyoMet"><span>Pronóstico elaborado por <b>ApoyoMet</b> – Asesorías Marítimas y Portuarias</span></div></footer>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+$("f").onsubmit=async ev=>{
+  ev.preventDefault();$("err").textContent="";$("b").disabled=true;$("b").textContent="Verificando…";
+  try{
+    const r=await fetch("api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({usuario:$("u").value.trim(),clave:$("c").value})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){$("err").textContent=j.error||"No se pudo ingresar";return}
+    location.replace(j.rol==="editor"||j.rol==="admin"?"editor.html":"./");
+  }catch(e){$("err").textContent="Sin conexión con el servidor"}
+  finally{$("b").disabled=false;$("b").textContent="Ingresar"}
+};
+fetch("api/sesion").then(r=>{if(r.ok)location.replace("./")}).catch(()=>{});
+</script>
+</body>
+</html>

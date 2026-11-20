@@ -35,6 +35,7 @@
     <div class="leyMapa"><span><i style="background:#1e9e57"></i>Bajo</span><span><i style="background:#e8b400"></i>Moderado</span><span><i style="background:#d33a2c"></i>Alto</span><span style="color:var(--muted)">riesgo máximo del período</span></div>
   </section>
   <div class="col rz">
+    <div class="ubar hidden" id="ubar"></div>
   <div class="bar">
     <label>Primer día<input type="date" id="fStart"></label>
     <label>Último día<input type="date" id="fEnd"></label>
@@ -74,6 +75,7 @@
     <button data-t="detalle">Detalle</button>
     <button data-t="config">Umbrales</button>
     <button data-t="pub">Publicación</button>
+    <button data-t="usr" class="hidden">Usuarios</button>
     <button data-t="metodo">Metodología</button>
   </div>
 
@@ -113,7 +115,9 @@
   </section>
 
   <section id="t-pub" class="hidden">
-    <div class="box"><h2>Publicación de emisiones</h2>
+    <div class="box hidden" id="pubPortal"><h2>Publicación de emisiones</h2>
+      <p class="note">Las emisiones se guardan en el portal y quedan disponibles al instante para los usuarios, según las ciudades que tenga asignadas cada uno. Queda registrado quién emitió.</p></div>
+    <div id="pubGit"><div class="box"><h2>Publicación de emisiones</h2>
       <p class="note">Al emitir, el pronóstico se cifra con la <b>clave de visualización</b> y se guarda en el repositorio. Los usuarios del visor solo necesitan esa clave. El token de GitHub es lo que permite publicar: guárdelo solo en equipos del equipo editor.</p>
       <div class="fg">
         <label>Nombre de quien emite<input id="cfgName" placeholder="Ej.: J. Ponce"></label>
@@ -127,7 +131,27 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button id="btnCfgSave" class="pri">Guardar configuración</button><button id="btnTest">Probar conexión</button><a href="./" style="align-self:center">Abrir el visor ↗</a></div>
       <div id="pubLog" class="note" style="margin-top:10px"></div>
     </div>
+    </div>
     <div class="box"><h2>Últimas emisiones</h2><div id="histList" class="note">Use "Probar conexión" para ver el historial.</div></div>
+  </section>
+
+  <section id="t-usr" class="hidden">
+    <div class="box"><h2>Usuario</h2>
+      <p class="note">Cree el número de usuario y la clave que entregará a cada persona. Para cambiar la clave de alguien, edítelo y escriba la nueva; si deja la clave en blanco, se mantiene la actual.</p>
+      <div class="fg">
+        <label>Número de usuario<input id="uU" placeholder="Ej.: 1001" autocomplete="off"></label>
+        <label>Nombre o referencia<input id="uN" placeholder="Ej.: Mallplaza Antofagasta – Operaciones"></label>
+        <label>Perfil<select id="uR"><option value="cliente">Cliente (ver y descargar)</option><option value="editor">Editor (además emite)</option></select></label>
+        <label>Clave<span style="display:flex;gap:6px"><input id="uC" type="text" autocomplete="off" placeholder="mínimo 6 caracteres" style="flex:1"><button class="mini" id="uGen" type="button">Generar</button></span></label>
+      </div>
+      <p class="note" style="margin-top:10px"><label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="uA" checked> Activo</label></p>
+      <h4 style="margin:10px 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Ciudades que puede ver <span style="text-transform:none;font-weight:400">(ninguna marcada = todas)</span></h4>
+      <div class="chips" id="uCities"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="pri" id="uSave">Guardar usuario</button><button id="uClear">Nuevo / limpiar</button></div>
+      <div class="note" id="uMsg" style="margin-top:8px"></div>
+    </div>
+    <div class="box"><h2>Usuarios</h2><div style="overflow-x:auto" id="uList" class="note">Cargando…</div></div>
+    <div class="box"><h2>Registro de accesos</h2><div style="overflow-x:auto" id="uLog" class="note">Cargando…</div></div>
   </section>
 
   <section id="t-metodo" class="hidden">
@@ -353,6 +377,11 @@ function savePub(){
   lsSet(LSPUB,keep);toast("Configuración guardada");
 }
 async function loadHist(){
+  if(PORTAL){const log=$("histList");
+    try{const idx=await api("emisiones");
+      log.innerHTML=idx.length?`<table class="grid"><thead><tr><th>Emisión</th><th>Período</th><th>Ciudades</th><th>Emitió</th></tr></thead><tbody>`+
+        idx.slice(0,15).map(x=>`<tr><td>${longDate(x.fecha)} ${x.hora}</td><td>${dayLabel(x.desde,false)} a ${dayLabel(x.hasta,false)}</td><td>${x.n}</td><td>${esc(x.por||"")}</td></tr>`).join("")+"</tbody></table>":"Aún no hay emisiones publicadas.";
+    }catch(e){log.textContent="Error: "+e.message}return}
   const c=pubCfg();const log=$("histList");
   if(!c.pass){log.textContent="Falta la clave de visualización.";return}
   log.textContent="Leyendo…";
@@ -371,7 +400,7 @@ async function emitir(){
   if(!DATES.length){toast("Primero descargue el pronóstico");return}
   const A=activeSites();if(!A.length){toast("No hay ciudades seleccionadas");return}
   const c=pubCfg();
-  if(!c.pass||!c.token){setTab("pub");toast("Complete la clave de visualización y el token");return}
+  if(!PORTAL&&(!c.pass||!c.token)){setTab("pub");toast("Complete la clave de visualización y el token");return}
   const btn=$("btnEmit");btn.disabled=true;btn.innerHTML='<span class="spin"></span>Emitiendo…';
   const log=$("pubLog");
   try{
@@ -380,6 +409,11 @@ async function emitir(){
     const cells={};A.forEach(s=>{cells[s.id]={};DATES.forEach(d=>{const x=CELLS[s.id][d];cells[s.id][d]=Object.fromEntries(keep.map(k=>[k,x[k]]))})});
     const snap={v:1,id,emitido:now.toISOString(),por:c.name,emision:{fecha:$("fEmiDate").value,hora:$("fEmiTime").value||"20:00"},
       pdf:clone(S.pdf),thr:clone(S.thr),dates:DATES.slice(),sites:clone(A),cells};
+    if(PORTAL){
+      const r=await api("emisiones",{method:"POST",body:snap});
+      log.innerHTML=`<b style="color:#3ccf7f">Emisión publicada</b> (${esc(r.id)}): ${A.length} ciudades, ${dayLabel(DATES[0],false)} a ${dayLabel(DATES[DATES.length-1],false)}.`;
+      toast("Pronóstico emitido");loadHist();return;
+    }
     // índice: confirma que la clave coincide antes de escribir
     let idx=[];const envIdx=await ghRead(c,"indice.json",c.token);
     if(envIdx){try{idx=await decryptJSON(envIdx,c.pass)}catch(e){throw new Error("La clave de visualización no coincide con la de las emisiones ya publicadas. No se publicó nada.")}}
@@ -394,11 +428,58 @@ async function emitir(){
   finally{btn.disabled=false;btn.textContent="Emitir pronóstico"}
 }
 
+/* ---------- usuarios (solo administrador del portal) ---------- */
+let USERS=[], U_SEL=new Set();
+function uCities(){
+  $("uCities").innerHTML=SITES_DEFAULT.map(s=>`<span class="chip${U_SEL.has(s.id)?" on":""}" data-s="${s.id}">${esc(s.nombre)}</span>`).join("");
+  $("uCities").querySelectorAll(".chip").forEach(el=>el.onclick=()=>{const id=el.dataset.s;U_SEL.has(id)?U_SEL.delete(id):U_SEL.add(id);uCities()});
+}
+function uFill(u){
+  $("uU").value=u?u.usuario:"";$("uU").disabled=!!u;$("uN").value=u?u.nombre||"":"";$("uR").value=u?u.rol:"cliente";
+  $("uC").value="";$("uC").placeholder=u?"dejar en blanco para mantener la clave":"mínimo 6 caracteres";$("uA").checked=u?u.activo!==false:true;
+  U_SEL=new Set(u?u.ciudades||[]:[]);uCities();$("uMsg").textContent="";
+}
+const nomCiudad=id=>{const s=SITES_DEFAULT.find(x=>x.id===id);return s?s.nombre:id};
+async function renderUsers(){
+  if(!PORTAL||PORTAL.rol!=="admin")return;
+  if(!$("uCities").innerHTML)uFill(null);
+  try{
+    USERS=await api("usuarios");
+    $("uList").innerHTML=USERS.length?`<table class="grid utbl"><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th>Ciudades</th><th>Estado</th><th>Último ingreso</th><th></th></tr></thead><tbody>`+
+      USERS.map(u=>`<tr><td><b>${esc(u.usuario)}</b></td><td class="l">${esc(u.nombre||"")}</td><td>${u.rol==="editor"?"Editor":"Cliente"}</td>
+        <td class="l">${u.ciudades&&u.ciudades.length?u.ciudades.map(nomCiudad).map(esc).join(", "):"Todas"}</td>
+        <td><span class="pill ${u.activo?"on":"off"}">${u.activo?"Activo":"Inactivo"}</span></td>
+        <td>${u.ultimo?new Date(u.ultimo).toLocaleString("es-CL",{timeZone:TZ.CL,dateStyle:"short",timeStyle:"short"}):"—"}</td>
+        <td style="white-space:nowrap"><button class="mini" data-ed="${esc(u.usuario)}">Editar</button> <button class="mini" data-del="${esc(u.usuario)}">Eliminar</button></td></tr>`).join("")+"</tbody></table>"
+      :"Todavía no hay usuarios. Cree el primero arriba.";
+    $("uList").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>{uFill(USERS.find(x=>x.usuario===b.dataset.ed));$("t-usr").scrollIntoView({behavior:"smooth"})});
+    $("uList").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>confirmar(`¿Eliminar el usuario ${b.dataset.del}? Perderá el acceso de inmediato.`,async()=>{
+      try{await api("usuarios/"+encodeURIComponent(b.dataset.del),{method:"DELETE"});toast("Usuario eliminado");renderUsers()}catch(e){toast(e.message)}}));
+    const log=await api("accesos");
+    const EV={ingreso:"Ingreso",fallo:"Clave incorrecta",emision:"Emisión",usuario_creado:"Usuario creado",usuario_editado:"Usuario editado",usuario_eliminado:"Usuario eliminado"};
+    $("uLog").innerHTML=log.length?`<table class="grid"><thead><tr><th>Fecha y hora (Chile)</th><th>Evento</th><th>Usuario</th><th>Detalle</th></tr></thead><tbody>`+
+      log.slice(0,80).map(x=>`<tr><td>${new Date(x.t).toLocaleString("es-CL",{timeZone:TZ.CL,dateStyle:"short",timeStyle:"medium"})}</td><td>${EV[x.ev]||esc(x.ev)}</td><td>${esc(x.usuario||"")}</td><td class="l">${esc(x.sobre||x.id||x.ip||"")}</td></tr>`).join("")+"</tbody></table>":"Sin registros.";
+  }catch(e){$("uList").textContent="Error: "+e.message}
+}
+function confirmar(msg,ok){
+  $("modalHost").innerHTML=`<div class="mbg" id="qbg"><div class="modal"><h3>Confirmar</h3><p>${esc(msg)}</p><div class="btns"><button id="qN">Cancelar</button><button id="qS" class="pri">Sí, continuar</button></div></div></div>`;
+  const c=()=>$("modalHost").innerHTML="";$("qN").onclick=c;$("qS").onclick=()=>{c();ok()};
+}
+async function saveUser(){
+  const b={usuario:$("uU").value.trim(),nombre:$("uN").value.trim(),rol:$("uR").value,activo:$("uA").checked,ciudades:[...U_SEL]};
+  if($("uC").value)b.clave=$("uC").value;
+  try{await api("usuarios",{method:"POST",body:b});
+    $("uMsg").innerHTML=`<b style="color:#3ccf7f">Usuario ${esc(b.usuario)} guardado.</b>`+(b.clave?` Entréguele su número de usuario y la clave <b>${esc(b.clave)}</b>; esta clave no se vuelve a mostrar.`:"");
+    $("uU").disabled=true;$("uC").value="";renderUsers();
+  }catch(e){$("uMsg").innerHTML=`<b style="color:#ff8a7a">${esc(e.message)}</b>`}
+}
+function genClave(){const a="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789",r=crypto.getRandomValues(new Uint8Array(10));return Array.from(r,x=>a[x%a.length]).join("")}
+
 /* ---------- inicio ---------- */
 function setTab(t){
   document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
-  ["ciudades","plan","detalle","config","pub","metodo"].forEach(x=>$("t-"+x).classList.toggle("hidden",x!==t));
-  if(t==="detalle")renderDetail();if(t==="config")renderConfig();if(t==="pub")renderPub();
+  ["ciudades","plan","detalle","config","pub","usr","metodo"].forEach(x=>$("t-"+x).classList.toggle("hidden",x!==t));
+  if(t==="detalle")renderDetail();if(t==="config")renderConfig();if(t==="pub"){renderPub();if(PORTAL)loadHist()}if(t==="usr")renderUsers();
 }
 function modoDemo(){
   // Vista de demostración: mismo pronóstico en vivo, sin edición ni emisión (riesgo/editor.html#demo)
@@ -411,8 +492,17 @@ function modoDemo(){
   document.querySelector(".nav.rnav").classList.add("hidden");
   const n=document.querySelector(".scope .in > p.note");if(n)n.textContent="Vista de demostración: valores del modelo sin revisión del pronosticador.";
 }
-function init(){
-  if(location.hash==="#demo")modoDemo();
+async function init(){
+  const modo=await detectarPortal();
+  if(modo==="fuera")return;
+  if(modo==="portal"){
+    document.querySelector(".nav.rnav").classList.add("hidden");
+    $("ubar").classList.remove("hidden");barraUsuario($("ubar"),'<a href="./">Ver como cliente</a>');
+    $("pubPortal").classList.remove("hidden");$("pubGit").classList.add("hidden");
+    if(PORTAL.rol==="admin"){document.querySelector('#tabs [data-t="usr"]').classList.remove("hidden");
+      $("uSave").onclick=saveUser;$("uClear").onclick=()=>uFill(null);$("uGen").onclick=()=>{$("uC").value=genClave()}}
+    if(PORTAL.nombre&&!S.pdf.porNombre)$("cfgName").value=PORTAL.nombre;
+  }else if(location.hash==="#demo")modoDemo();
   restore();tick();setInterval(tick,30000);
   const today=todayCL();$("fEmiDate").value=today;
   if(S.range.mode==="custom"&&S.range.b>=addDays(today,1)&&S.range.b<=addDays(today,15)){$("fStart").value=S.range.a<addDays(today,1)?addDays(today,1):S.range.a;$("fEnd").value=S.range.b}

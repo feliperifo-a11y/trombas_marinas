@@ -26,7 +26,7 @@
 
 <div class="rz">
   <!-- Ingreso -->
-  <section id="login" class="box login">
+  <section id="login" class="box login hidden">
     <img src="apoyomet.png" alt="ApoyoMet – Asesorías Marítimas y Portuarias" class="loginLogo">
     <h2>Acceso</h2>
     <p class="note">Ingrese la clave de visualización entregada por su proveedor del pronóstico.</p>
@@ -45,6 +45,7 @@
     <div class="leyMapa"><span><i style="background:#1e9e57"></i>Bajo</span><span><i style="background:#e8b400"></i>Moderado</span><span><i style="background:#d33a2c"></i>Alto</span><span style="color:var(--muted)">riesgo máximo del período</span></div>
   </section>
   <div class="col rz">
+    <div class="ubar hidden" id="ubar"></div>
     <div class="bar">
       <label>Emisión<select id="fEmi"></select></label>
       <div class="acts">
@@ -158,14 +159,34 @@ document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>setTab(b.data
 $("fLogin").onsubmit=async ev=>{ev.preventDefault();const p=$("lPass").value;
   if(await login(p)){try{(($("lRemember").checked)?localStorage:sessionStorage).setItem(LSV+"_k",p)}catch(e){}}};
 $("fEmi").onchange=async()=>{
-  const id=$("fEmi").value;try{const env=await ghRead(cfg,`historial/${id}.json`);if(!env)throw new Error("emisión no encontrada");show(await decryptJSON(env,PASS))}
+  const id=$("fEmi").value;
+  if(PORTAL){try{show(await api("emisiones/"+encodeURIComponent(id)))}catch(e){toast("No se pudo abrir la emisión: "+e.message)}return}
+  try{const env=await ghRead(cfg,`historial/${id}.json`);if(!env)throw new Error("emisión no encontrada");show(await decryptJSON(env,PASS))}
   catch(e){toast("No se pudo abrir la emisión: "+e.message)}};
 $("btnPdf").onclick=()=>makePdf().catch(e=>{console.error(e);toast("Error al generar PDF: "+e.message)});
-$("btnXls").onclick=makeXls;$("btnDocx").onclick=()=>makeDocx().catch(e=>{console.error(e);toast("Error al generar Word: "+e.message)});$("btnOut").onclick=logout;
+$("btnXls").onclick=makeXls;$("btnDocx").onclick=()=>makeDocx().catch(e=>{console.error(e);toast("Error al generar Word: "+e.message)});$("btnOut").onclick=()=>PORTAL?salirPortal():logout();
 $("selAll").onclick=()=>{S.sites.forEach(s=>S.sel[s.id]=true);savePrefs();renderScope();renderAll()};
 $("selNone").onclick=()=>{S.sites.forEach(s=>S.sel[s.id]=false);savePrefs();renderScope();renderAll()};
 tick();setInterval(tick,30000);
-(async()=>{let k=null;try{k=sessionStorage.getItem(LSV+"_k")||localStorage.getItem(LSV+"_k")}catch(e){}
+(async()=>{
+  const modo=await detectarPortal();
+  if(modo==="fuera")return;
+  if(modo==="portal"){
+    // Portal con usuario y clave: la sesión ya está verificada por el servidor
+    $("login").classList.add("hidden");$("btnOut").classList.add("hidden");
+    $("ubar").classList.remove("hidden");
+    barraUsuario($("ubar"),PORTAL.rol!=="cliente"?'<a href="editor.html">Ir al editor</a>':"");
+    try{
+      const lst=await api("emisiones");IDX=lst.slice().reverse();
+      show(await api("emisiones/actual"));
+    }catch(e){
+      $("app").classList.add("hidden");$("login").classList.remove("hidden");
+      $("login").innerHTML=`<h2>Pronóstico de riesgo</h2><p class="note">${esc(e.message)}</p>`;
+    }
+    return;
+  }
+  $("login").classList.remove("hidden");
+  let k=null;try{k=sessionStorage.getItem(LSV+"_k")||localStorage.getItem(LSV+"_k")}catch(e){}
   if(k)await login(k,true);})();
 </script>
 </body>
