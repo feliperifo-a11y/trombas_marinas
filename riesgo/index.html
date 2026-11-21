@@ -24,6 +24,8 @@
   <div class="reloj"><div class="h" id="hora">–</div><div class="s" id="emiTop">Acceso con clave</div></div>
 </div>
 
+<!-- Barra del usuario del portal: siempre visible bajo la cabecera, aunque falle la carga del pronóstico -->
+<div class="ubar rz hidden" id="ubar"></div>
 <div class="rz">
   <!-- Ingreso -->
   <section id="login" class="box login hidden">
@@ -45,7 +47,6 @@
     <div class="leyMapa"><span><i style="background:#1e9e57"></i>Bajo</span><span><i style="background:#e8b400"></i>Moderado</span><span><i style="background:#d33a2c"></i>Alto</span><span style="color:var(--muted)">riesgo máximo del período</span></div>
   </section>
   <div class="col rz">
-    <div class="ubar hidden" id="ubar"></div>
     <div class="bar">
       <label>Emisión<select id="fEmi"></select></label>
       <div class="acts">

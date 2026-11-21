@@ -23,6 +23,8 @@
   <div class="firmaTop"><span class="fl">Pronóstico elaborado por</span><img src="apoyomet.png" alt="ApoyoMet – Asesorías Marítimas y Portuarias"></div>
   <div class="reloj"><div class="h" id="hora">–</div><div class="s">Open-Meteo: ECMWF IFS, GFS e ICON</div></div>
 </div>
+<!-- Barra del usuario del portal: siempre visible bajo la cabecera, aunque falle la carga del pronóstico -->
+<div class="ubar rz hidden" id="ubar"></div>
 <nav class="nav rnav">
   <a href="../"><svg class="ic" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M13 22h37a8 8 0 0 0-2-15.7A13 13 0 0 0 24.5 5 9 9 0 0 0 13 22Z" stroke="#e8f1fb" stroke-width="2.6"/><path d="M23 22h18c-3.5 8-5.6 17-6.4 28h-5.2C28.6 39 26.5 30 23 22Z" fill="#2f8cff"/><path d="M4 56c4-3.5 8-3.5 12 0s8 3.5 12 0M36 56c4-3.5 8-3.5 12 0s8 3.5 12 0" stroke="#22c3ee" stroke-width="3.4"/></svg>Trombas</a>
   <a href="./"><svg class="ic" viewBox="0 0 64 64" fill="none"><rect x="22" y="6" width="20" height="52" rx="7" stroke="#e8f1fb" stroke-width="2.6"/><circle cx="32" cy="18" r="5" fill="#d33a2c"/><circle cx="32" cy="32" r="5" fill="#e8b400"/><circle cx="32" cy="46" r="5" fill="#1e9e57"/></svg>Riesgo (visor)</a>
@@ -35,7 +37,6 @@
     <div class="leyMapa"><span><i style="background:#1e9e57"></i>Bajo</span><span><i style="background:#e8b400"></i>Moderado</span><span><i style="background:#d33a2c"></i>Alto</span><span style="color:var(--muted)">riesgo máximo del período</span></div>
   </section>
   <div class="col rz">
-    <div class="ubar hidden" id="ubar"></div>
   <div class="bar">
     <label>Primer día<input type="date" id="fStart"></label>
     <label>Último día<input type="date" id="fEnd"></label>

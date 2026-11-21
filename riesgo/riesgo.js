@@ -588,7 +588,7 @@ async function api(path,opts){
   if(!r.ok)throw new Error(j.error||("HTTP "+r.status));
   return j;
 }
-async function salirPortal(){try{await api("logout",{method:"POST"})}catch(e){}location.replace("login.html")}
+async function salirPortal(){const b=$("uSalir");if(b){b.disabled=true;b.textContent="Cerrando…"}try{await api("logout",{method:"POST"})}catch(e){}location.replace("login.html")}
 function cambiarClave(){
   const host=document.getElementById("modalHost")||document.body.appendChild(Object.assign(document.createElement("div"),{id:"modalHost"}));
   host.innerHTML=`<div class="mbg" id="cbg"><div class="modal"><h3>Cambiar mi clave</h3>
@@ -607,7 +607,7 @@ function cambiarClave(){
 }
 function barraUsuario(host,extra){
   host.innerHTML=`<span class="usr">👤 <b>${esc(PORTAL.usuario)}</b>${PORTAL.nombre?" · "+esc(PORTAL.nombre):""}</span>
-    ${extra||""}${PORTAL.rol!=="admin"?'<button class="mini" id="uClave">Cambiar clave</button>':""}<button class="mini" id="uSalir">Salir</button>`;
+    ${extra||""}${PORTAL.rol!=="admin"?'<button class="mini" id="uClave">Cambiar clave</button>':""}<button class="mini salir" id="uSalir" title="Cerrar la sesión en este equipo">Cerrar sesión ⎋</button>`;
   if($("uClave"))$("uClave").onclick=cambiarClave;
   $("uSalir").onclick=salirPortal;
 }

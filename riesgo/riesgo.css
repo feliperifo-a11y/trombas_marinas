@@ -144,6 +144,8 @@ table.grid input.w{width:170px}table.grid input.ww{width:170px}
 
 /* ===== Portal: barra de usuario y administración ===== */
 .ubar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;font-size:12.5px;color:#c9d9ea;margin:0 0 10px}
+.ubar.rz{padding-bottom:0}
+.ubar button.salir{border-color:#8a4a44;color:#ffb3aa;font-weight:600}.ubar button.salir:hover{background:#3a1512;border-color:#e5534b;color:#fff}
 .ubar .usr{margin-right:auto}
 .ubar a{color:#7fc4ff}
 .utbl td .chip{padding:2px 8px;font-size:11px;cursor:default}
