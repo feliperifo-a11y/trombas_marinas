@@ -11,15 +11,15 @@ const PAIS = {CL:"Chile", CO:"Colombia", PE:"Perú"};
 const SITES_DEFAULT = [
  {id:"arica",        nombre:"ARICA",             ref:"Arica y Parinacota", pais:"CL", lat:-18.47, lon:-70.31, iso:true},
  {id:"iquique",      nombre:"IQUIQUE",           ref:"Tarapacá",           pais:"CL", lat:-20.23, lon:-70.14, iso:true},
- {id:"calama",       nombre:"CALAMA",            ref:"Antofagasta",        pais:"CL", lat:-22.45, lon:-68.92, iso:true, rA:70, rR:90},
+ {id:"calama",       nombre:"CALAMA",            ref:"Antofagasta",        pais:"CL", lat:-22.45, lon:-68.92, iso:true, u:{gust:{A:70,R:90}}},
  {id:"antofagasta",  nombre:"ANTOFAGASTA",       ref:"Antofagasta",        pais:"CL", lat:-23.65, lon:-70.40, iso:true},
  {id:"copiapo",      nombre:"COPIAPÓ",           ref:"Atacama",            pais:"CL", lat:-27.37, lon:-70.34, iso:true},
  {id:"laserena",     nombre:"LA SERENA",         ref:"Coquimbo",           pais:"CL", lat:-29.91, lon:-71.26, iso:true},
  {id:"santiago",     nombre:"SANTIAGO",          ref:"Metropolitana",      pais:"CL", lat:-33.52, lon:-70.60, iso:true},
  {id:"talcahuano",   nombre:"TALCAHUANO",        ref:"Biobío",             pais:"CL", lat:-36.79, lon:-73.07, iso:true},
  {id:"losangeles",   nombre:"LOS ÁNGELES",       ref:"Biobío",             pais:"CL", lat:-37.47, lon:-72.35, iso:true},
- {id:"barranquilla", nombre:"BARRANQUILLA",      ref:"Atlántico",          pais:"CO", lat:11.02,  lon:-74.83, iso:false},
- {id:"cartagena",    nombre:"CARTAGENA",         ref:"Bolívar",            pais:"CO", lat:10.42,  lon:-75.54, iso:false},
+ {id:"barranquilla", nombre:"BARRANQUILLA",      ref:"Atlántico",          pais:"CO", lat:11.02,  lon:-74.83, iso:false, u:{tmax:{A:35,R:38}}},
+ {id:"cartagena",    nombre:"CARTAGENA",         ref:"Bolívar",            pais:"CO", lat:10.42,  lon:-75.54, iso:false, u:{tmax:{A:35,R:38}}},
  {id:"manizales",    nombre:"MANIZALES",         ref:"Caldas",             pais:"CO", lat:5.07,   lon:-75.49, iso:false},
  {id:"bogota",       nombre:"BOGOTÁ",            ref:"Bogotá D.C.",        pais:"CO", lat:4.62,   lon:-74.09, iso:false},
  {id:"cali",         nombre:"CALI",              ref:"Valle del Cauca",    pais:"CO", lat:3.41,   lon:-76.55, iso:false},
@@ -31,9 +31,9 @@ const SITES_DEFAULT = [
  {id:"lima_smig",    nombre:"LIMA (SAN MIGUEL)", ref:"Lima",               pais:"PE", lat:-12.08, lon:-77.09, iso:false},
  {id:"callao_cc",    nombre:"CALLAO (CANTA CALLAO)", ref:"Callao",         pais:"PE", lat:-12.00, lon:-77.11, iso:false},
  {id:"arequipa",     nombre:"AREQUIPA",          ref:"Arequipa",           pais:"PE", lat:-16.39, lon:-71.55, iso:false},
- {id:"piura",        nombre:"PIURA",             ref:"Piura",              pais:"PE", lat:-5.18,  lon:-80.62, iso:false},
+ {id:"piura",        nombre:"PIURA",             ref:"Piura",              pais:"PE", lat:-5.18,  lon:-80.62, iso:false, u:{tmax:{A:35,R:38}}},
  {id:"huancayo",     nombre:"HUANCAYO",          ref:"Junín",              pais:"PE", lat:-12.06, lon:-75.21, iso:false},
- {id:"chiclayo",     nombre:"CHICLAYO",          ref:"Lambayeque",         pais:"PE", lat:-6.78,  lon:-79.84, iso:false},
+ {id:"chiclayo",     nombre:"CHICLAYO",          ref:"Lambayeque",         pais:"PE", lat:-6.78,  lon:-79.84, iso:false, u:{tmax:{A:35,R:38}}},
  {id:"huanuco",      nombre:"HUÁNUCO",           ref:"Huánuco",            pais:"PE", lat:-9.94,  lon:-76.25, iso:false},
  {id:"cajamarca",    nombre:"CAJAMARCA",         ref:"Cajamarca",          pais:"PE", lat:-7.15,  lon:-78.51, iso:false}
 ];
@@ -104,16 +104,30 @@ function txtP(c){if(c.phi==null)return"–";if(c.phi<0.1)return"0 mm";return (c.
 function txtIso(c){if(c.isoLo==null)return"";return c.isoLo===c.isoHi?`ISO 0°: ${c.isoLo} m`:`ISO 0°: ${c.isoLo}-${c.isoHi} m`}
 
 /* ===================== Riesgo ===================== */
-function gustThr(s){return[s.rA!=null&&s.rA!==""?+s.rA:S.thr.gust.A, s.rR!=null&&s.rR!==""?+s.rR:S.thr.gust.R]}
+/* Umbral de una variable para una ubicación: el propio de la ciudad si existe; si no, el general.
+   Compatibilidad: emisiones antiguas guardaban solo la ráfaga propia en rA/rR. */
+const VARS_U=["gust","wind","pp","tmax","tmin"];
+const okv=v=>v!=null&&v!==""&&!isNaN(+v);
+function umbral(s,k,thr){
+  const g=(thr||S.thr)[k];let o=s&&s.u&&s.u[k];
+  if(!o&&k==="gust"&&s&&okv(s.rA))o={A:s.rA,R:s.rR};
+  const A=o&&okv(o.A)?+o.A:g.A, R=o&&okv(o.R)?+o.R:g.R;
+  return {A,R,propio:!!(o&&(okv(o.A)||okv(o.R)))};
+}
+function umbralesPropios(s,thr){return VARS_U.filter(k=>umbral(s,k,thr).propio)}
+function textoUmbralesPropios(s,thr){
+  return umbralesPropios(s,thr).map(k=>{const u=umbral(s,k,thr),[l,un,op]=THR_LABEL[k];return `${l.split(" (")[0].toLowerCase()} ${op} ${u.A}/${u.R} ${un}`}).join(", ");
+}
+function gustThr(s){const u=umbral(s,"gust");return[u.A,u.R]}
 function riskOf(c,s){
   const T=S.thr, why=[]; let lv=0;
   const up=(l,txt)=>{if(l>0)why.push({l,txt});if(l>lv)lv=l};
-  const [gA,gR]=gustThr(s);
-  if(T.gust.on&&c.whi!=null) up(c.whi>=gR?2:c.whi>=gA?1:0,`Ráfagas ${c.whi} km/h`);
-  if(T.wind.on&&c.wlo!=null) up(c.wlo>=T.wind.R?2:c.wlo>=T.wind.A?1:0,`Viento ${c.wlo} km/h`);
-  if(T.pp.on&&c.pmed!=null) up(c.pmed>=T.pp.R?2:c.pmed>=T.pp.A?1:0,`Lluvia ${fmtMM(c.pmed)} mm`);
-  if(T.tmax.on&&c.tmax!=null) up(c.tmax>=T.tmax.R?2:c.tmax>=T.tmax.A?1:0,`Calor ${c.tmax} °C`);
-  if(T.tmin.on&&c.tmin!=null) up(c.tmin<=T.tmin.R?2:c.tmin<=T.tmin.A?1:0,`Frío ${c.tmin} °C`);
+  const G=umbral(s,"gust"),W=umbral(s,"wind"),P=umbral(s,"pp"),X=umbral(s,"tmax"),N=umbral(s,"tmin");
+  if(T.gust.on&&c.whi!=null) up(c.whi>=G.R?2:c.whi>=G.A?1:0,`Ráfagas ${c.whi} km/h`);
+  if(T.wind.on&&c.wlo!=null) up(c.wlo>=W.R?2:c.wlo>=W.A?1:0,`Viento ${c.wlo} km/h`);
+  if(T.pp.on&&c.pmed!=null) up(c.pmed>=P.R?2:c.pmed>=P.A?1:0,`Lluvia ${fmtMM(c.pmed)} mm`);
+  if(T.tmax.on&&c.tmax!=null) up(c.tmax>=X.R?2:c.tmax>=X.A?1:0,`Calor ${c.tmax} °C`);
+  if(T.tmin.on&&c.tmin!=null) up(c.tmin<=N.R?2:c.tmin<=N.A?1:0,`Frío ${c.tmin} °C`);
   if(T.storm.on&&c.code>=95) up(1,"Tormenta eléctrica");
   why.sort((a,b)=>b.l-a.l);
   return {lv,why:why.map(w=>w.txt)};
@@ -332,7 +346,7 @@ function critText(){
   if(T.tmax.on)parts.push(`Tmáx >= ${T.tmax.A} / ${T.tmax.R} °C`);
   if(T.tmin.on)parts.push(`Tmín <= ${T.tmin.A} / ${T.tmin.R} °C`);
   if(T.storm.on)parts.push("tormenta eléctrica = moderado");
-  const ex=activeSites().filter(s=>s.rA!=null&&s.rA!=="").map(s=>`${s.nombre}: ráfaga ${s.rA}/${s.rR} km/h`);
+  const ex=activeSites().filter(s=>umbralesPropios(s).length).map(s=>`${s.nombre}: ${textoUmbralesPropios(s).replace(/≥/g,">=").replace(/≤/g,"<=")}`);
   return parts.join(" · ")+(ex.length?". Umbrales propios: "+ex.join("; ")+".":".")+
     " Temperatura y viento: mediana de los modelos. Precipitación: rango mínimo-máximo entre modelos. Viento: medio máximo - ráfaga máxima. ISO 0°: altura mínima-máxima del día de la isoterma 0 °C (GFS).";
 }

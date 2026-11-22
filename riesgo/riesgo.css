@@ -151,3 +151,19 @@ table.grid input.w{width:170px}table.grid input.ww{width:170px}
 .utbl td .chip{padding:2px 8px;font-size:11px;cursor:default}
 .pill{display:inline-block;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700}
 .pill.on{background:#1e9e57;color:#fff}.pill.off{background:#5b6673;color:#fff}
+
+/* ===== Usuarios en tarjetas ===== */
+.ucards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.ucard{background:#0b1d31;border:1px solid var(--line);border-left:5px solid #1e9e57;border-radius:12px;padding:12px}
+.ucard.off{border-left-color:#5b6673;opacity:.8}
+.ucard .uh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ucard .un{font-size:20px;font-weight:800;letter-spacing:.5px;margin-right:auto}
+.ucard .ur{font-size:11px;font-weight:700;border-radius:10px;padding:1px 8px;background:#1d4673;color:#fff}
+.ucard .ur.editor{background:#7b5cff}
+.ucard .unom{font-size:14px;font-weight:600;margin:6px 0 8px;color:#e8f1fb}
+.ucard .uci{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.ucard .uci .chip{padding:2px 8px;font-size:11px;cursor:default}
+.ucard .uult{font-size:11.5px;color:var(--muted);margin-bottom:10px}
+.ucard .ubtn{display:flex;gap:6px;flex-wrap:wrap}
+.ucard .ubtn button{flex:1;min-width:80px;padding:8px 6px}
+.ucard .ubtn button.del{border-color:#8e1f15;color:#ff8a7a}

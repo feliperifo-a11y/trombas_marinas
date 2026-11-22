@@ -285,12 +285,15 @@ async function actualizarObs(env, horas) {
 function nivelObs(ob, s, thr) {
   const why = []; let lv = 0;
   const up = (l, t) => { if (l > 0) why.push(t); if (l > lv) lv = l; };
-  const gA = s.rA != null && s.rA !== "" ? +s.rA : thr.gust.A, gR = s.rR != null && s.rR !== "" ? +s.rR : thr.gust.R;
+  const ok = v => v != null && v !== "" && !isNaN(+v);
+  const um = k => { let o = s.u && s.u[k]; if (!o && k === "gust" && ok(s.rA)) o = { A: s.rA, R: s.rR };
+    return { A: o && ok(o.A) ? +o.A : thr[k].A, R: o && ok(o.R) ? +o.R : thr[k].R }; };
+  const G = um("gust"), W = um("wind"), X = um("tmax"), N = um("tmin");
   const g = Math.max(ob.gmax || 0, ob.wmax || 0);
-  if (thr.gust.on && (ob.gmax || ob.wmax)) up(g >= gR ? 2 : g >= gA ? 1 : 0, `Ráfagas ${g} km/h`);
-  if (thr.wind.on && ob.wmax != null) up(ob.wmax >= thr.wind.R ? 2 : ob.wmax >= thr.wind.A ? 1 : 0, `Viento ${ob.wmax} km/h`);
-  if (thr.tmax.on && ob.tmax != null) up(ob.tmax >= thr.tmax.R ? 2 : ob.tmax >= thr.tmax.A ? 1 : 0, `Calor ${ob.tmax} °C`);
-  if (thr.tmin.on && ob.tmin != null) up(ob.tmin <= thr.tmin.R ? 2 : ob.tmin <= thr.tmin.A ? 1 : 0, `Frío ${ob.tmin} °C`);
+  if (thr.gust.on && (ob.gmax || ob.wmax)) up(g >= G.R ? 2 : g >= G.A ? 1 : 0, `Ráfagas ${g} km/h`);
+  if (thr.wind.on && ob.wmax != null) up(ob.wmax >= W.R ? 2 : ob.wmax >= W.A ? 1 : 0, `Viento ${ob.wmax} km/h`);
+  if (thr.tmax.on && ob.tmax != null) up(ob.tmax >= X.R ? 2 : ob.tmax >= X.A ? 1 : 0, `Calor ${ob.tmax} °C`);
+  if (thr.tmin.on && ob.tmin != null) up(ob.tmin <= N.R ? 2 : ob.tmin <= N.A ? 1 : 0, `Frío ${ob.tmin} °C`);
   if (thr.storm.on && ob.tormenta) up(1, "Tormenta eléctrica");
   return { lv, why };
 }
