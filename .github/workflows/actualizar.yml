@@ -11,6 +11,7 @@ on:
       - "riesgo/*.html"   # pronóstico de riesgo por ciudad (las emisiones en riesgo/data no se publican: se leen cifradas desde el repositorio)
       - "riesgo/*.js"
       - "riesgo/*.css"
+      - "riesgo/*.png"
       - "scripts/**"
       - "data/geo/**"
       - "data/trombas_avisos_historicos.json"
@@ -105,7 +106,7 @@ jobs:
           mkdir -p _site/data/geo
           cp index.html _site/
           cp -r assets _site/
-          mkdir -p _site/riesgo && cp riesgo/*.html riesgo/*.js riesgo/*.css _site/riesgo/
+          mkdir -p _site/riesgo && cp riesgo/*.html riesgo/*.js riesgo/*.css riesgo/*.png _site/riesgo/
           cp data/geo/metarea.json _site/data/geo/
           for f in trombas.json trombas_prob.json trombas_ecmwf.json trombas_prob_ecmwf.json trombas_avisos.json trombas_monan.json monan_campos.json monan_indices.json trombas_eventos.json; do [ -f data/$f ] && cp data/$f _site/data/ || true; done
 
