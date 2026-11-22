@@ -50,7 +50,8 @@ const THR_LABEL = {
 const RISK_TXT = ["Bajo","Moderado","Alto"];
 const RISK_RGB = [[30,158,87],[232,180,0],[211,58,44]];
 const RISK_HEX = ["#1e9e57","#e8b400","#d33a2c"];
-const PDF_TITLE_DEF = "PRONÓSTICO DE RIESGO METEOROLÓGICO";
+const PDF_TITLE_DEF = "PRONÓSTICO DE RIESGO METEOROLÓGICO MALL PLAZA";
+const PDF_TITLE_OLD = "PRONÓSTICO DE RIESGO METEOROLÓGICO";
 const FIRMA = "ApoyoMet – Asesorías Marítimas y Portuarias";
 const LOGO_URL = "apoyomet.png", LOGO_RATIO = 900/366;   // firma en todas las salidas
 
@@ -175,7 +176,7 @@ function activeSites(){return S.sites.filter(s=>S.sel[s.id]!==false&&CELLS[s.id]
 function groups(){
   const A=activeSites(), cl=A.filter(s=>s.pais==="CL"), ot=A.filter(s=>s.pais!=="CL");
   const t=["CO","PE"].filter(c=>ot.some(s=>s.pais===c)).map(c=>PAIS[c].toUpperCase()).join(" – ");
-  return[{t:"CHILE",sites:cl},{t:t,sites:ot}];
+  return[{t:"MALL PLAZA CHILE",sites:cl},{t:"MALL PLAZA "+t,sites:ot}];
 }
 function renderSiteChips(host,onChange){
   let h="";
@@ -221,7 +222,7 @@ function renderPlan(){
   let h="";
   groups().forEach(g=>{
     if(!g.sites.length)return;
-    h+=`<div class="sect">${g.t}</div><div class="tw"><table class="plan"><thead><tr><th>UBICACIÓN</th>${DATES.map(d=>`<th>${dayLabel(d,true)}</th>`).join("")}</tr></thead><tbody>`;
+    h+=`<div class="sect">${g.t}</div><div class="tw"><table class="plan"><thead><tr><th>MALL PLAZA</th>${DATES.map(d=>`<th>${dayLabel(d,true)}</th>`).join("")}</tr></thead><tbody>`;
     g.sites.forEach(s=>{
       h+=`<tr><td class="site">${esc(s.nombre)}<span class="ref">${esc(s.ref)}</span></td>`;
       DATES.forEach(d=>{
@@ -405,7 +406,7 @@ async function makePdf(){
     const hasIso=g.sites.some(s=>s.iso);
     doc.autoTable({
       startY:y+18, margin:{left:M,right:M,top:44,bottom:28},
-      head:[["UBICACIÓN",...DATES.map(d=>dayLabel(d,true))]], body:g.sites.map(s=>[s.nombre,...DATES.map(()=>"")]),
+      head:[["MALL PLAZA",...DATES.map(d=>dayLabel(d,true))]], body:g.sites.map(s=>[s.nombre,...DATES.map(()=>"")]),
       theme:"grid", rowPageBreak:"avoid",
       styles:{fontSize:8,cellPadding:2,lineColor:[200,208,218],lineWidth:.5,valign:"middle"},
       headStyles:{fillColor:head,textColor:255,halign:"center",fontStyle:"bold"},
@@ -451,7 +452,7 @@ function makeXls(){
   if(!window.XLSX){toast("No se cargó la librería Excel");return}
   const rows=[];
   activeSites().forEach(s=>DATES.forEach(d=>{const c=CELLS[s.id][d];if(!c)return;rows.push({
-    "Ubicación":s.nombre,"Ciudad / región":s.ref,"País":PAIS[s.pais],"Fecha":d,"Día":dayLabel(d,true),
+    "Mall Plaza":s.nombre,"Ciudad / región":s.ref,"País":PAIS[s.pais],"Fecha":d,"Día":dayLabel(d,true),
     "Tmín °C":c.tmin,"Tmáx °C":c.tmax,"Viento medio máx km/h":c.wlo,"Ráfaga máx km/h":c.whi,
     "Precip mín mm":c.plo,"Precip máx mm":c.phi,"Precip mediana mm":c.pmed,"Prob. precip %":c.pprob,
     "ISO 0° mín m":s.iso?c.isoLo:null,"ISO 0° máx m":s.iso?c.isoHi:null,"Código WMO":c.code,
@@ -504,7 +505,7 @@ async function makeDocx(){
       children:[T(g.t,{bold:true,color:"FFFFFF",size:20})]}));
     const head=new TableRow({tableHeader:true,cantSplit:true,children:[
       new TableCell({width:{size:CITYW,type:WidthType.DXA},shading:{type:ShadingType.CLEAR,fill:HEAD,color:"auto"},verticalAlign:VerticalAlign.CENTER,
-        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[T("UBICACIÓN",{bold:true,color:"FFFFFF",size:17})]})]}),
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[T("MALL PLAZA",{bold:true,color:"FFFFFF",size:17})]})]}),
       ...DATES.map(d=>new TableCell({width:{size:DAYW,type:WidthType.DXA},shading:{type:ShadingType.CLEAR,fill:HEAD,color:"auto"},verticalAlign:VerticalAlign.CENTER,
         children:[new Paragraph({alignment:AlignmentType.CENTER,children:[T(dayLabel(d,true),{bold:true,color:"FFFFFF",size:17})]})]}))]});
     const rows=g.sites.map(s=>new TableRow({cantSplit:true,children:[

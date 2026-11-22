@@ -240,7 +240,7 @@ function restore(){const j=lsGet(LS);if(!j)return;
     });
     SITES_DEFAULT.forEach(d=>{if(!S.sites.some(x=>x.id===d.id))S.sites.push(Object.assign(clone(d),{uRev:1,nRev:1}))});
   }
-  if(j.thr)S.thr=Object.assign(clone(THR_DEFAULT),j.thr); if(j.sel)S.sel=j.sel; if(j.pdf)S.pdf=Object.assign(S.pdf,j.pdf);if(!S.pdf.author||S.pdf.author==="CF Felipe Rifo Espósito")S.pdf.author=FIRMA;
+  if(j.thr)S.thr=Object.assign(clone(THR_DEFAULT),j.thr); if(j.sel)S.sel=j.sel; if(j.pdf)S.pdf=Object.assign(S.pdf,j.pdf);if(!S.pdf.title||S.pdf.title===PDF_TITLE_OLD)S.pdf.title=PDF_TITLE_DEF;if(!S.pdf.author||S.pdf.author==="CF Felipe Rifo Espósito")S.pdf.author=FIRMA;
   if(j.edits)S.edits=j.edits; if(j.range)S.range=j.range;}
 function pubCfg(){return Object.assign({repo:ALMACEN_DEF.repo,rama:ALMACEN_DEF.rama,carpeta:ALMACEN_DEF.carpeta,name:"",pass:"",token:"",remember:false},lsGet(LSPUB)||{},PUB_SESSION)}
 let PUB_SESSION={};
