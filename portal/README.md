@@ -39,3 +39,14 @@ Cada cambio en `riesgo/` o `portal/` que llegue a `main` vuelve a desplegar el p
 - Claves con PBKDF2-SHA256 y sal propia por usuario; nunca se guardan en texto.
 - `build.sh` arma `portal/public` con las páginas de `riesgo/` y los recursos de `assets/`.
 - Plan gratuito de Workers y KV: alcanza de sobra para decenas de usuarios y una o dos emisiones diarias.
+
+## Verificación con estaciones METAR
+
+- Cada 3 horas (tarea programada del Worker) se descargan desde aviationweather.gov los METAR de la estación más cercana
+  a cada ciudad (tabla `ESTACIONES` en `worker.js`) y se guarda, por día local, Tmáx, Tmín, viento medio máximo,
+  ráfaga máxima, si llovió y si hubo tormenta.
+- Editor → **Verificación** compara cada día con la última emisión hecha antes de ese día: error y sesgo de Tmáx, Tmín
+  y ráfaga, acierto del semáforo (falsas alarmas y no previstos) y acierto de lluvia sí/no.
+- El administrador puede descargar de inmediato la última semana de observaciones con el botón de esa pestaña.
+- Limitaciones: estaciones ◐ no reportan de noche (Tmín incompleta); los METAR no informan milímetros de lluvia en
+  Chile y Colombia; Copiapó, Iquique, Huancayo y los puntos de Lima tierra adentro quedan lejos de su estación.

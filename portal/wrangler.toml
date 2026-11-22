@@ -11,3 +11,6 @@ run_worker_first = true      # el Worker revisa la sesión antes de entregar cua
 [[kv_namespaces]]
 binding = "RIESGO"
 id = "__KV_ID__"             # lo completa el workflow de despliegue (crea el espacio KV si no existe)
+
+[triggers]
+crons = ["17 */3 * * *"]     # observaciones METAR cada 3 horas para la verificación

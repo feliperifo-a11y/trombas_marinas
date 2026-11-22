@@ -11,6 +11,9 @@ const PUBLICOS = new Set(["/login", "/login.html", "/riesgo.css", "/apoyomet.png
 const COOKIE = "riesgo_sesion";
 
 export default {
+  async scheduled(event, env, ctx) {      // cada 3 horas: observaciones METAR para la verificación
+    ctx.waitUntil(actualizarObs(env, 30));
+  },
   async fetch(req, env) {
     const url = new URL(req.url);
     const p = url.pathname;
@@ -134,6 +137,19 @@ async function api(req, env, url) {
     return json({ ok: true, id });
   }
 
+  /* verificación pronóstico vs. observado (equipo editor) */
+  if (p === "/api/verificacion" && m === "GET") {
+    if (!esEditor) return json({ error: "Solo el equipo editor" }, 403);
+    const dias = Math.min(60, Math.max(1, +(url.searchParams.get("dias") || 14)));
+    return json(await verificacion(env, dias));
+  }
+  if (p === "/api/verificacion/actualizar" && m === "POST") {
+    if (!esAdmin) return json({ error: "Solo el administrador" }, 403);
+    const r = await actualizarObs(env, 168);
+    await registrar(env, { ev: "obs_actualizadas", usuario: ses.usuario, sobre: `${r.metar} METAR, ${r.fechas} días` });
+    return json(r);
+  }
+
   /* administración de usuarios */
   if (p === "/api/usuarios" && m === "GET") {
     if (!esAdmin) return json({ error: "Solo el administrador" }, 403);
@@ -208,4 +224,102 @@ async function login(req, env) {
   await env.RIESGO.put("sess:" + token, JSON.stringify(Object.assign({ creado: new Date().toISOString() }, perfil)), { expirationTtl: SESION_H * 3600 });
   await registrar(env, { ev: "ingreso", usuario, ip: ip(req) });
   return json(perfil, 200, { "Set-Cookie": `${COOKIE}=${token}; Path=/; Max-Age=${SESION_H * 3600}; HttpOnly; Secure; SameSite=Strict` });
+}
+
+
+/* ================= Verificación con estaciones METAR ================= */
+/* Estación con METAR más cercana a cada punto (verificada con aviationweather.gov, nov-2026).
+   ◐ = reporta solo parte del día. */
+const ESTACIONES = {
+  arica:["SCAR","Chacalluta",14], iquique:["SCDA","Diego Aracena",34], calama:["SCCF","El Loa",6],
+  antofagasta:["SCFA","Cerro Moreno",23], copiapo:["SCAT","Desierto de Atacama",45], laserena:["SCSE","La Florida",6],
+  santiago:["SCTB","Tobalaba ◐",9], talcahuano:["SCIE","Carriel Sur",2], losangeles:["SCGE","María Dolores ◐",10],
+  barranquilla:["SKBQ","Ernesto Cortissoz",16], cartagena:["SKCG","Rafael Núñez",4], manizales:["SKMZ","La Nubia ◐",5],
+  bogota:["SKBO","El Dorado",11], cali:["SKCL","Alfonso Bonilla Aragón",24], trujillo:["SPRU","Martínez de Pinillos",7],
+  lima_comas:["SPJC","Jorge Chávez",10], callao_bv:["SPJC","Jorge Chávez",5], lima_surq:["SPJC","Jorge Chávez",15],
+  lima_sjm:["SPJC","Jorge Chávez",20], lima_smig:["SPJC","Jorge Chávez",7], callao_cc:["SPJC","Jorge Chávez",3],
+  arequipa:["SPQU","Rodríguez Ballón",7], piura:["SPUR","Concha Ibérico",3], huancayo:["SPJJ","Jauja ◐",42],
+  chiclayo:["SPHI","Quiñones",2], huanuco:["SPNC","Figueroa Fernandini ◐",8], cajamarca:["SPJR","Revoredo",3]
+};
+const TZ_EST = c => c.startsWith("SC") ? "America/Santiago" : c.startsWith("SK") ? "America/Bogota" : "America/Lima";
+const KT = 1.852;
+function fechaLocal(epochS, tz) { return new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(epochS * 1000)); }
+
+async function actualizarObs(env, horas) {
+  const ids = [...new Set(Object.values(ESTACIONES).map(e => e[0]))];
+  const base = env.METAR_URL || "https://aviationweather.gov/api/data/metar";
+  const r = await fetch(`${base}?ids=${ids.join(",")}&hours=${horas}&format=json`, { headers: { "User-Agent": "riesgo-apoyomet/1.0 (verificacion de pronostico)" } });
+  if (!r.ok) throw new Error("aviationweather.gov respondió " + r.status);
+  const lista = await r.json();
+  const porFecha = {};
+  for (const o of lista) {
+    if (!o || !o.icaoId || !o.obsTime) continue;
+    const f = fechaLocal(o.obsTime, TZ_EST(o.icaoId));
+    ((porFecha[f] = porFecha[f] || {})[o.icaoId] = porFecha[f][o.icaoId] || []).push(o);
+  }
+  let escritas = 0;
+  for (const [f, est] of Object.entries(porFecha)) {
+    const k = "obs:" + f, prev = (await env.RIESGO.get(k, "json")) || {};
+    let cambio = false;
+    for (const [icao, obs] of Object.entries(est)) {
+      const a = prev[icao] || { t: [], tmax: null, tmin: null, wmax: null, gmax: null, lluvia: false, tormenta: false };
+      for (const o of obs) {
+        if (a.t.includes(o.obsTime)) continue;
+        a.t.push(o.obsTime); cambio = true;
+        if (typeof o.temp === "number") { a.tmax = a.tmax == null ? o.temp : Math.max(a.tmax, o.temp); a.tmin = a.tmin == null ? o.temp : Math.min(a.tmin, o.temp); }
+        if (typeof o.wspd === "number") a.wmax = Math.max(a.wmax || 0, Math.round(o.wspd * KT));
+        if (typeof o.wgst === "number") a.gmax = Math.max(a.gmax || 0, Math.round(o.wgst * KT));
+        // tiempo presente: del campo decodificado o del cuerpo del METAR (sin observaciones RMK)
+        const cuerpo = (o.rawOb || "").split(" RMK")[0].split(" ").slice(2).join(" ");
+        const wx = ((o.wxString || "") + " " + cuerpo).split(/\s+/);
+        if (wx.some(g => /^[-+]?(VC)?(SH|TS|FZ)?(RA|DZ|SN|GR|GS|PL)+$/.test(g))) a.lluvia = true;
+        if (wx.some(g => /^[-+]?(VC)?TS/.test(g))) a.tormenta = true;
+      }
+      a.t.sort(); prev[icao] = a;
+    }
+    if (cambio) { await env.RIESGO.put(k, JSON.stringify(prev), { expirationTtl: 400 * 86400 }); escritas++; }
+  }
+  return { metar: lista.length, fechas: Object.keys(porFecha).length, escritas };
+}
+
+function nivelObs(ob, s, thr) {
+  const why = []; let lv = 0;
+  const up = (l, t) => { if (l > 0) why.push(t); if (l > lv) lv = l; };
+  const gA = s.rA != null && s.rA !== "" ? +s.rA : thr.gust.A, gR = s.rR != null && s.rR !== "" ? +s.rR : thr.gust.R;
+  const g = Math.max(ob.gmax || 0, ob.wmax || 0);
+  if (thr.gust.on && (ob.gmax || ob.wmax)) up(g >= gR ? 2 : g >= gA ? 1 : 0, `Ráfagas ${g} km/h`);
+  if (thr.wind.on && ob.wmax != null) up(ob.wmax >= thr.wind.R ? 2 : ob.wmax >= thr.wind.A ? 1 : 0, `Viento ${ob.wmax} km/h`);
+  if (thr.tmax.on && ob.tmax != null) up(ob.tmax >= thr.tmax.R ? 2 : ob.tmax >= thr.tmax.A ? 1 : 0, `Calor ${ob.tmax} °C`);
+  if (thr.tmin.on && ob.tmin != null) up(ob.tmin <= thr.tmin.R ? 2 : ob.tmin <= thr.tmin.A ? 1 : 0, `Frío ${ob.tmin} °C`);
+  if (thr.storm.on && ob.tormenta) up(1, "Tormenta eléctrica");
+  return { lv, why };
+}
+
+async function verificacion(env, dias) {
+  const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Santiago" }).format(new Date());
+  const fechas = []; for (let i = dias; i >= 1; i--) { const d = new Date(hoy + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() - i); fechas.push(d.toISOString().slice(0, 10)); }
+  const idx = (await env.RIESGO.get("emis:indice", "json")) || [];
+  const cache = {}, filas = [];
+  for (const f of fechas) {
+    // pronóstico vigente: la última emisión hecha antes de ese día que lo incluya
+    const cand = idx.filter(e => e.fecha && e.fecha < f && e.desde <= f && e.hasta >= f);
+    if (!cand.length) continue;
+    const e = cand[cand.length - 1];
+    if (!cache[e.id]) cache[e.id] = await env.RIESGO.get("emis:" + e.id, "json");
+    const snap = cache[e.id]; if (!snap) continue;
+    const obsDia = (await env.RIESGO.get("obs:" + f, "json")) || {};
+    for (const s of snap.sites) {
+      const c = snap.cells[s.id] && snap.cells[s.id][f]; if (!c) continue;
+      const est = ESTACIONES[s.id]; const ob = est ? obsDia[est[0]] : null;
+      const fila = { fecha: f, site: s.id, nombre: s.nombre, emision: e.id, plazo: Math.round((Date.parse(f) - Date.parse(e.fecha)) / 86400000),
+        pr: { tmax: c.tmax, tmin: c.tmin, wlo: c.wlo, whi: c.whi, plo: c.plo, phi: c.phi, pmed: c.pmed, risk: c.risk, code: c.code } };
+      if (ob && ob.t.length) {
+        const no = nivelObs(ob, s, snap.thr);
+        fila.ob = { tmax: ob.tmax, tmin: ob.tmin, wmax: ob.wmax, gmax: ob.gmax, lluvia: ob.lluvia, tormenta: ob.tormenta, n: ob.t.length, risk: no.lv, why: no.why };
+      }
+      filas.push(fila);
+    }
+  }
+  const estaciones = Object.fromEntries(Object.entries(ESTACIONES).map(([k, v]) => [k, { icao: v[0], nombre: v[1], km: v[2] }]));
+  return { desde: fechas[0], hasta: fechas[fechas.length - 1], filas, estaciones };
 }

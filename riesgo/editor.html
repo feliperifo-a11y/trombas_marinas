@@ -77,6 +77,7 @@
     <button data-t="config">Umbrales</button>
     <button data-t="pub">Publicación</button>
     <button data-t="usr" class="hidden">Usuarios</button>
+    <button data-t="ver" class="hidden">Verificación</button>
     <button data-t="metodo">Metodología</button>
   </div>
 
@@ -153,6 +154,21 @@
     </div>
     <div class="box"><h2>Usuarios</h2><div style="overflow-x:auto" id="uList" class="note">Cargando…</div></div>
     <div class="box"><h2>Registro de accesos</h2><div style="overflow-x:auto" id="uLog" class="note">Cargando…</div></div>
+  </section>
+
+  <section id="t-ver" class="hidden">
+    <div class="box"><h2>Verificación: pronóstico emitido vs. observado</h2>
+      <p class="note">Cada día se compara la última emisión hecha <b>antes</b> de ese día con lo que registró la estación METAR más cercana a la ciudad. El portal descarga las observaciones de aviationweather.gov cada 3 horas. El viento observado es el viento medio de 10 minutos y las ráfagas solo aparecen cuando las hubo. La lluvia se verifica como "llovió / no llovió", porque la mayoría de los METAR no informa milímetros.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <label style="font-size:12px;color:var(--muted)">Período <select id="vDias"><option value="7">Últimos 7 días</option><option value="14" selected>Últimos 14 días</option><option value="30">Últimos 30 días</option><option value="60">Últimos 60 días</option></select></label>
+        <button id="vLoad" class="pri">Calcular</button>
+        <button id="vObs" class="hidden">Descargar observaciones de la última semana</button>
+        <span class="note" id="vMsg"></span>
+      </div>
+    </div>
+    <div class="kpis" id="vKpis"></div>
+    <div class="box"><h2>Por ciudad</h2><div style="overflow-x:auto" id="vTabla" class="note">Presione "Calcular".</div></div>
+    <div class="box"><h2>Detalle diario</h2><label style="font-size:12px;color:var(--muted)">Ciudad <select id="vCiudad"></select></label><div style="overflow-x:auto;margin-top:8px" id="vDet"></div></div>
   </section>
 
   <section id="t-metodo" class="hidden">
@@ -476,11 +492,64 @@ async function saveUser(){
 }
 function genClave(){const a="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789",r=crypto.getRandomValues(new Uint8Array(10));return Array.from(r,x=>a[x%a.length]).join("")}
 
+/* ---------- verificación ---------- */
+let VER=null;
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const f1=v=>v==null?"–":(Math.round(v*10)/10).toString().replace(".",",");
+const pct=(a,b)=>b?Math.round(100*a/b)+"%":"–";
+function colErr(e,a,b){if(e==null)return"";const x=Math.abs(e);return x<=a?"#1e9e57":x<=b?"#b08a00":"#d33a2c"}
+function statsDe(rows){
+  const v=rows.filter(r=>r.ob);
+  const dT=v.filter(r=>r.pr.tmax!=null&&r.ob.tmax!=null).map(r=>r.pr.tmax-r.ob.tmax);
+  const dt=v.filter(r=>r.pr.tmin!=null&&r.ob.tmin!=null).map(r=>r.pr.tmin-r.ob.tmin);
+  const dg=v.filter(r=>r.pr.whi!=null&&(r.ob.gmax||r.ob.wmax)).map(r=>r.pr.whi-Math.max(r.ob.gmax||0,r.ob.wmax||0));
+  const ries=v.filter(r=>r.pr.risk!=null&&r.ob.risk!=null);
+  const ll=v.filter(r=>r.pr.phi!=null);
+  return {n:v.length,total:rows.length,
+    sT:mean(dT),mT:mean(dT.map(Math.abs)),st:mean(dt),mt:mean(dt.map(Math.abs)),sg:mean(dg),mg:mean(dg.map(Math.abs)),
+    rOk:ries.filter(r=>r.pr.risk===r.ob.risk).length,rFa:ries.filter(r=>r.pr.risk>r.ob.risk).length,rSo:ries.filter(r=>r.pr.risk<r.ob.risk).length,rN:ries.length,
+    lOk:ll.filter(r=>(r.pr.phi>=1)===!!r.ob.lluvia).length,lN:ll.length};
+}
+async function cargarVer(){
+  $("vMsg").textContent="Calculando…";
+  try{VER=await api("verificacion?dias="+$("vDias").value)}catch(e){$("vMsg").textContent="Error: "+e.message;return}
+  const F=VER.filas;$("vMsg").textContent=`${VER.desde} a ${VER.hasta}: ${F.filter(r=>r.ob).length} de ${F.length} ciudad-días con observación.`;
+  if(!F.length){$("vKpis").innerHTML="";$("vTabla").innerHTML="Todavía no hay días con pronóstico emitido antes de que ocurrieran. La verificación empieza a llenarse al día siguiente de la primera emisión.";$("vDet").innerHTML="";$("vCiudad").innerHTML="";return}
+  const g=statsDe(F);
+  $("vKpis").innerHTML=`<div class="kpi"><div class="n">${f1(g.mT)}°</div><div class="l">Error medio Tmáx (sesgo ${g.sT>0?"+":""}${f1(g.sT)}°)</div></div>
+    <div class="kpi"><div class="n">${f1(g.mt)}°</div><div class="l">Error medio Tmín (sesgo ${g.st>0?"+":""}${f1(g.st)}°)</div></div>
+    <div class="kpi"><div class="n">${f1(g.mg)}</div><div class="l">Error medio ráfaga, km/h (sesgo ${g.sg>0?"+":""}${f1(g.sg)})</div></div>
+    <div class="kpi g"><div class="n">${pct(g.rOk,g.rN)}</div><div class="l">Semáforo acertado (${g.rFa} falsas alarmas, ${g.rSo} no previstos)</div></div>
+    <div class="kpi"><div class="n">${pct(g.lOk,g.lN)}</div><div class="l">Acierto lluvia sí/no</div></div>`;
+  const ids=[...new Set(F.map(r=>r.site))];
+  $("vTabla").innerHTML=`<table class="grid"><thead><tr><th>Ciudad</th><th>Estación</th><th>Días</th><th>Tmáx error (sesgo)</th><th>Tmín error (sesgo)</th><th>Ráfaga error</th><th>Semáforo</th><th>Lluvia</th></tr></thead><tbody>`+
+    ids.map(id=>{const R0=F.filter(r=>r.site===id),st=statsDe(R0),e=VER.estaciones[id]||{};
+      return `<tr><td class="l"><b>${esc(R0[0].nombre)}</b></td><td class="l">${esc(e.icao||"")} ${esc(e.nombre||"")}<br><small style="color:var(--muted)">${e.km!=null?e.km+" km":""}</small></td><td>${st.n}/${st.total}</td>
+        <td style="color:${colErr(st.mT,1.5,3)}">${f1(st.mT)}° (${st.sT>0?"+":""}${f1(st.sT)})</td><td style="color:${colErr(st.mt,1.5,3)}">${f1(st.mt)}° (${st.st>0?"+":""}${f1(st.st)})</td>
+        <td style="color:${colErr(st.mg,8,15)}">${f1(st.mg)}</td><td>${pct(st.rOk,st.rN)}${st.rFa?` · ${st.rFa} FA`:""}${st.rSo?` · ${st.rSo} NP`:""}</td><td>${pct(st.lOk,st.lN)}</td></tr>`}).join("")+
+    `</tbody></table><p class="note">Error = promedio de la diferencia absoluta. Sesgo positivo = el pronóstico fue más alto que lo observado. FA = falsa alarma (se pronosticó más riesgo del observado); NP = no previsto. Verde ≤ 1,5 °C, amarillo ≤ 3 °C.</p>`;
+  const cur=$("vCiudad").value;
+  $("vCiudad").innerHTML=ids.map(id=>`<option value="${id}">${esc(F.find(r=>r.site===id).nombre)}</option>`).join("");
+  if(cur&&ids.includes(cur))$("vCiudad").value=cur;
+  renderVerDet();
+}
+function renderVerDet(){
+  if(!VER)return;const id=$("vCiudad").value,R0=VER.filas.filter(r=>r.site===id);
+  const dot=l=>l==null?"–":`<i class="dot" style="background:${RISK_HEX[l]}"></i>${RISK_TXT[l]}`;
+  $("vDet").innerHTML=`<table class="grid"><thead><tr><th>Día</th><th>Plazo</th><th>Tmáx pron/obs</th><th>Tmín pron/obs</th><th>Ráfaga pron/obs</th><th>Lluvia pron/obs</th><th>Riesgo pron</th><th>Riesgo obs</th></tr></thead><tbody>`+
+    R0.map(r=>{const o=r.ob;const g=o?Math.max(o.gmax||0,o.wmax||0):null;
+      return `<tr><td>${dayLabel(r.fecha,false)}</td><td>${r.plazo} d</td>
+      <td>${r.pr.tmax??"–"} / <b>${o?o.tmax??"–":"–"}</b></td><td>${r.pr.tmin??"–"} / <b>${o?o.tmin??"–":"–"}</b></td>
+      <td>${r.pr.whi??"–"} / <b>${o?(g||"–"):"–"}</b></td><td>${r.pr.phi!=null?fmtMM(r.pr.phi)+" mm":"–"} / <b>${o?(o.lluvia?"Sí":"No"):"–"}</b>${o&&o.tormenta?" ⚡":""}</td>
+      <td>${dot(r.pr.risk)}</td><td>${o?dot(o.risk):"sin datos"}${o&&o.why.length?`<br><small style="color:var(--muted)">${esc(o.why.join(", "))}</small>`:""}</td></tr>`}).join("")+
+    `</tbody></table>${R0.some(r=>r.ob&&r.ob.n<12)?'<p class="note">Algunos días tienen pocos reportes (estación ◐ que no opera de noche): la mínima observada puede quedar alta.</p>':""}`;
+}
+
 /* ---------- inicio ---------- */
 function setTab(t){
   document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
-  ["ciudades","plan","detalle","config","pub","usr","metodo"].forEach(x=>$("t-"+x).classList.toggle("hidden",x!==t));
-  if(t==="detalle")renderDetail();if(t==="config")renderConfig();if(t==="pub"){renderPub();if(PORTAL)loadHist()}if(t==="usr")renderUsers();
+  ["ciudades","plan","detalle","config","pub","usr","ver","metodo"].forEach(x=>$("t-"+x).classList.toggle("hidden",x!==t));
+  if(t==="detalle")renderDetail();if(t==="config")renderConfig();if(t==="pub"){renderPub();if(PORTAL)loadHist()}if(t==="usr")renderUsers();if(t==="ver"&&!VER)cargarVer();
 }
 function modoDemo(){
   // Vista de demostración: mismo pronóstico en vivo, sin edición ni emisión (riesgo/editor.html#demo)
@@ -500,6 +569,11 @@ async function init(){
     document.querySelector(".nav.rnav").classList.add("hidden");
     $("ubar").classList.remove("hidden");barraUsuario($("ubar"),'<a href="./">Ver como cliente</a>');
     $("pubPortal").classList.remove("hidden");$("pubGit").classList.add("hidden");
+    document.querySelector('#tabs [data-t="ver"]').classList.remove("hidden");
+    $("vLoad").onclick=cargarVer;$("vCiudad").onchange=renderVerDet;
+    if(PORTAL.rol==="admin"){$("vObs").classList.remove("hidden");$("vObs").onclick=async()=>{
+      $("vMsg").textContent="Descargando observaciones…";
+      try{const r=await api("verificacion/actualizar",{method:"POST"});$("vMsg").textContent=`${r.metar} reportes METAR procesados (${r.fechas} días).`;cargarVer()}catch(e){$("vMsg").textContent="Error: "+e.message}}}
     if(PORTAL.rol==="admin"){document.querySelector('#tabs [data-t="usr"]').classList.remove("hidden");
       $("uSave").onclick=saveUser;$("uClear").onclick=()=>uFill(null);$("uGen").onclick=()=>{$("uC").value=genClave()}}
     if(PORTAL.nombre&&!S.pdf.porNombre)$("cfgName").value=PORTAL.nombre;
