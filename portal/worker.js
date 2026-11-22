@@ -239,7 +239,8 @@ const ESTACIONES = {
   lima_comas:["SPJC","Jorge Chávez",10], callao_bv:["SPJC","Jorge Chávez",5], lima_surq:["SPJC","Jorge Chávez",15],
   lima_sjm:["SPJC","Jorge Chávez",20], lima_smig:["SPJC","Jorge Chávez",7], callao_cc:["SPJC","Jorge Chávez",3],
   arequipa:["SPQU","Rodríguez Ballón",7], piura:["SPUR","Concha Ibérico",3], huancayo:["SPJJ","Jauja ◐",42],
-  chiclayo:["SPHI","Quiñones",2], huanuco:["SPNC","Figueroa Fernandini ◐",8], cajamarca:["SPJR","Revoredo",3]
+  chiclayo:["SPHI","Quiñones",2], huanuco:["SPNC","Figueroa Fernandini ◐",8], cajamarca:["SPJR","Revoredo",3],
+  pucallpa:["SPCL","Abensur Rengifo",2]
 };
 const TZ_EST = c => c.startsWith("SC") ? "America/Santiago" : c.startsWith("SK") ? "America/Bogota" : "America/Lima";
 const KT = 1.852;
