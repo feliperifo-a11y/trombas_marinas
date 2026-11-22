@@ -145,8 +145,8 @@ function renderCrit(){
   Object.keys(THR_LABEL).forEach(k=>{if(T[k].on){const[l,u,op]=THR_LABEL[k];h+=row(l,T[k].A,T[k].R,u,op)}});
   if(T.storm.on)h+=`<tr><td class="l">Tormenta eléctrica</td><td>Moderado</td><td>—</td></tr>`;
   h+="</tbody></table>";
-  const ex=S.sites.filter(s=>s.rA!=null&&s.rA!=="");
-  if(ex.length)h+=`<p class="note">Umbrales propios de ráfaga: ${ex.map(s=>`${esc(s.nombre)} ${s.rA}/${s.rR} km/h`).join("; ")}.</p>`;
+  const ex=S.sites.filter(s=>umbralesPropios(s).length);
+  if(ex.length)h+=`<p class="note"><b>Umbrales propios por ubicación:</b> ${ex.map(s=>`${esc(s.nombre)}: ${esc(textoUmbralesPropios(s))}`).join("; ")}.</p>`;
   h+=`<p class="note">Temperatura y viento: mediana de los modelos ECMWF, GFS e ICON. Viento: medio máximo y ráfaga máxima. Precipitación: rango entre modelos. ISO 0°: altura mínima y máxima del día de la isoterma 0 °C. Los valores fueron revisados por el pronosticador antes de la emisión.</p>`;
   $("critBox").innerHTML=h;
 }

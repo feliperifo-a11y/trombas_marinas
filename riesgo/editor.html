@@ -110,7 +110,27 @@
     <div class="box"><h2>Umbrales de riesgo</h2><p class="note">Propuesta inicial, editable; no corresponde a una norma. Los cambios recalculan la planilla y quedan guardados en este navegador.</p>
       <div style="overflow-x:auto"><table class="grid" id="thrTable"></table></div>
       <div style="margin-top:10px"><button id="btnThrReset">Restablecer umbrales</button></div></div>
-    <div class="box"><h2>Ciudades</h2><p class="note">Las columnas de ráfaga permiten un umbral propio por ciudad (vacío = umbral general). Si cambia una coordenada, presione Actualizar pronóstico.</p>
+    <div class="box" id="uBox"><h2>Umbrales por ubicación</h2>
+      <p class="note">Cada ciudad puede tener umbrales propios. Un campo vacío usa el umbral general de arriba. Vienen con valores iniciales: ráfaga 70/90 km/h en Calama, por su viento habitual de la tarde, y calor 35/38 °C en Barranquilla, Cartagena, Piura y Chiclayo, donde 32–34 °C es normal.</p>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px">
+        <label style="font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px">Ciudad<select id="tuCiudad"></select></label>
+        <span class="note" id="tuEstado" style="margin:0"></span>
+      </div>
+      <div style="overflow-x:auto"><table class="grid" id="tuTabla"></table></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button id="tuGuardar" class="pri">Guardar umbrales de esta ciudad</button>
+        <button id="tuGeneral">Volver a los generales</button>
+        <button id="tuCopiar">Copiar a otras ciudades…</button>
+      </div>
+      <div id="tuCopiarBox" class="hidden" style="margin-top:10px">
+        <p class="note" style="margin:0 0 6px">Marque las ciudades que recibirán estos mismos umbrales:</p>
+        <div class="chips" id="tuDestinos"></div>
+        <div style="display:flex;gap:8px;margin-top:8px"><button id="tuCopiarOk" class="pri">Copiar</button><button id="tuCopiarNo">Cancelar</button></div>
+      </div>
+      <h4 style="margin:16px 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Ciudades con umbrales propios</h4>
+      <div id="tuResumen" class="note"></div>
+    </div>
+    <div class="box"><h2>Ciudades</h2><p class="note">Coordenadas y nombres de cada punto. Si cambia una coordenada, presione Actualizar pronóstico.</p>
       <div style="overflow-x:auto"><table class="grid" id="siteTable"></table></div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button id="btnSitesReset">Restablecer ciudades</button><button id="btnEditsClear">Borrar todas las ediciones manuales</button></div></div>
     <div class="box"><h2>Textos del PDF</h2><div class="fg"><label>Título<input id="pTitle"></label><label>Elaborado por (firma en PDF, Word y Excel)<input id="pAuthor"></label></div></div>
@@ -138,7 +158,8 @@
   </section>
 
   <section id="t-usr" class="hidden">
-    <div class="box"><h2>Usuario</h2>
+    <div class="box"><h2>Usuarios</h2><div id="uList" class="note">Cargando…</div></div>
+    <div class="box" id="uForm"><h2 id="uFormTit">Nuevo usuario</h2>
       <p class="note">Cree el número de usuario y la clave que entregará a cada persona. Para cambiar la clave de alguien, edítelo y escriba la nueva; si deja la clave en blanco, se mantiene la actual.</p>
       <div class="fg">
         <label>Número de usuario<input id="uU" placeholder="Ej.: 1001" autocomplete="off"></label>
@@ -149,10 +170,9 @@
       <p class="note" style="margin-top:10px"><label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="uA" checked> Activo</label></p>
       <h4 style="margin:10px 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Ciudades que puede ver <span style="text-transform:none;font-weight:400">(ninguna marcada = todas)</span></h4>
       <div class="chips" id="uCities"></div>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="pri" id="uSave">Guardar usuario</button><button id="uClear">Nuevo / limpiar</button></div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="pri" id="uSave">Guardar usuario</button><button id="uClear">Nuevo usuario / limpiar</button></div>
       <div class="note" id="uMsg" style="margin-top:8px"></div>
     </div>
-    <div class="box"><h2>Usuarios</h2><div style="overflow-x:auto" id="uList" class="note">Cargando…</div></div>
     <div class="box"><h2>Registro de accesos</h2><div style="overflow-x:auto" id="uLog" class="note">Cargando…</div></div>
   </section>
 
@@ -205,7 +225,17 @@ S.edits={}; S.range={mode:"preset",k:"n5"};
 
 function save(){lsSet(LS,{sites:S.sites,thr:S.thr,sel:S.sel,pdf:S.pdf,edits:S.edits,range:S.range})}
 function restore(){const j=lsGet(LS);if(!j)return;
-  if(j.sites&&j.sites.length&&j.sites[0].id&&SITES_DEFAULT.some(d=>d.id===j.sites[0].id))S.sites=j.sites;
+  if(j.sites&&j.sites.length&&j.sites[0].id&&SITES_DEFAULT.some(d=>d.id===j.sites[0].id)){
+    S.sites=j.sites;
+    // migración: ráfaga propia antigua (rA/rR) -> umbrales por ubicación; valores iniciales nuevos para ciudades sin umbrales propios
+    S.sites.forEach(x=>{
+      if(okv(x.rA)||okv(x.rR)){x.u=x.u||{};x.u.gust=x.u.gust||{A:x.rA,R:x.rR}}
+      delete x.rA;delete x.rR;
+      const d=SITES_DEFAULT.find(y=>y.id===x.id);
+      if(d&&d.u&&!x.uRev){x.u=Object.assign({},clone(d.u),x.u||{})}
+      x.uRev=1;
+    });
+  }
   if(j.thr)S.thr=Object.assign(clone(THR_DEFAULT),j.thr); if(j.sel)S.sel=j.sel; if(j.pdf)S.pdf=Object.assign(S.pdf,j.pdf);if(!S.pdf.author||S.pdf.author==="CF Felipe Rifo Espósito")S.pdf.author=FIRMA;
   if(j.edits)S.edits=j.edits; if(j.range)S.range=j.range;}
 function pubCfg(){return Object.assign({repo:ALMACEN_DEF.repo,rama:ALMACEN_DEF.rama,carpeta:ALMACEN_DEF.carpeta,name:"",pass:"",token:"",remember:false},lsGet(LSPUB)||{},PUB_SESSION)}
@@ -367,21 +397,46 @@ onCellClick=function(sid,d){
 
 /* ---------- configuración ---------- */
 function recalc(){if(DATES_ALL.length){computeAll();renderAll()}}
+function renderUmbCiudad(init){
+  const sel=$("tuCiudad");
+  if(init||!sel.options.length){const cur=sel.value;sel.innerHTML=S.sites.map(x=>`<option value="${x.id}">${esc(x.nombre)}${umbralesPropios(x).length?" ★":""}</option>`).join("");if(cur)sel.value=cur;sel.onchange=()=>renderUmbCiudad()}
+  const x=S.sites.find(y=>y.id===sel.value)||S.sites[0];
+  $("tuTabla").innerHTML=`<thead><tr><th>Variable</th><th>General</th><th>Moderado (ciudad)</th><th>Alto (ciudad)</th><th>Unidad</th></tr></thead><tbody>`+
+    VARS_U.map(k=>{const[l,un,op]=THR_LABEL[k],g=S.thr[k],o=(x.u&&x.u[k])||{};
+      return `<tr><td class="l">${l}</td><td style="color:var(--muted)">${op} ${g.A} / ${g.R}</td>
+        <td>${op} <input type="number" step="0.5" data-k="${k}" data-f="A" value="${okv(o.A)?o.A:""}" placeholder="${g.A}"></td>
+        <td>${op} <input type="number" step="0.5" data-k="${k}" data-f="R" value="${okv(o.R)?o.R:""}" placeholder="${g.R}"></td><td>${un}</td></tr>`}).join("")+"</tbody>";
+  const n=umbralesPropios(x).length;
+  $("tuEstado").innerHTML=n?`<b style="color:#f2c230">★ ${n} umbral${n>1?"es":""} propio${n>1?"s":""}</b>`:"Usa los umbrales generales";
+  const L=S.sites.filter(y=>umbralesPropios(y).length);
+  $("tuResumen").innerHTML=L.length?L.map(y=>`<div style="margin:3px 0"><b>${esc(y.nombre)}</b>: ${esc(textoUmbralesPropios(y))} <button class="mini" data-ir="${y.id}">Editar</button></div>`).join("")
+    :"Ninguna: todas usan los umbrales generales.";
+  $("tuResumen").querySelectorAll("[data-ir]").forEach(b=>b.onclick=()=>{sel.value=b.dataset.ir;renderUmbCiudad()});
+}
+function leerUmbCiudad(){
+  const u={};$("tuTabla").querySelectorAll("input").forEach(el=>{if(el.value!==""){(u[el.dataset.k]=u[el.dataset.k]||{})[el.dataset.f]=+el.value}});return u;
+}
+function aplicarUmb(ids,u){
+  ids.forEach(id=>{const x=S.sites.find(y=>y.id===id);if(!x)return;x.u=clone(u);x.uRev=1;delete x.rA;delete x.rR});
+  save();recalc();renderUmbCiudad(true);renderConfig();
+}
 function renderConfig(){
   const T=S.thr;let h=`<thead><tr><th>Activo</th><th>Variable</th><th>Moderado</th><th>Alto</th><th>Unidad</th></tr></thead><tbody>`;
   Object.keys(THR_LABEL).forEach(k=>{const[l,u,op]=THR_LABEL[k];h+=`<tr><td><input type="checkbox" data-k="${k}" data-f="on" ${T[k].on?"checked":""}></td><td class="l">${l}</td><td>${op} <input type="number" step="0.5" data-k="${k}" data-f="A" value="${T[k].A}"></td><td>${op} <input type="number" step="0.5" data-k="${k}" data-f="R" value="${T[k].R}"></td><td>${u}</td></tr>`});
   h+=`<tr><td><input type="checkbox" data-k="storm" data-f="on" ${T.storm.on?"checked":""}></td><td class="l">Tormenta eléctrica (WMO 95–99)</td><td colspan="2">Moderado</td><td>—</td></tr></tbody>`;
   $("thrTable").innerHTML=h;
   $("thrTable").querySelectorAll("input").forEach(el=>el.onchange=()=>{S.thr[el.dataset.k][el.dataset.f]=el.dataset.f==="on"?el.checked:+el.value;save();recalc()});
-  let s=`<thead><tr><th>Nombre</th><th>Región</th><th>País</th><th>Latitud</th><th>Longitud</th><th>Isoterma 0°</th><th>Ráfaga mod.</th><th>Ráfaga alto</th></tr></thead><tbody>`;
+  let s=`<thead><tr><th>Nombre</th><th>Región</th><th>País</th><th>Latitud</th><th>Longitud</th><th>Isoterma 0°</th><th>Umbrales</th></tr></thead><tbody>`;
   S.sites.forEach((x,i)=>{s+=`<tr><td><input class="w" data-i="${i}" data-f="nombre" value="${esc(x.nombre)}"></td><td><input class="ww" data-i="${i}" data-f="ref" value="${esc(x.ref)}"></td><td>${x.pais}</td>
     <td><input data-i="${i}" data-f="lat" type="number" step="0.01" value="${x.lat}"></td><td><input data-i="${i}" data-f="lon" type="number" step="0.01" value="${x.lon}"></td>
     <td><input type="checkbox" data-i="${i}" data-f="iso" ${x.iso?"checked":""}></td>
-    <td><input data-i="${i}" data-f="rA" type="number" value="${x.rA??""}" placeholder="${S.thr.gust.A}"></td><td><input data-i="${i}" data-f="rR" type="number" value="${x.rR??""}" placeholder="${S.thr.gust.R}"></td></tr>`});
+    <td><button class="mini" data-umb="${x.id}">${umbralesPropios(x).length?"Propios ("+umbralesPropios(x).length+")":"Generales"}</button></td></tr>`});
   $("siteTable").innerHTML=s+"</tbody>";
   $("siteTable").querySelectorAll("input").forEach(el=>el.onchange=()=>{const x=S.sites[+el.dataset.i],f=el.dataset.f;
     if(f==="iso")x.iso=el.checked;else if(f==="lat"||f==="lon"){x[f]=+el.value;toast("Coordenada cambiada: presione Actualizar pronóstico")}
-    else if(f==="rA"||f==="rR")x[f]=el.value===""?null:+el.value;else x[f]=el.value;save();recalc();renderScope()});
+    else x[f]=el.value;save();recalc();renderScope()});
+  $("siteTable").querySelectorAll("[data-umb]").forEach(b=>b.onclick=()=>{$("tuCiudad").value=b.dataset.umb;renderUmbCiudad();$("uBox").scrollIntoView({behavior:"smooth"})});
+  renderUmbCiudad(true);
   $("pTitle").value=S.pdf.title;$("pAuthor").value=S.pdf.author;
 }
 function renderPub(){const c=pubCfg();$("cfgName").value=c.name||"";$("cfgPass").value=c.pass||"";$("cfgToken").value=c.token||"";
@@ -455,6 +510,7 @@ function uFill(u){
   $("uU").value=u?u.usuario:"";$("uU").disabled=!!u;$("uN").value=u?u.nombre||"":"";$("uR").value=u?u.rol:"cliente";
   $("uC").value="";$("uC").placeholder=u?"dejar en blanco para mantener la clave":"mínimo 6 caracteres";$("uA").checked=u?u.activo!==false:true;
   U_SEL=new Set(u?u.ciudades||[]:[]);uCities();$("uMsg").textContent="";
+  $("uFormTit").textContent=u?`Editar usuario ${u.usuario}`:"Nuevo usuario";
 }
 const nomCiudad=id=>{const s=SITES_DEFAULT.find(x=>x.id===id);return s?s.nombre:id};
 async function renderUsers(){
@@ -462,14 +518,20 @@ async function renderUsers(){
   if(!$("uCities").innerHTML)uFill(null);
   try{
     USERS=await api("usuarios");
-    $("uList").innerHTML=USERS.length?`<table class="grid utbl"><thead><tr><th>Usuario</th><th>Nombre</th><th>Perfil</th><th>Ciudades</th><th>Estado</th><th>Último ingreso</th><th></th></tr></thead><tbody>`+
-      USERS.map(u=>`<tr><td><b>${esc(u.usuario)}</b></td><td class="l">${esc(u.nombre||"")}</td><td>${u.rol==="editor"?"Editor":"Cliente"}</td>
-        <td class="l">${u.ciudades&&u.ciudades.length?u.ciudades.map(nomCiudad).map(esc).join(", "):"Todas"}</td>
-        <td><span class="pill ${u.activo?"on":"off"}">${u.activo?"Activo":"Inactivo"}</span></td>
-        <td>${u.ultimo?new Date(u.ultimo).toLocaleString("es-CL",{timeZone:TZ.CL,dateStyle:"short",timeStyle:"short"}):"—"}</td>
-        <td style="white-space:nowrap"><button class="mini" data-ed="${esc(u.usuario)}">Editar</button> <button class="mini" data-del="${esc(u.usuario)}">Eliminar</button></td></tr>`).join("")+"</tbody></table>"
-      :"Todavía no hay usuarios. Cree el primero arriba.";
-    $("uList").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>{uFill(USERS.find(x=>x.usuario===b.dataset.ed));$("t-usr").scrollIntoView({behavior:"smooth"})});
+    const fch=v=>v?new Date(v).toLocaleString("es-CL",{timeZone:TZ.CL,dateStyle:"short",timeStyle:"short"}):"nunca";
+    const act=USERS.filter(u=>u.activo).length;
+    $("uList").innerHTML=USERS.length?`<p class="note" style="margin:0 0 10px">${USERS.length} usuario${USERS.length>1?"s":""} · ${act} activo${act!==1?"s":""}</p><div class="ucards">`+
+      USERS.map(u=>`<div class="ucard${u.activo?"":" off"}">
+        <div class="uh"><span class="un">${esc(u.usuario)}</span><span class="pill ${u.activo?"on":"off"}">${u.activo?"Activo":"Inactivo"}</span><span class="ur ${u.rol}">${u.rol==="editor"?"Editor":"Cliente"}</span></div>
+        <div class="unom">${esc(u.nombre||"(sin nombre)")}</div>
+        <div class="uci">${u.ciudades&&u.ciudades.length?u.ciudades.map(id=>`<span class="chip">${esc(nomCiudad(id))}</span>`).join(""):'<span class="chip">Todas las ciudades</span>'}</div>
+        <div class="uult">Último ingreso: ${fch(u.ultimo)}</div>
+        <div class="ubtn"><button class="pri" data-ed="${esc(u.usuario)}">Editar</button><button data-tog="${esc(u.usuario)}">${u.activo?"Desactivar":"Activar"}</button><button class="del" data-del="${esc(u.usuario)}">Eliminar</button></div>
+      </div>`).join("")+"</div>"
+      :"Todavía no hay usuarios. Cree el primero en el formulario.";
+    $("uList").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>{uFill(USERS.find(x=>x.usuario===b.dataset.ed));$("uForm").scrollIntoView({behavior:"smooth"})});
+    $("uList").querySelectorAll("[data-tog]").forEach(b=>b.onclick=async()=>{const u=USERS.find(x=>x.usuario===b.dataset.tog);
+      try{await api("usuarios",{method:"POST",body:{usuario:u.usuario,nombre:u.nombre,rol:u.rol,ciudades:u.ciudades,activo:!u.activo}});toast(u.activo?"Usuario desactivado":"Usuario activado");renderUsers()}catch(e){toast(e.message)}});
     $("uList").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>confirmar(`¿Eliminar el usuario ${b.dataset.del}? Perderá el acceso de inmediato.`,async()=>{
       try{await api("usuarios/"+encodeURIComponent(b.dataset.del),{method:"DELETE"});toast("Usuario eliminado");renderUsers()}catch(e){toast(e.message)}}));
     const log=await api("accesos");
@@ -591,6 +653,15 @@ async function init(){
   $("selAll").onclick=()=>{S.sites.forEach(s=>S.sel[s.id]=true);save();renderScope();if(DATES_ALL.length)renderAll()};
   $("selNone").onclick=()=>{S.sites.forEach(s=>S.sel[s.id]=false);save();renderScope();if(DATES_ALL.length)renderAll()};
   $("btnThrReset").onclick=()=>{S.thr=clone(THR_DEFAULT);save();renderConfig();recalc()};
+  $("tuGuardar").onclick=()=>{const id=$("tuCiudad").value;aplicarUmb([id],leerUmbCiudad());toast("Umbrales guardados para "+S.sites.find(y=>y.id===id).nombre)};
+  $("tuGeneral").onclick=()=>{const id=$("tuCiudad").value;aplicarUmb([id],{});toast("La ciudad vuelve a los umbrales generales")};
+  $("tuCopiar").onclick=()=>{const id=$("tuCiudad").value;$("tuCopiarBox").classList.remove("hidden");
+    $("tuDestinos").innerHTML=S.sites.filter(y=>y.id!==id).map(y=>`<span class="chip" data-s="${y.id}">${esc(y.nombre)}</span>`).join("");
+    $("tuDestinos").querySelectorAll(".chip").forEach(c=>c.onclick=()=>c.classList.toggle("on"))};
+  $("tuCopiarNo").onclick=()=>$("tuCopiarBox").classList.add("hidden");
+  $("tuCopiarOk").onclick=()=>{const ids=[...$("tuDestinos").querySelectorAll(".chip.on")].map(c=>c.dataset.s);
+    if(!ids.length){toast("Marque al menos una ciudad");return}
+    aplicarUmb(ids.concat($("tuCiudad").value),leerUmbCiudad());$("tuCopiarBox").classList.add("hidden");toast(`Umbrales copiados a ${ids.length} ciudad${ids.length>1?"es":""}`)};
   $("btnSitesReset").onclick=()=>{S.sites=clone(SITES_DEFAULT);save();renderConfig();toast("Ciudades restablecidas: presione Actualizar")};
   $("btnEditsClear").onclick=()=>{S.edits={};save();recalc();toast("Ediciones borradas")};
   $("pTitle").onchange=e=>{S.pdf.title=e.target.value;save()};$("pAuthor").onchange=e=>{S.pdf.author=e.target.value;save()};
