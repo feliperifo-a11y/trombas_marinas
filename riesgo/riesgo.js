@@ -15,27 +15,28 @@ const SITES_DEFAULT = [
  {id:"antofagasta",  nombre:"ANTOFAGASTA",       ref:"Antofagasta",        pais:"CL", lat:-23.65, lon:-70.40, iso:true},
  {id:"copiapo",      nombre:"COPIAPÓ",           ref:"Atacama",            pais:"CL", lat:-27.37, lon:-70.34, iso:true},
  {id:"laserena",     nombre:"LA SERENA",         ref:"Coquimbo",           pais:"CL", lat:-29.91, lon:-71.26, iso:true},
- {id:"santiago",     nombre:"SANTIAGO",          ref:"Metropolitana",      pais:"CL", lat:-33.52, lon:-70.60, iso:true},
- {id:"talcahuano",   nombre:"TALCAHUANO",        ref:"Biobío",             pais:"CL", lat:-36.79, lon:-73.07, iso:true},
+ {id:"santiago",     nombre:"REGIÓN METROPOLITANA",          ref:"Santiago",      pais:"CL", lat:-33.52, lon:-70.60, iso:true},
+ {id:"talcahuano",   nombre:"EL TRÉBOL",        ref:"Talcahuano",             pais:"CL", lat:-36.79, lon:-73.07, iso:true},
  {id:"losangeles",   nombre:"LOS ÁNGELES",       ref:"Biobío",             pais:"CL", lat:-37.47, lon:-72.35, iso:true},
- {id:"barranquilla", nombre:"BARRANQUILLA",      ref:"Atlántico",          pais:"CO", lat:11.02,  lon:-74.83, iso:false, u:{tmax:{A:35,R:38}}},
+ {id:"barranquilla", nombre:"BUENAVISTA",      ref:"Barranquilla",          pais:"CO", lat:11.02,  lon:-74.83, iso:false, u:{tmax:{A:35,R:38}}},
  {id:"cartagena",    nombre:"CARTAGENA",         ref:"Bolívar",            pais:"CO", lat:10.42,  lon:-75.54, iso:false, u:{tmax:{A:35,R:38}}},
  {id:"manizales",    nombre:"MANIZALES",         ref:"Caldas",             pais:"CO", lat:5.07,   lon:-75.49, iso:false},
- {id:"bogota",       nombre:"BOGOTÁ",            ref:"Bogotá D.C.",        pais:"CO", lat:4.62,   lon:-74.09, iso:false},
+ {id:"bogota",       nombre:"NQS",            ref:"Bogotá",        pais:"CO", lat:4.62,   lon:-74.09, iso:false},
  {id:"cali",         nombre:"CALI",              ref:"Valle del Cauca",    pais:"CO", lat:3.41,   lon:-76.55, iso:false},
  {id:"trujillo",     nombre:"TRUJILLO",          ref:"La Libertad",        pais:"PE", lat:-8.10,  lon:-79.05, iso:false},
- {id:"lima_comas",   nombre:"LIMA (COMAS)",      ref:"Lima",               pais:"PE", lat:-11.94, lon:-77.07, iso:false},
- {id:"callao_bv",    nombre:"CALLAO (BELLAVISTA)",ref:"Callao",            pais:"PE", lat:-12.06, lon:-77.10, iso:false},
- {id:"lima_surq",    nombre:"LIMA (SURQUILLO)",  ref:"Lima",               pais:"PE", lat:-12.11, lon:-77.01, iso:false},
- {id:"lima_sjm",     nombre:"LIMA (S. J. DE MIRAFLORES)", ref:"Lima",      pais:"PE", lat:-12.15, lon:-76.98, iso:false},
- {id:"lima_smig",    nombre:"LIMA (SAN MIGUEL)", ref:"Lima",               pais:"PE", lat:-12.08, lon:-77.09, iso:false},
- {id:"callao_cc",    nombre:"CALLAO (CANTA CALLAO)", ref:"Callao",         pais:"PE", lat:-12.00, lon:-77.11, iso:false},
+ {id:"lima_comas",   nombre:"COMAS",      ref:"Lima",               pais:"PE", lat:-11.94, lon:-77.07, iso:false},
+ {id:"callao_bv",    nombre:"BELLAVISTA",ref:"Callao",            pais:"PE", lat:-12.06, lon:-77.10, iso:false},
+ {id:"lima_surq",    nombre:"ANGAMOS",  ref:"Lima (Surquillo)",               pais:"PE", lat:-12.11, lon:-77.01, iso:false},
+ {id:"lima_sjm",     nombre:"ATOCONGO", ref:"Lima (S. J. de Miraflores)",      pais:"PE", lat:-12.15, lon:-76.98, iso:false},
+ {id:"lima_smig",    nombre:"LA MARINA", ref:"Lima (San Miguel)",               pais:"PE", lat:-12.08, lon:-77.09, iso:false},
+ {id:"callao_cc",    nombre:"CANTA CALLAO", ref:"Lima (S. M. de Porres)",         pais:"PE", lat:-12.00, lon:-77.11, iso:false},
  {id:"arequipa",     nombre:"AREQUIPA",          ref:"Arequipa",           pais:"PE", lat:-16.39, lon:-71.55, iso:false},
  {id:"piura",        nombre:"PIURA",             ref:"Piura",              pais:"PE", lat:-5.18,  lon:-80.62, iso:false, u:{tmax:{A:35,R:38}}},
  {id:"huancayo",     nombre:"HUANCAYO",          ref:"Junín",              pais:"PE", lat:-12.06, lon:-75.21, iso:false},
  {id:"chiclayo",     nombre:"CHICLAYO",          ref:"Lambayeque",         pais:"PE", lat:-6.78,  lon:-79.84, iso:false, u:{tmax:{A:35,R:38}}},
  {id:"huanuco",      nombre:"HUÁNUCO",           ref:"Huánuco",            pais:"PE", lat:-9.94,  lon:-76.25, iso:false},
- {id:"cajamarca",    nombre:"CAJAMARCA",         ref:"Cajamarca",          pais:"PE", lat:-7.15,  lon:-78.51, iso:false}
+ {id:"cajamarca",    nombre:"CAJAMARCA",         ref:"Cajamarca",          pais:"PE", lat:-7.15,  lon:-78.51, iso:false},
+ {id:"pucallpa",     nombre:"PUCALLPA",          ref:"Ucayali",            pais:"PE", lat:-8.39,  lon:-74.56, iso:false, u:{tmax:{A:35,R:38}}}
 ];
 const THR_DEFAULT = {
   gust:{A:50,R:70,on:true}, wind:{A:40,R:60,on:true}, pp:{A:10,R:25,on:true},
@@ -220,7 +221,7 @@ function renderPlan(){
   let h="";
   groups().forEach(g=>{
     if(!g.sites.length)return;
-    h+=`<div class="sect">${g.t}</div><div class="tw"><table class="plan"><thead><tr><th>CIUDAD</th>${DATES.map(d=>`<th>${dayLabel(d,true)}</th>`).join("")}</tr></thead><tbody>`;
+    h+=`<div class="sect">${g.t}</div><div class="tw"><table class="plan"><thead><tr><th>UBICACIÓN</th>${DATES.map(d=>`<th>${dayLabel(d,true)}</th>`).join("")}</tr></thead><tbody>`;
     g.sites.forEach(s=>{
       h+=`<tr><td class="site">${esc(s.nombre)}<span class="ref">${esc(s.ref)}</span></td>`;
       DATES.forEach(d=>{
@@ -404,7 +405,7 @@ async function makePdf(){
     const hasIso=g.sites.some(s=>s.iso);
     doc.autoTable({
       startY:y+18, margin:{left:M,right:M,top:44,bottom:28},
-      head:[["CIUDAD",...DATES.map(d=>dayLabel(d,true))]], body:g.sites.map(s=>[s.nombre,...DATES.map(()=>"")]),
+      head:[["UBICACIÓN",...DATES.map(d=>dayLabel(d,true))]], body:g.sites.map(s=>[s.nombre,...DATES.map(()=>"")]),
       theme:"grid", rowPageBreak:"avoid",
       styles:{fontSize:8,cellPadding:2,lineColor:[200,208,218],lineWidth:.5,valign:"middle"},
       headStyles:{fillColor:head,textColor:255,halign:"center",fontStyle:"bold"},
@@ -450,7 +451,7 @@ function makeXls(){
   if(!window.XLSX){toast("No se cargó la librería Excel");return}
   const rows=[];
   activeSites().forEach(s=>DATES.forEach(d=>{const c=CELLS[s.id][d];if(!c)return;rows.push({
-    "Ciudad":s.nombre,"Región":s.ref,"País":PAIS[s.pais],"Fecha":d,"Día":dayLabel(d,true),
+    "Ubicación":s.nombre,"Ciudad / región":s.ref,"País":PAIS[s.pais],"Fecha":d,"Día":dayLabel(d,true),
     "Tmín °C":c.tmin,"Tmáx °C":c.tmax,"Viento medio máx km/h":c.wlo,"Ráfaga máx km/h":c.whi,
     "Precip mín mm":c.plo,"Precip máx mm":c.phi,"Precip mediana mm":c.pmed,"Prob. precip %":c.pprob,
     "ISO 0° mín m":s.iso?c.isoLo:null,"ISO 0° máx m":s.iso?c.isoHi:null,"Código WMO":c.code,
@@ -503,7 +504,7 @@ async function makeDocx(){
       children:[T(g.t,{bold:true,color:"FFFFFF",size:20})]}));
     const head=new TableRow({tableHeader:true,cantSplit:true,children:[
       new TableCell({width:{size:CITYW,type:WidthType.DXA},shading:{type:ShadingType.CLEAR,fill:HEAD,color:"auto"},verticalAlign:VerticalAlign.CENTER,
-        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[T("CIUDAD",{bold:true,color:"FFFFFF",size:17})]})]}),
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:[T("UBICACIÓN",{bold:true,color:"FFFFFF",size:17})]})]}),
       ...DATES.map(d=>new TableCell({width:{size:DAYW,type:WidthType.DXA},shading:{type:ShadingType.CLEAR,fill:HEAD,color:"auto"},verticalAlign:VerticalAlign.CENTER,
         children:[new Paragraph({alignment:AlignmentType.CENTER,children:[T(dayLabel(d,true),{bold:true,color:"FFFFFF",size:17})]})]}))]});
     const rows=g.sites.map(s=>new TableRow({cantSplit:true,children:[

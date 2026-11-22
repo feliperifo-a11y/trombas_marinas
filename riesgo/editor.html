@@ -234,7 +234,11 @@ function restore(){const j=lsGet(LS);if(!j)return;
       const d=SITES_DEFAULT.find(y=>y.id===x.id);
       if(d&&d.u&&!x.uRev){x.u=Object.assign({},clone(d.u),x.u||{})}
       x.uRev=1;
+      // nombres según la planilla original de ApoyoMet
+      if(d&&!x.nRev){x.nombre=d.nombre;x.ref=d.ref}
+      x.nRev=1;
     });
+    SITES_DEFAULT.forEach(d=>{if(!S.sites.some(x=>x.id===d.id))S.sites.push(Object.assign(clone(d),{uRev:1,nRev:1}))});
   }
   if(j.thr)S.thr=Object.assign(clone(THR_DEFAULT),j.thr); if(j.sel)S.sel=j.sel; if(j.pdf)S.pdf=Object.assign(S.pdf,j.pdf);if(!S.pdf.author||S.pdf.author==="CF Felipe Rifo Espósito")S.pdf.author=FIRMA;
   if(j.edits)S.edits=j.edits; if(j.range)S.range=j.range;}
