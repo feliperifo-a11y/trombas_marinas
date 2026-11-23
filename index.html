@@ -34,7 +34,7 @@
     <div class="ctrls">
       <button type="button" id="btnCapas" title="Capas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></button>
       <button type="button" id="btnInicio" title="Ver zonas III a VI"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
-      <button type="button" id="btnViento" title="Viento ECMWF 9 km (MeteoIA)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/></svg></button>
+      <button type="button" id="btnViento" title="Viento ECMWF 9 km en las zonas III a VI (MeteoIA)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/></svg></button>
       <button type="button" id="btnFull" title="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
     <div id="capasPop"></div>
@@ -112,7 +112,7 @@
   }).catch(() => null);
 
   const tr = crearTrombas(L, map, { escH, contenedor: document.getElementById('lado'), resumen: document.getElementById('resumen'), alCambiar: () => {} });
-  geoZonas.then(fs => { if (fs) tr.ponerZonas(fs); });
+
   tr.actualizar();
   let ultima = Date.now();
   const refrescar = () => { if (!document.hidden && Date.now() - ultima > 30 * 60e3) { ultima = Date.now(); tr.actualizar(); } };
@@ -125,6 +125,7 @@
   const btnViento = document.getElementById('btnViento');
   btnViento.onclick = () => { map.hasLayer(vientoEC) ? map.removeLayer(vientoEC) : vientoEC.addTo(map); };
   map.on('layeradd layerremove', () => { const on = map.hasLayer(vientoEC); btnViento.classList.toggle('on', on); btnViento.setAttribute('aria-pressed', on); });
+  geoZonas.then(fs => { if (fs) { tr.ponerZonas(fs); vientoEC.ponerMascara(fs); } });   // el viento se muestra solo en las zonas III a VI
   const CAPAS = [['Zonas III a VI (Cuadro "F")', zonas], ['Celdas sobre umbral (modelo elegido)', tr.capas.celdas], ['Probabilidad (zonas o puntos del ensamble)', tr.capas.zona], ['MONAN 3 km: campos y ficha por punto', tr.capas.monan], ['Trombas observadas (catálogo)', tr.capas.obs, false], ['Viento ECMWF 9 km (MeteoIA)', vientoEC, false]];
   const pop = document.getElementById('capasPop');
   pop.innerHTML = '<div class="t">Capas</div>' + CAPAS.map(([n, , on], i) => `<label><input type="checkbox" data-i="${i}"${on === false ? '' : ' checked'}> ${escH(n)}</label>`).join('') +

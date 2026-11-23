@@ -48,6 +48,25 @@ function crearCapaECMWF(L, map, escapar, contenedor) {
   const chkFlechas = panel.querySelector('.ww3-op input');
   let idx = null, campos = null, indice = 0, timer = null, overlay = null, token = 0, posicion = {};
   const cache = new Map();
+  // Máscara opcional (polígonos GeoJSON): el viento solo se dibuja y se consulta dentro de ella
+  let mascara = null;
+  const anillos = g => g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
+  function dentro(lat, lon) {
+    if (!mascara) return true;
+    for (const f of mascara) for (const pol of anillos(f.geometry)) {
+      let ok = false;
+      pol.forEach((r, n) => {
+        let c = false;
+        for (let a = 0, b = r.length - 1; a < r.length; b = a++) {
+          const [xa, ya] = r[a], [xb, yb] = r[b];
+          if ((ya > lat) !== (yb > lat) && lon < (xb - xa) * (lat - ya) / (yb - ya) + xa) c = !c;
+        }
+        if (n === 0) ok = c; else if (c) ok = false;   // los anillos siguientes son huecos
+      });
+      if (ok) return true;
+    }
+    return false;
+  }
   const activo = () => map.hasLayer(grupo);
   const detener = () => { clearInterval(timer); timer = null; play.textContent = 'Reproducir'; play.setAttribute('aria-pressed', 'false'); };
   function valor(nombre, i, j) {
@@ -82,6 +101,12 @@ function crearCapaECMWF(L, map, escapar, contenedor) {
       }
     }
     ctx.putImageData(img, 0, 0);
+    if (mascara) {   // deja solo lo que cae dentro de los polígonos
+      const X = lon => (lon - lonW) / (lonE - lonW) * W, Y = lat => (yN - merc(lat)) / (yN - yS) * H;
+      ctx.globalCompositeOperation = 'destination-in'; ctx.beginPath();
+      for (const f of mascara) for (const pol of anillos(f.geometry)) for (const r of pol) r.forEach(([lo, la], n) => n ? ctx.lineTo(X(lo), Y(la)) : ctx.moveTo(X(lo), Y(la)));
+      ctx.fill('evenodd'); ctx.globalCompositeOperation = 'source-over';
+    }
     if (overlay) grupo.removeLayer(overlay);
     overlay = L.imageOverlay(cv.toDataURL('image/png'), [[latS, lonW], [latN, lonE]], { pane: 'ecmwfPane', opacity: 0.7, interactive: true, bubblingMouseEvents: false,
       attribution: 'Viento: ECMWF IFS (CC-BY-4.0)' }).on('click', consultar).addTo(grupo);
@@ -96,7 +121,7 @@ function crearCapaECMWF(L, map, escapar, contenedor) {
       const lat = idx.lat0 + idx.dlat * i; if (lat < b.getSouth() || lat > b.getNorth()) continue;
       for (let j = 0; j < idx.nlon; j += paso) {
         const lon = idx.lon0 + idx.dlon * j; if (lon < b.getWest() || lon > b.getEast()) continue;
-        const d = valor('dir', i, j), v = valor('vel', i, j); if (isNaN(d) || isNaN(v) || v < 1) continue;
+        const d = valor('dir', i, j), v = valor('vel', i, j); if (isNaN(d) || isNaN(v) || v < 1 || !dentro(lat, lon)) continue;
         const largo = 10 + Math.min(v, 50) * 0.3;
         L.marker([lat, lon], { pane: 'ecmwfFlechaPane', interactive: false, keyboard: false,
           icon: L.divIcon({ className: 'ww3-flecha ecmwf-flecha', iconSize: [0, 0],
@@ -107,7 +132,7 @@ function crearCapaECMWF(L, map, escapar, contenedor) {
   function consultar(e) {
     const { lat, lng } = e.latlng;
     const i = Math.round((idx.lat0 - lat) / -idx.dlat), j = Math.round((lng - idx.lon0) / idx.dlon);
-    if (i < 0 || j < 0 || i >= idx.nlat || j >= idx.nlon) return;
+    if (i < 0 || j < 0 || i >= idx.nlat || j >= idx.nlon || !dentro(lat, lng)) return;
     const vel = valor('vel', i, j), d = valor('dir', i, j), raf = valor('raf', i, j);
     if (isNaN(vel)) return;
     const p = idx.plazos[indice];
@@ -167,5 +192,6 @@ function crearCapaECMWF(L, map, escapar, contenedor) {
   grupo.on('add', () => { panel.hidden = false; flechas.addTo(map); cargar(); });
   grupo.on('remove', () => { panel.hidden = true; detener(); map.removeLayer(flechas); map.closePopup(); });
   setInterval(() => { if (activo()) cargar(); }, 30 * 60000);
+  grupo.ponerMascara = fs => { mascara = fs; if (activo() && campos) pintar(); };
   return grupo;
 }
