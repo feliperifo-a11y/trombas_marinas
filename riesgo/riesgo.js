@@ -249,11 +249,13 @@ function worstRisk(s){let w=0;DATES.forEach(d=>{const c=CELLS[s.id]&&CELLS[s.id]
 function renderMap(){
   if(typeof L==="undefined"||!$("rmap"))return;
   if(!rmap){
-    rmap=L.map("rmap",{zoomControl:false,attributionControl:true}).setView([-15,-74],3);
+    // Solo Sudamérica: teselas recortadas a la región y el mapa no se puede desplazar fuera de ella
+    const SUDAM=L.latLngBounds([-57,-93],[14,-33]);
+    rmap=L.map("rmap",{zoomControl:false,attributionControl:true,maxBounds:SUDAM.pad(0.05),maxBoundsViscosity:1,minZoom:3,worldCopyJump:false}).fitBounds(SUDAM);
     L.control.zoom({position:"bottomright"}).addTo(rmap);
     // Mismas teselas que la página de trombas (Esri), más límites y nombres de lugares
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{attribution:"Imagen © Esri",maxZoom:17,maxNativeZoom:13}).addTo(rmap);
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{attribution:"Límites © Esri",maxZoom:17,maxNativeZoom:13,opacity:.9}).addTo(rmap);
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{attribution:"Imagen © Esri",maxZoom:17,maxNativeZoom:13,noWrap:true,bounds:SUDAM}).addTo(rmap);
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{attribution:"Límites © Esri",maxZoom:17,maxNativeZoom:13,opacity:.9,noWrap:true,bounds:SUDAM}).addTo(rmap);
     rmapLayer=L.layerGroup().addTo(rmap);
     window.addEventListener("resize",()=>rmap.invalidateSize());
   }

@@ -49,6 +49,8 @@ async function hashClave(clave, saltB64, iter = ITER) {
 function igual(a, b) { if (a.length !== b.length) return false; let r = 0; for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i); return r === 0; }
 function cookieDe(req) { const m = (req.headers.get("Cookie") || "").match(new RegExp("(?:^|;\\s*)" + COOKIE + "=([^;]+)")); return m ? m[1] : null; }
 function ip(req) { return req.headers.get("CF-Connecting-IP") || "local"; }
+const INFORMES = ["pdf", "word", "excel"];
+const informesDe = u => Array.isArray(u && u.informes) ? u.informes.filter(x => INFORMES.includes(x)) : INFORMES.slice();
 const usuarioValido = u => /^[A-Za-z0-9._-]{2,32}$/.test(u || "");
 
 async function sesion(req, env) {
@@ -58,6 +60,7 @@ async function sesion(req, env) {
     const u = await env.RIESGO.get("user:" + s.usuario, "json");
     if (!u || !u.activo) { await env.RIESGO.delete("sess:" + t); return null; }
     s.rol = u.rol; s.ciudades = u.ciudades || []; s.nombre = u.nombre || "";
+    s.mapa = u.mapa !== false; s.informes = informesDe(u);
   }
   s.token = t; return s;
 }
@@ -94,7 +97,7 @@ async function api(req, env, url) {
   if (!ses) return json({ error: "Sesión no válida o vencida" }, 401);
   const esEditor = ["editor", "admin"].includes(ses.rol), esAdmin = ses.rol === "admin";
 
-  if (p === "/api/sesion") return json({ usuario: ses.usuario, nombre: ses.nombre, rol: ses.rol, ciudades: ses.ciudades || [] });
+  if (p === "/api/sesion") return json({ usuario: ses.usuario, nombre: ses.nombre, rol: ses.rol, ciudades: ses.ciudades || [], mapa: ses.rol === "cliente" ? ses.mapa !== false : true, informes: ses.rol === "cliente" ? informesDe(ses) : INFORMES.slice() });
 
   if (p === "/api/clave" && m === "POST") {       // cambio de la propia clave
     if (esAdmin) return json({ error: "La clave del administrador se cambia en los secretos de Cloudflare" }, 400);
@@ -156,7 +159,7 @@ async function api(req, env, url) {
     const out = []; let cursor;
     do {
       const l = await env.RIESGO.list({ prefix: "user:", cursor });
-      for (const k of l.keys) { const u = await env.RIESGO.get(k.name, "json"); if (u) out.push({ usuario: u.usuario, nombre: u.nombre, rol: u.rol, ciudades: u.ciudades || [], activo: u.activo, creado: u.creado, ultimo: u.ultimo || null }); }
+      for (const k of l.keys) { const u = await env.RIESGO.get(k.name, "json"); if (u) out.push({ usuario: u.usuario, nombre: u.nombre, rol: u.rol, ciudades: u.ciudades || [], mapa: u.mapa !== false, informes: informesDe(u), activo: u.activo, creado: u.creado, ultimo: u.ultimo || null }); }
       cursor = l.list_complete ? null : l.cursor;
     } while (cursor);
     out.sort((a, b) => a.usuario.localeCompare(b.usuario, "es", { numeric: true }));
@@ -172,7 +175,7 @@ async function api(req, env, url) {
     if (b.clave && b.clave.length < 6) return json({ error: "La clave debe tener al menos 6 caracteres" }, 400);
     const rol = ["cliente", "editor"].includes(b.rol) ? b.rol : "cliente";
     const u = Object.assign(prev || { usuario: b.usuario, creado: new Date().toISOString() },
-      { nombre: String(b.nombre || "").slice(0, 80), rol, ciudades: Array.isArray(b.ciudades) ? b.ciudades.slice(0, 100) : [], activo: b.activo !== false, modificado: new Date().toISOString() });
+      { nombre: String(b.nombre || "").slice(0, 80), rol, ciudades: Array.isArray(b.ciudades) ? b.ciudades.slice(0, 100) : [], mapa: b.mapa !== false, informes: informesDe(b), activo: b.activo !== false, modificado: new Date().toISOString() });
     if (b.clave) { u.salt = nuevaSal(); u.iter = ITER; u.hash = await hashClave(b.clave, u.salt); }
     await env.RIESGO.put(k, JSON.stringify(u));
     await registrar(env, { ev: prev ? "usuario_editado" : "usuario_creado", usuario: ses.usuario, sobre: b.usuario });
@@ -209,7 +212,7 @@ async function login(req, env) {
     const u = await env.RIESGO.get("user:" + usuario, "json");
     if (u && u.activo) {
       ok = igual(await hashClave(clave, u.salt, u.iter || ITER), u.hash);
-      perfil = { usuario, nombre: u.nombre || "", rol: u.rol, ciudades: u.ciudades || [] };
+      perfil = { usuario, nombre: u.nombre || "", rol: u.rol, ciudades: u.ciudades || [], mapa: u.mapa !== false, informes: informesDe(u) };
       if (ok) { u.ultimo = new Date().toISOString(); await env.RIESGO.put("user:" + usuario, JSON.stringify(u)); }
     } else await hashClave(clave, "c2FsLWZhbHNh");           // mismo tiempo de respuesta si el usuario no existe
   }

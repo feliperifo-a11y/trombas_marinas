@@ -168,6 +168,13 @@
         <label>Clave<span style="display:flex;gap:6px"><input id="uC" type="text" autocomplete="off" placeholder="mínimo 6 caracteres" style="flex:1"><button class="mini" id="uGen" type="button">Generar</button></span></label>
       </div>
       <p class="note" style="margin-top:10px"><label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" id="uA" checked> Activo</label></p>
+      <h4 style="margin:12px 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Qué puede ver y descargar <span style="text-transform:none;font-weight:400">(perfil cliente)</span></h4>
+      <div class="chips" id="uPerm">
+        <label class="chip"><input type="checkbox" id="uMapa" checked> Mapa</label>
+        <label class="chip"><input type="checkbox" data-inf="pdf" checked> Informe PDF</label>
+        <label class="chip"><input type="checkbox" data-inf="word" checked> Informe Word</label>
+        <label class="chip"><input type="checkbox" data-inf="excel" checked> Planilla Excel</label>
+      </div>
       <h4 style="margin:10px 0 6px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Ciudades que puede ver <span style="text-transform:none;font-weight:400">(ninguna marcada = todas)</span></h4>
       <div class="chips" id="uCities"></div>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="pri" id="uSave">Guardar usuario</button><button id="uClear">Nuevo usuario / limpiar</button></div>
@@ -513,6 +520,9 @@ function uCities(){
 function uFill(u){
   $("uU").value=u?u.usuario:"";$("uU").disabled=!!u;$("uN").value=u?u.nombre||"":"";$("uR").value=u?u.rol:"cliente";
   $("uC").value="";$("uC").placeholder=u?"dejar en blanco para mantener la clave":"mínimo 6 caracteres";$("uA").checked=u?u.activo!==false:true;
+  $("uMapa").checked=u?u.mapa!==false:true;
+  const inf=u&&Array.isArray(u.informes)?u.informes:["pdf","word","excel"];
+  document.querySelectorAll("#uPerm [data-inf]").forEach(c=>c.checked=inf.includes(c.dataset.inf));
   U_SEL=new Set(u?u.ciudades||[]:[]);uCities();$("uMsg").textContent="";
   $("uFormTit").textContent=u?`Editar usuario ${u.usuario}`:"Nuevo usuario";
 }
@@ -529,13 +539,14 @@ async function renderUsers(){
         <div class="uh"><span class="un">${esc(u.usuario)}</span><span class="pill ${u.activo?"on":"off"}">${u.activo?"Activo":"Inactivo"}</span><span class="ur ${u.rol}">${u.rol==="editor"?"Editor":"Cliente"}</span></div>
         <div class="unom">${esc(u.nombre||"(sin nombre)")}</div>
         <div class="uci">${u.ciudades&&u.ciudades.length?u.ciudades.map(id=>`<span class="chip">${esc(nomCiudad(id))}</span>`).join(""):'<span class="chip">Todas las ciudades</span>'}</div>
+        ${u.rol==="cliente"?`<div class="uperm">${[["Mapa",u.mapa!==false],["PDF",(u.informes||[]).includes("pdf")],["Word",(u.informes||[]).includes("word")],["Excel",(u.informes||[]).includes("excel")]].map(([t,ok])=>`<span class="${ok?"si":"no"}">${ok?"✓":"✗"} ${t}</span>`).join("")}</div>`:""}
         <div class="uult">Último ingreso: ${fch(u.ultimo)}</div>
         <div class="ubtn"><button class="pri" data-ed="${esc(u.usuario)}">Editar</button><button data-tog="${esc(u.usuario)}">${u.activo?"Desactivar":"Activar"}</button><button class="del" data-del="${esc(u.usuario)}">Eliminar</button></div>
       </div>`).join("")+"</div>"
       :"Todavía no hay usuarios. Cree el primero en el formulario.";
     $("uList").querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>{uFill(USERS.find(x=>x.usuario===b.dataset.ed));$("uForm").scrollIntoView({behavior:"smooth"})});
     $("uList").querySelectorAll("[data-tog]").forEach(b=>b.onclick=async()=>{const u=USERS.find(x=>x.usuario===b.dataset.tog);
-      try{await api("usuarios",{method:"POST",body:{usuario:u.usuario,nombre:u.nombre,rol:u.rol,ciudades:u.ciudades,activo:!u.activo}});toast(u.activo?"Usuario desactivado":"Usuario activado");renderUsers()}catch(e){toast(e.message)}});
+      try{await api("usuarios",{method:"POST",body:{usuario:u.usuario,nombre:u.nombre,rol:u.rol,ciudades:u.ciudades,mapa:u.mapa,informes:u.informes,activo:!u.activo}});toast(u.activo?"Usuario desactivado":"Usuario activado");renderUsers()}catch(e){toast(e.message)}});
     $("uList").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>confirmar(`¿Eliminar el usuario ${b.dataset.del}? Perderá el acceso de inmediato.`,async()=>{
       try{await api("usuarios/"+encodeURIComponent(b.dataset.del),{method:"DELETE"});toast("Usuario eliminado");renderUsers()}catch(e){toast(e.message)}}));
     const log=await api("accesos");
@@ -549,7 +560,8 @@ function confirmar(msg,ok){
   const c=()=>$("modalHost").innerHTML="";$("qN").onclick=c;$("qS").onclick=()=>{c();ok()};
 }
 async function saveUser(){
-  const b={usuario:$("uU").value.trim(),nombre:$("uN").value.trim(),rol:$("uR").value,activo:$("uA").checked,ciudades:[...U_SEL]};
+  const b={usuario:$("uU").value.trim(),nombre:$("uN").value.trim(),rol:$("uR").value,activo:$("uA").checked,ciudades:[...U_SEL],
+    mapa:$("uMapa").checked,informes:[...document.querySelectorAll("#uPerm [data-inf]:checked")].map(c=>c.dataset.inf)};
   if($("uC").value)b.clave=$("uC").value;
   try{await api("usuarios",{method:"POST",body:b});
     $("uMsg").innerHTML=`<b style="color:#3ccf7f">Usuario ${esc(b.usuario)} guardado.</b>`+(b.clave?` Entréguele su número de usuario y la clave <b>${esc(b.clave)}</b>; esta clave no se vuelve a mostrar.`:"");

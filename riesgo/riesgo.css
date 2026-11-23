@@ -167,3 +167,10 @@ table.grid input.w{width:170px}table.grid input.ww{width:170px}
 .ucard .ubtn{display:flex;gap:6px;flex-wrap:wrap}
 .ucard .ubtn button{flex:1;min-width:80px;padding:8px 6px}
 .ucard .ubtn button.del{border-color:#8e1f15;color:#ff8a7a}
+
+/* Permisos por usuario */
+.wrap.sinMapa{grid-template-columns:1fr}
+.ucard .uperm{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;font-size:11.5px}
+.ucard .uperm .si{color:#3ccf7f}.ucard .uperm .no{color:#8a96a3;text-decoration:line-through}
+#uPerm .chip{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+#uPerm .chip input{width:auto;margin:0}
