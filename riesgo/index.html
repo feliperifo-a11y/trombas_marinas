@@ -177,6 +177,10 @@ tick();setInterval(tick,30000);
     $("login").classList.add("hidden");$("btnOut").classList.add("hidden");
     $("ubar").classList.remove("hidden");
     barraUsuario($("ubar"),PORTAL.rol!=="cliente"?'<a href="editor.html">Ir al editor</a>':"");
+    // Permisos que fija el administrador para cada usuario
+    if(PORTAL.mapa===false){$("mapa").classList.add("hidden");$("app").classList.add("sinMapa")}
+    const inf=Array.isArray(PORTAL.informes)?PORTAL.informes:["pdf","word","excel"];
+    [["pdf","btnPdf"],["word","btnDocx"],["excel","btnXls"]].forEach(([k,id])=>{if(!inf.includes(k))$(id).classList.add("hidden")});
     try{
       const lst=await api("emisiones");IDX=lst.slice().reverse();
       show(await api("emisiones/actual"));
