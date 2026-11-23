@@ -56,7 +56,7 @@ function crearTrombas(L, map, h) {
   const NOMBRE_IND = { alguno: 'Cualquiera de los tres', stp: 'STP ≤ −0,1', hslc: 'Alto cizalle y CAPE bajo', nst: 'NST > 1 (sin validar en Chile)' };
   const claseP = v => v == null ? '' : v >= 80 ? 'p4' : v >= 50 ? 'p3' : v >= 20 ? 'p2' : v > 0 ? 'p1' : 'p0';
   // Niveles en palabras para la vista simple (mismos cortes que los colores)
-  const NIVEL = { p0: 'Sin señal', p1: 'Baja', p2: 'Moderada', p3: 'Alta', p4: 'Muy alta' };
+  const NIVEL = { p0: 'Sin condiciones propicias', p1: 'Baja', p2: 'Moderada', p3: 'Alta', p4: 'Muy alta' };
   const nivel = v => v == null ? '–' : NIVEL[claseP(v)];
   const NOMBRE_ZONA = { III: 'Valparaíso a Constitución', IV: 'Constitución a Isla Mocha', V: 'Isla Mocha a Puerto Montt', VI: 'Puerto Montt a San Pedro' };
   let zonasGeo = null;   // polígonos de las zonas III a VI (los entrega la página con ponerZonas)
@@ -84,7 +84,7 @@ function crearTrombas(L, map, h) {
     <p class="mar-ayuda tr-sim">Toca un día en el resumen de arriba o una zona en el mapa para ver el detalle cada 6 horas.</p>
     <div class="ev-tabs tr-ptabs tr-tec" role="tablist">${Object.entries(NOMBRE_IND).map(([k, t]) => `<button type="button" role="tab" data-i="${k}" aria-selected="${k === indProb}">${t}</button>`).join('')}</div>
     <div class="tr-ptabla tr-tec"></div>
-    <div class="mar-ley tr-pley"><span><i class="tr-p0"></i><span class="tr-tec">0 %</span><span class="tr-sim">Sin señal</span></span><span><i class="tr-p1"></i><span class="tr-tec">1–19</span><span class="tr-sim">Baja</span></span><span><i class="tr-p2"></i><span class="tr-tec">20–49</span><span class="tr-sim">Moderada</span></span><span><i class="tr-p3"></i><span class="tr-tec">50–79</span><span class="tr-sim">Alta</span></span><span><i class="tr-p4"></i><span class="tr-tec">80–100 %</span><span class="tr-sim">Muy alta</span></span></div>
+    <div class="mar-ley tr-pley"><span><i class="tr-p0"></i><span class="tr-tec">0 %</span><span class="tr-sim">Sin condiciones propicias</span></span><span><i class="tr-p1"></i><span class="tr-tec">1–19</span><span class="tr-sim">Baja</span></span><span><i class="tr-p2"></i><span class="tr-tec">20–49</span><span class="tr-sim">Moderada</span></span><span><i class="tr-p3"></i><span class="tr-tec">50–79</span><span class="tr-sim">Alta</span></span><span><i class="tr-p4"></i><span class="tr-tec">80–100 %</span><span class="tr-sim">Muy alta</span></span></div>
     <p class="mar-ayuda tr-sim">Nivel = porcentaje de escenarios del modelo en que se dan las condiciones: baja, 1 a 19 %; moderada, 20 a 49 %; alta, 50 a 79 %; muy alta, 80 % o más. Que se den las condiciones no significa que vaya a haber trombas.</p>
     <div class="mar-det tr-pdet" aria-live="polite"><p class="mar-ayuda tr-tec">Tabla: porcentaje de los miembros del ensamble en que al menos un punto de la zona cumple el umbral durante el día (hora de Chile). Mapa: el mismo porcentaje en cada punto de mar. Selecciona una casilla para ver el día en el mapa y el detalle cada 6 h.</p></div>
     <div class="tr-tec">
@@ -290,7 +290,7 @@ function crearTrombas(L, map, h) {
     if (!leyMapa) return;
     if (v === 'prob' && prob && modo === 'simple') {
       const t = plazoProb != null && prob.validas[plazoProb] ? `${diaChile(prob.validas[plazoProb])}, ${hhChile(prob.validas[plazoProb])} h` : celdaProb ? diaLargo(celdaProb[1]) : '';
-      leyMapa.innerHTML = `<span><b>Condiciones favorables${t ? ' · ' + escH(t) : ''}</b></span>` +
+      leyMapa.innerHTML = `<span><b>Condiciones propicias${t ? ' · ' + escH(t) : ''}</b></span>` +
         Object.entries({ p1: 'Baja', p2: 'Moderada', p3: 'Alta', p4: 'Muy alta' }).map(([k, x]) => `<span><i style="background:${COLOR_P[k]}"></i>${x}</span>`).join('');
     } else if (v === 'prob' && prob && prob.grilla) {
       const t = plazoProb != null && prob.validas[plazoProb] ? `${hhChile(prob.validas[plazoProb])} h` : celdaProb ? 'día completo' : '';
@@ -351,7 +351,7 @@ function crearTrombas(L, map, h) {
     const filas = d.validas.map((v, k) => [v, serie[k], k]).filter(([v]) => new Date(v).toLocaleDateString('en-CA', { timeZone: 'America/Santiago' }) === f);
     const conMapa = !!d.grilla;
     pdet.innerHTML = `<h3>${escH(a.nombre)} · ${escH(diaLargo(f))}</h3>
-      <p class="mar-ayuda">${modo === 'simple' ? `Porcentaje de los ${d.miembros} escenarios con condiciones favorables, cada 6 h (hora de Chile).` : `${escH(NOMBRE_IND[indProb])}: porcentaje de ${d.miembros} miembros, cada 6 h (hora de Chile).`}${conMapa ? ' Toca una hora para verla en el mapa.' : ''}</p>
+      <p class="mar-ayuda">${modo === 'simple' ? `Porcentaje de los ${d.miembros} escenarios con condiciones propicias, cada 6 h (hora de Chile).` : `${escH(NOMBRE_IND[indProb])}: porcentaje de ${d.miembros} miembros, cada 6 h (hora de Chile).`}${conMapa ? ' Toca una hora para verla en el mapa.' : ''}</p>
       <div class="tr-6h">${conMapa ? `<button type="button" class="tr-6b${plazoProb == null ? ' sel' : ''}" data-k="">Día</button>` : ''}${filas.map(([v, x, k]) => conMapa
         ? `<button type="button" class="tr-6b tr-${claseP(x)}${plazoProb === k ? ' sel' : ''}" data-k="${k}"><b>${escH(hhChile(v))} h</b>${x ?? '–'} %</button>`
         : `<span class="tr-${claseP(x)}"><b>${escH(hhChile(v))} h</b>${x ?? '–'} %</span>`).join('')}</div>`;
@@ -375,7 +375,7 @@ function crearTrombas(L, map, h) {
         L.geoJSON(g, { style: { color: elegida ? '#ffffff' : '#9fb4c8', weight: elegida ? 2.4 : 1, opacity: 0.9, fillColor: COLOR_P[k] || '#ffffff', fillOpacity: v ? OPAC_P[k] : 0.06 } })
           .bindTooltip(`Zona ${escH(id)} · ${escH(nivel(v))}`, { sticky: true })
           .on('click', () => elegirProb(id, f, true))
-          .bindPopup(`<div class="pp"><div class="ppT">Zona ${escH(id)} · ${escH(NOMBRE_ZONA[id] || '')}</div><table><tr><th>Condiciones favorables</th><td><b>${escH(nivel(v))}</b></td></tr>` +
+          .bindPopup(`<div class="pp"><div class="ppT">Zona ${escH(id)} · ${escH(NOMBRE_ZONA[id] || '')}</div><table><tr><th>Condiciones propicias</th><td><b>${escH(nivel(v))}</b></td></tr>` +
             `<tr><th>Escenarios</th><td>${v ?? '–'} % de ${d.miembros}</td></tr><tr><th>Cuándo</th><td>${escH(cuando)}</td></tr></table></div>`)
           .addTo(grupoZona);
       }
@@ -779,13 +779,15 @@ function crearTrombas(L, map, h) {
     const lista = ids => ids.length === 1 ? `la zona ${ids[0]} (${NOMBRE_ZONA[ids[0]] || ''})` : `las zonas ${ids.slice(0, -1).join(', ')} y ${ids[ids.length - 1]}`;
     let frase;
     if (!dias.length) frase = 'El pronóstico se está actualizando. Vuelve a revisar en unos minutos.';
-    else if (vmax === 0) frase = `Sin condiciones favorables para trombas marinas entre Valparaíso y San Pedro hasta el ${diaLargo(dias[dias.length - 1])}.`;
+    else if (vmax === 0) frase = `Sin condiciones propicias para trombas marinas entre Valparaíso y San Pedro hasta el ${diaLargo(dias[dias.length - 1])}.`;
     else {
       const k = claseP(vmax), ids = zonas.filter(z => claseP(val(z, fmax)) === k);
-      frase = `Probabilidad ${NIVEL[k].toLowerCase()} de condiciones favorables para trombas el ${diaLargo(fmax)} en ${lista(ids)}.`;
+      frase = `Probabilidad ${NIVEL[k].toLowerCase()} de condiciones propicias para trombas el ${diaLargo(fmax)} en ${lista(ids)}.`;
     }
     html += `<p class="rs-tit">${escH(frase)}</p><div class="rs-zonas">` + d.areas.map(a => `<div class="rs-z"><div class="rs-zn"><b>${escH(a.id)}</b><span>${escH(NOMBRE_ZONA[a.id] || a.nombre)}</span></div><div class="rs-d">` +
-      dias.map(f => { const v = val(a.id, f); return `<button type="button" class="rs-c tr-${claseP(v)}" data-a="${escH(a.id)}" data-f="${f}" title="${v == null ? '' : v + ' % de los escenarios'}"><small>${escH(diaLargo(f))}</small>${escH(nivel(v))}</button>`; }).join('') + '</div></div>').join('') + '</div>' +
+      (dias.every(f => !val(a.id, f))
+        ? `<p class="rs-cero">Sin condiciones propicias hasta el ${escH(diaLargo(dias[dias.length - 1]))}</p>`
+        : dias.map(f => { const v = val(a.id, f); return `<button type="button" class="rs-c tr-${claseP(v)}" data-a="${escH(a.id)}" data-f="${f}" title="${v == null ? '' : v + ' % de los escenarios'}"><small>${escH(diaLargo(f))}</small>${escH(v === 0 ? 'Sin condiciones' : nivel(v))}</button>`; }).join('')) + '</div></div>').join('') + '</div>' +
       `<p class="rs-nota">Estimación automática y experimental con ${d.miembros} escenarios del modelo GFS (NOAA), actualizada el ${escH(fecha(d.generado))}. <b>No es un aviso</b>: los avisos oficiales los emite la Armada en <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">meteoarmada.directemar.cl</a>.</p>`;
     el.innerHTML = html;
     if (celdaProb && modelo === 'gfs') el.querySelectorAll('.rs-c').forEach(b => b.classList.toggle('sel', b.dataset.a === celdaProb[0] && b.dataset.f === celdaProb[1]));

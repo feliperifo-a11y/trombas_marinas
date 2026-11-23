@@ -77,3 +77,4 @@ span.tr-alto,span.tr-bajo{padding:0 4px;border-radius:3px;color:var(--ink)}
 @media (max-width:1100px){.rs-zonas{grid-template-columns:repeat(2,minmax(0,1fr))}.mapCard{height:52vh;min-height:340px}}
 @media (max-width:760px){.resumen{margin:0 12px 12px;padding:12px}.rs-tit{font-size:16px}.rs-zonas{grid-template-columns:1fr}}
 .rs-c.sel{outline:2px solid #fff;outline-offset:1px}
+.rs-cero{grid-column:1/-1;margin:2px 0;font-size:12.5px;color:#c9d9ea}
