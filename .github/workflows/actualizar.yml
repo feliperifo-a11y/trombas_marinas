@@ -104,7 +104,7 @@ jobs:
       - name: Armar el sitio
         run: |
           mkdir -p _site/data/geo
-          cp index.html _site/
+          cp index.html CNAME _site/
           cp -r assets _site/
           mkdir -p _site/riesgo && cp riesgo/*.html riesgo/*.js riesgo/*.css riesgo/*.png _site/riesgo/
           cp data/geo/metarea.json _site/data/geo/
