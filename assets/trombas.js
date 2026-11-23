@@ -32,8 +32,12 @@ function crearTrombas(L, map, h) {
       sinProb: 'MONAN se corre de forma determinística (una sola corrida): no tiene ensamble ni probabilidad por zona.',
       atr: 'Modelo comunitario <a href="https://github.com/monanadmin/MONAN-Model" target="_blank" rel="noopener">MONAN</a> (INPE/CPTEC), corrido por esta página en una malla de 12 km que se afina a 3 km sobre el golfo de Arauco; condiciones iniciales y de borde NOAA GFS 0,25°. Los índices los calcula esta página con el mismo método.' },
   };
-  let modelo = 'gfs';
-  try { const g = localStorage.getItem('trombasModelo'); if (g === 'ecmwf' || g === 'monan') modelo = g; } catch (e) {}
+  // Vista simple (público general: un solo modelo, palabras en vez de índices) o técnica (todo el detalle)
+  let modo = 'simple';
+  try { if (localStorage.getItem('trombasModo') === 'tecnico') modo = 'tecnico'; } catch (e) {}
+  let modeloTec = 'gfs';
+  try { const g = localStorage.getItem('trombasModelo'); if (g === 'ecmwf' || g === 'monan') modeloTec = g; } catch (e) {}
+  let modelo = modo === 'simple' ? 'gfs' : modeloTec;
   // Campos de pronóstico de MONAN dibujados con la forma real de las celdas (data/monan_campos.json, scripts/monan_campos.py)
   const CAMPOS_M = {
     ninguno: { nombre: 'Sin campo' },
@@ -51,35 +55,47 @@ function crearTrombas(L, map, h) {
   const grupoMonan = L.layerGroup().addTo(map);
   const NOMBRE_IND = { alguno: 'Cualquiera de los tres', stp: 'STP ≤ −0,1', hslc: 'Alto cizalle y CAPE bajo', nst: 'NST > 1 (sin validar en Chile)' };
   const claseP = v => v == null ? '' : v >= 80 ? 'p4' : v >= 50 ? 'p3' : v >= 20 ? 'p2' : v > 0 ? 'p1' : 'p0';
+  // Niveles en palabras para la vista simple (mismos cortes que los colores)
+  const NIVEL = { p0: 'Sin señal', p1: 'Baja', p2: 'Moderada', p3: 'Alta', p4: 'Muy alta' };
+  const nivel = v => v == null ? '–' : NIVEL[claseP(v)];
+  const NOMBRE_ZONA = { III: 'Valparaíso a Constitución', IV: 'Constitución a Isla Mocha', V: 'Isla Mocha a Puerto Montt', VI: 'Puerto Montt a San Pedro' };
+  let zonasGeo = null;   // polígonos de las zonas III a VI (los entrega la página con ponerZonas)
   const diaLargo = f => new Date(f + 'T12:00:00Z').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).replace('.', '');
   const card = document.createElement('section');
   card.className = 'tr-card'; card.id = 'trombas';
-  card.innerHTML = `<nav class="tr-nav" role="tablist" aria-label="Secciones">
-      <button type="button" role="tab" data-tab="pron" aria-selected="true">Pronóstico</button>
-      <button type="button" role="tab" data-tab="avisos" aria-selected="false">Avisos</button>
-      <button type="button" role="tab" data-tab="obs" aria-selected="false">Observadas</button>
+  card.dataset.modo = modo;
+  card.innerHTML = `<div class="tr-vista" role="radiogroup" aria-label="Vista"><span>Vista</span><button type="button" role="radio" data-v="simple" aria-checked="${modo === 'simple'}">Simple</button><button type="button" role="radio" data-v="tecnico" aria-checked="${modo === 'tecnico'}">Técnica</button></div>
+    <nav class="tr-nav" role="tablist" aria-label="Secciones">
+      <button type="button" role="tab" data-tab="pron" aria-selected="true">Próximos días</button>
+      <button type="button" role="tab" data-tab="avisos" aria-selected="false">Avisos de la Armada</button>
+      <button type="button" role="tab" data-tab="obs" aria-selected="false">Trombas registradas</button>
       <button type="button" role="tab" data-tab="ficha" aria-selected="false">Ficha técnica</button></nav>
-    <p class="tr-exp">Estimación automática y experimental: <b>no constituye aviso</b>. Los avisos oficiales los emite el Servicio Meteorológico de la Armada en <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">meteoarmada.directemar.cl</a>.</p>
+    <p class="tr-exp tr-tec">Estimación automática y experimental: <b>no constituye aviso</b>. Los avisos oficiales los emite el Servicio Meteorológico de la Armada en <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">meteoarmada.directemar.cl</a>.</p>
     <div class="tr-panel" data-tab="pron">
-    <div class="tr-mod" role="radiogroup" aria-label="Modelo"><span>Modelo</span>${Object.entries({ gfs: 'GFS · NOAA', ecmwf: 'ECMWF', monan: 'MONAN 3 km' }).map(([k, t]) => `<button type="button" role="radio" data-m="${k}" aria-checked="${k === modelo}">${t}</button>`).join('')}</div>
-    <p class="tr-atr"></p>
-    <div class="tr-campos" style="display:none">
+    <div class="tr-mod tr-tec" role="radiogroup" aria-label="Modelo"><span>Modelo</span>${Object.entries({ gfs: 'GFS · NOAA', ecmwf: 'ECMWF', monan: 'MONAN 3 km' }).map(([k, t]) => `<button type="button" role="radio" data-m="${k}" aria-checked="${k === modelo}">${t}</button>`).join('')}</div>
+    <p class="tr-atr tr-tec"></p>
+    <div class="tr-campos tr-tec" style="display:none">
       <div class="tr-mod" role="radiogroup" aria-label="Campo de MONAN en el mapa"><span>Mapa</span>${Object.entries(CAMPOS_M).map(([k, c]) => `<button type="button" role="radio" data-c="${k}" aria-checked="${k === campoSel}">${c.nombre}</button>`).join('')}</div>
       <div class="tr-cley"></div>
       <p class="mar-ayuda" style="margin:4px 0 0">Toca cualquier punto del dominio de MONAN para ver todos sus parámetros en el plazo elegido.</p>
     </div>
-    <h3 class="tr-h">Probabilidad de que se cumplan los parámetros · <span class="tr-nprob"></span></h3>
-    <p class="mar-sub tr-psub" aria-live="polite">Cargando…</p>
-    <div class="ev-tabs tr-ptabs" role="tablist">${Object.entries(NOMBRE_IND).map(([k, t]) => `<button type="button" role="tab" data-i="${k}" aria-selected="${k === indProb}">${t}</button>`).join('')}</div>
-    <div class="tr-ptabla"></div>
-    <div class="mar-ley tr-pley"><span><i class="tr-p0"></i>0 %</span><span><i class="tr-p1"></i>1–19</span><span><i class="tr-p2"></i>20–49</span><span><i class="tr-p3"></i>50–79</span><span><i class="tr-p4"></i>80–100 %</span></div>
-    <div class="mar-det tr-pdet" aria-live="polite"><p class="mar-ayuda">Tabla: porcentaje de los miembros del ensamble en que al menos un punto de la zona cumple el umbral durante el día (hora de Chile). Mapa: el mismo porcentaje en cada punto de mar. Selecciona una casilla para ver el día en el mapa y el detalle cada 6 h.</p></div>
+    <h3 class="tr-h tr-tec">Probabilidad de que se cumplan los parámetros · <span class="tr-nprob"></span></h3>
+    <p class="mar-sub tr-psub tr-tec" aria-live="polite">Cargando…</p>
+    <p class="mar-ayuda tr-sim">Toca un día en el resumen de arriba o una zona en el mapa para ver el detalle cada 6 horas.</p>
+    <div class="ev-tabs tr-ptabs tr-tec" role="tablist">${Object.entries(NOMBRE_IND).map(([k, t]) => `<button type="button" role="tab" data-i="${k}" aria-selected="${k === indProb}">${t}</button>`).join('')}</div>
+    <div class="tr-ptabla tr-tec"></div>
+    <div class="mar-ley tr-pley"><span><i class="tr-p0"></i><span class="tr-tec">0 %</span><span class="tr-sim">Sin señal</span></span><span><i class="tr-p1"></i><span class="tr-tec">1–19</span><span class="tr-sim">Baja</span></span><span><i class="tr-p2"></i><span class="tr-tec">20–49</span><span class="tr-sim">Moderada</span></span><span><i class="tr-p3"></i><span class="tr-tec">50–79</span><span class="tr-sim">Alta</span></span><span><i class="tr-p4"></i><span class="tr-tec">80–100 %</span><span class="tr-sim">Muy alta</span></span></div>
+    <p class="mar-ayuda tr-sim">Nivel = porcentaje de escenarios del modelo en que se dan las condiciones: baja, 1 a 19 %; moderada, 20 a 49 %; alta, 50 a 79 %; muy alta, 80 % o más. Que se den las condiciones no significa que vaya a haber trombas.</p>
+    <div class="mar-det tr-pdet" aria-live="polite"><p class="mar-ayuda tr-tec">Tabla: porcentaje de los miembros del ensamble en que al menos un punto de la zona cumple el umbral durante el día (hora de Chile). Mapa: el mismo porcentaje en cada punto de mar. Selecciona una casilla para ver el día en el mapa y el detalle cada 6 h.</p></div>
+    <div class="tr-tec">
     <h3 class="tr-h">Detalle por celda · <span class="tr-ndet"></span> (una corrida, sin probabilidad)</h3>
     <p class="mar-sub tr-sub" aria-live="polite">Cargando…</p>
     <div class="tr-tira"></div>
     <div class="mar-ley tr-ley"><span><i style="background:${COLOR.stp}"></i>STP ≤ −0,1</span><span><i style="background:${COLOR.hslc}"></i>Alto cizalle y CAPE bajo</span><span><i style="background:${COLOR.nst}"></i>NST &gt; 1</span><span class="tr-nceldas">número = celdas de 0,25° sobre umbral</span></div>
     <div class="mar-det tr-det" aria-live="polite"><p class="mar-ayuda">Selecciona un plazo para ver en el mapa las celdas que superan algún umbral.</p></div>
     <p class="mar-nota">Índices calculados sobre el océano con el modelo elegido, dominio 20°–56° S / 85°–68° W, con el mismo método para el GFS, ECMWF y MONAN. Los umbrales se apoyan en estudios de tornados chilenos en tierra (Marín et al., 2024 y 2026) y en el NST del SPC: aún no están calibrados para trombas. El STP ≤ −0,1 es un criterio propio, más permisivo que el umbral publicado (≤ −0,3). Ningún modelo global resuelve la vorticidad de escala local, por lo que el NST rara vez supera su umbral. ECMWF publica menos niveles bajo 700 hPa que el GFS (1000, 925 y 850 hPa) y su ΔT usa la temperatura de piel del mar. MONAN cubre solo un círculo de 450 km centrado en el golfo de Arauco (zona IV), con celdas de 3 km hasta unos 70 km del centro y de 12 km en el resto; sus columnas se llevan a los mismos niveles de presión que el GFS y su NST usa la vorticidad del primer nivel del modelo, que a 3 km ya resuelve parte de la escala local: por eso MONAN marca muchas más celdas con NST &gt; 1 y su conteo no es comparable con el de los modelos globales.</p>
+    </div>
+    <p class="mar-nota tr-sim">La vista simple usa el ensamble del modelo GFS de NOAA (31 escenarios). Los índices, los otros modelos (ECMWF y MONAN 3 km) y el detalle de cada corrida están en la vista técnica.</p>
     </div>
     <div class="tr-panel" data-tab="avisos" hidden>
     <h3 class="tr-h">Qué mostraba el modelo en cada aviso de trombas</h3>
@@ -272,7 +288,11 @@ function crearTrombas(L, map, h) {
     if (v === 'prob') { if (map.hasLayer(grupo)) map.removeLayer(grupo); if (!map.hasLayer(grupoZona)) grupoZona.addTo(map); }
     else { if (map.hasLayer(grupoZona)) map.removeLayer(grupoZona); if (datos && !map.hasLayer(grupo)) grupo.addTo(map); }
     if (!leyMapa) return;
-    if (v === 'prob' && prob && prob.grilla) {
+    if (v === 'prob' && prob && modo === 'simple') {
+      const t = plazoProb != null && prob.validas[plazoProb] ? `${diaChile(prob.validas[plazoProb])}, ${hhChile(prob.validas[plazoProb])} h` : celdaProb ? diaLargo(celdaProb[1]) : '';
+      leyMapa.innerHTML = `<span><b>Condiciones favorables${t ? ' · ' + escH(t) : ''}</b></span>` +
+        Object.entries({ p1: 'Baja', p2: 'Moderada', p3: 'Alta', p4: 'Muy alta' }).map(([k, x]) => `<span><i style="background:${COLOR_P[k]}"></i>${x}</span>`).join('');
+    } else if (v === 'prob' && prob && prob.grilla) {
       const t = plazoProb != null && prob.validas[plazoProb] ? `${hhChile(prob.validas[plazoProb])} h` : celdaProb ? 'día completo' : '';
       leyMapa.innerHTML = `<span><b>Probabilidad · ${escH(NOMBRE_IND[indProb])}${t ? ' · ' + escH(t) : ''}</b></span>` +
         Object.entries({ p1: '1–19 %', p2: '20–49 %', p3: '50–79 %', p4: '80–100 %' }).map(([k, x]) => `<span><i style="background:${COLOR_P[k]}"></i>${x}</span>`).join('');
@@ -304,10 +324,13 @@ function crearTrombas(L, map, h) {
   function pintarProb() {
     const d = prob, hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
     const dias = d.dias.filter(f => f >= hoy);
-    psub.innerHTML = `Corrida ${escH(d.corrida.replace('T', ' ').replace('Z', ' UTC'))} · ${escH(d.fuente)} · procesada ${escH(horaChile(d.generado))} (hora Chile)${Date.now() - new Date(d.generado) > (MODELOS[modelo].viejoProbH || 22) * 3600e3 ? ' · <b class="mar-viejo">corrida antigua</b>' : ''}`;
+    const viejaP = Date.now() - new Date(d.generado) > (MODELOS[modelo].viejoProbH || 22) * 3600e3;
+    psub.innerHTML = modo === 'simple'
+      ? `Según ${d.miembros} escenarios del modelo GFS (NOAA) · actualizado ${escH(horaChile(d.generado))}${viejaP ? ' · <b class="mar-viejo">datos atrasados</b>' : ''}. Toca una casilla para verla en el mapa.`
+      : `Corrida ${escH(d.corrida.replace('T', ' ').replace('Z', ' UTC'))} · ${escH(d.fuente)} · procesada ${escH(horaChile(d.generado))} (hora Chile)${viejaP ? ' · <b class="mar-viejo">corrida antigua</b>' : ''}`;
     ptabla.innerHTML = `<div class="ev-tw"><table class="ev-tabla tr-pt"><thead><tr><th>Zona</th>${dias.map(f => `<th>${escH(diaLargo(f))}</th>`).join('')}</tr></thead><tbody>` +
       d.areas.map(a => `<tr><th title="${escH(a.nombre)}">${escH(a.nombre.replace(/^Zona (\S+) · /, '$1 · '))}</th>` +
-        dias.map(f => { const v = d.prob_dia[a.id][indProb]?.[f]; return `<td><button type="button" class="tr-pc tr-${claseP(v)}${celdaProb && celdaProb[0] === a.id && celdaProb[1] === f ? ' sel' : ''}" data-a="${a.id}" data-f="${f}">${v == null ? '–' : v + ' %'}</button></td>`; }).join('') + '</tr>').join('') +
+        dias.map(f => { const v = d.prob_dia[a.id][indProb]?.[f]; return `<td><button type="button" class="tr-pc tr-${claseP(v)}${celdaProb && celdaProb[0] === a.id && celdaProb[1] === f ? ' sel' : ''}" data-a="${a.id}" data-f="${f}"${modo === 'simple' && v != null ? ` title="${v} % de los escenarios"` : ''}>${v == null ? '–' : modo === 'simple' ? nivel(v) : v + ' %'}</button></td>`; }).join('') + '</tr>').join('') +
       '</tbody></table></div>';
     ptabla.querySelectorAll('.tr-pc').forEach(b => b.onclick = () => elegirProb(b.dataset.a, b.dataset.f));
     if (celdaProb && dias.includes(celdaProb[1])) elegirProb(...celdaProb, true);
@@ -322,18 +345,19 @@ function crearTrombas(L, map, h) {
     if (!celdaProb || celdaProb[1] !== f) plazoProb = null;
     celdaProb = [id, f];
     ptabla.querySelectorAll('.tr-pc').forEach(b => b.classList.toggle('sel', b.dataset.a === id && b.dataset.f === f));
+    if (h.resumen) h.resumen.querySelectorAll('.rs-c').forEach(b => b.classList.toggle('sel', b.dataset.a === id && b.dataset.f === f));
     const d = prob, a = d.areas.find(x => x.id === id); if (!a) return;
     const serie = d.prob[id][indProb] || [];
     const filas = d.validas.map((v, k) => [v, serie[k], k]).filter(([v]) => new Date(v).toLocaleDateString('en-CA', { timeZone: 'America/Santiago' }) === f);
     const conMapa = !!d.grilla;
     pdet.innerHTML = `<h3>${escH(a.nombre)} · ${escH(diaLargo(f))}</h3>
-      <p class="mar-ayuda">${escH(NOMBRE_IND[indProb])}: porcentaje de ${d.miembros} miembros, cada 6 h (hora de Chile).${conMapa ? ' Toca una hora para verla en el mapa.' : ''}</p>
+      <p class="mar-ayuda">${modo === 'simple' ? `Porcentaje de los ${d.miembros} escenarios con condiciones favorables, cada 6 h (hora de Chile).` : `${escH(NOMBRE_IND[indProb])}: porcentaje de ${d.miembros} miembros, cada 6 h (hora de Chile).`}${conMapa ? ' Toca una hora para verla en el mapa.' : ''}</p>
       <div class="tr-6h">${conMapa ? `<button type="button" class="tr-6b${plazoProb == null ? ' sel' : ''}" data-k="">Día</button>` : ''}${filas.map(([v, x, k]) => conMapa
         ? `<button type="button" class="tr-6b tr-${claseP(x)}${plazoProb === k ? ' sel' : ''}" data-k="${k}"><b>${escH(hhChile(v))} h</b>${x ?? '–'} %</button>`
         : `<span class="tr-${claseP(x)}"><b>${escH(hhChile(v))} h</b>${x ?? '–'} %</span>`).join('')}</div>`;
     pdet.querySelectorAll('.tr-6b').forEach(b => b.onclick = () => { plazoProb = b.dataset.k === '' ? null : +b.dataset.k; elegirProb(id, f, true); mostrarVista('prob'); });
     pintarMapaProb(a);
-    if (!silencioso) { mostrarVista('prob'); map.fitBounds(L.latLngBounds(a.puntos).pad(0.2), { maxZoom: 7 }); }
+    if (!silencioso) { mostrarVista('prob'); if (modo !== 'simple') map.fitBounds(L.latLngBounds(a.puntos).pad(0.2), { maxZoom: 7 }); }
     else if (vista === 'prob') mostrarVista('prob');
   }
 
@@ -342,6 +366,21 @@ function crearTrombas(L, map, h) {
   function pintarMapaProb(a) {
     grupoZona.clearLayers();
     const d = prob, f = celdaProb && celdaProb[1];
+    if (modo === 'simple' && zonasGeo) {   // vista simple: cada zona entera con su nivel (algún punto de la zona)
+      for (const g of zonasGeo) {
+        const id = g.properties.id, sz = d.prob[id];
+        if (!sz) continue;
+        const v = plazoProb != null ? sz.alguno?.[plazoProb] : d.prob_dia[id].alguno?.[f], k = claseP(v), elegida = id === a.id;
+        const cuando = plazoProb != null ? horaChile(d.validas[plazoProb]) : diaLargo(f);
+        L.geoJSON(g, { style: { color: elegida ? '#ffffff' : '#9fb4c8', weight: elegida ? 2.4 : 1, opacity: 0.9, fillColor: COLOR_P[k] || '#ffffff', fillOpacity: v ? OPAC_P[k] : 0.06 } })
+          .bindTooltip(`Zona ${escH(id)} · ${escH(nivel(v))}`, { sticky: true })
+          .on('click', () => elegirProb(id, f, true))
+          .bindPopup(`<div class="pp"><div class="ppT">Zona ${escH(id)} · ${escH(NOMBRE_ZONA[id] || '')}</div><table><tr><th>Condiciones favorables</th><td><b>${escH(nivel(v))}</b></td></tr>` +
+            `<tr><th>Escenarios</th><td>${v ?? '–'} % de ${d.miembros}</td></tr><tr><th>Cuándo</th><td>${escH(cuando)}</td></tr></table></div>`)
+          .addTo(grupoZona);
+      }
+      return;
+    }
     if (!d.grilla || !d.prob_punto_dia?.[indProb]) {   // archivo anterior: solo los puntos de la zona elegida
       for (const [la, lo] of a.puntos) L.circleMarker([la, lo], { radius: 4, color: '#18212b', weight: 1, fillColor: '#ffffff', fillOpacity: 0.7 }).addTo(grupoZona);
       return;
@@ -611,14 +650,31 @@ function crearTrombas(L, map, h) {
   }
   card.querySelectorAll('.tr-mod button').forEach(b => b.onclick = () => {
     if (b.dataset.m === modelo) return;
-    modelo = b.dataset.m;
+    modelo = modeloTec = b.dataset.m;
     try { localStorage.setItem('trombasModelo', modelo); } catch (e) {}
+    recargarModelo();
+  });
+  function recargarModelo() {
     rotularModelo();
     datos = null; prob = null; sel = null;
     sub.textContent = 'Cargando…'; psub.textContent = 'Cargando…'; tira.innerHTML = ''; ptabla.innerHTML = '';
     cargar(); cargarProb(); cargarCampos();
-  });
+  }
   rotularModelo();
+  // Selector de vista: la simple fija el ensamble GFS y el criterio combinado
+  card.querySelectorAll('.tr-vista button').forEach(b => b.onclick = () => {
+    if (b.dataset.v === modo) return;
+    modo = b.dataset.v; card.dataset.modo = modo;
+    try { localStorage.setItem('trombasModo', modo); } catch (e) {}
+    card.querySelectorAll('.tr-vista button').forEach(x => x.setAttribute('aria-checked', x === b));
+    if (modo === 'simple') {
+      indProb = 'alguno';
+      card.querySelectorAll('.tr-ptabs button').forEach(x => x.setAttribute('aria-selected', x.dataset.i === 'alguno'));
+    }
+    const m = modo === 'simple' ? 'gfs' : modeloTec;
+    if (m !== modelo) { modelo = m; recargarModelo(); }
+    else if (prob) { pintarProb(); mostrarVista('prob'); }
+  });
 
   // ---- Trombas observadas (data/trombas_eventos.json): catálogo de eventos ocurridos, no avisos ni pronóstico
   const grupoObs = L.layerGroup();
@@ -694,9 +750,59 @@ function crearTrombas(L, map, h) {
       'Por eso un día sin registro no es un día sin tromba. ' + (obs.base_cientifica && obs.base_cientifica.cita ? escH(obs.base_cientifica.cita) : '');
   }
 
+  // ---- Resumen para el público (h.resumen): aviso vigente de la Armada y una frase con el ensamble GFS, siempre el mismo modelo
+  let probRes = null;
+  async function cargarResumen() {
+    if (!h.resumen) return;
+    try {
+      const r = await fetch(MODELOS.gfs.prob + '?t=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(30000) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      probRes = await r.json();
+    } catch (e) { probRes = null; }
+    pintarResumen();
+  }
+  function pintarResumen() {
+    const el = h.resumen; if (!el) return;
+    const ahora = new Date(), hoy = ahora.toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
+    const fecha = iso => new Date(iso).toLocaleString('es-CL', { timeZone: 'America/Santiago', weekday: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', '');
+    const vigentes = avs ? Object.values(avs.avisos).filter(a => a.desde && a.hasta && new Date(a.desde) <= ahora && ahora <= new Date(a.hasta)) : [];
+    let html = vigentes.map(a => `<div class="rs-aviso" role="alert"><b>Aviso de la Armada vigente: trombas marinas.</b> ${escH(a.sector || '')}${a.zonas && a.zonas.length ? ` (zona${a.zonas.length > 1 ? 's' : ''} ${escH(a.zonas.join(', '))})` : ''}, hasta el ${escH(fecha(a.hasta))}.${a.url ? ` <a href="${escH(a.url)}" target="_blank" rel="noopener">Ver aviso ↗</a>` : ''}</div>`).join('');
+    const d = probRes;
+    if (!d || !d.prob_dia) {
+      el.innerHTML = html + '<p class="rs-tit">El pronóstico se está actualizando. Vuelve a revisar en unos minutos.</p>';
+      return;
+    }
+    const dias = d.dias.filter(f => f >= hoy), zonas = d.areas.map(a => a.id);
+    const val = (z, f) => d.prob_dia[z]?.alguno?.[f];
+    let vmax = 0, fmax = null;
+    for (const f of dias) for (const z of zonas) { const v = val(z, f) ?? 0; if (v > vmax) { vmax = v; fmax = f; } }
+    const lista = ids => ids.length === 1 ? `la zona ${ids[0]} (${NOMBRE_ZONA[ids[0]] || ''})` : `las zonas ${ids.slice(0, -1).join(', ')} y ${ids[ids.length - 1]}`;
+    let frase;
+    if (!dias.length) frase = 'El pronóstico se está actualizando. Vuelve a revisar en unos minutos.';
+    else if (vmax === 0) frase = `Sin condiciones favorables para trombas marinas entre Valparaíso y San Pedro hasta el ${diaLargo(dias[dias.length - 1])}.`;
+    else {
+      const k = claseP(vmax), ids = zonas.filter(z => claseP(val(z, fmax)) === k);
+      frase = `Probabilidad ${NIVEL[k].toLowerCase()} de condiciones favorables para trombas el ${diaLargo(fmax)} en ${lista(ids)}.`;
+    }
+    html += `<p class="rs-tit">${escH(frase)}</p><div class="rs-zonas">` + d.areas.map(a => `<div class="rs-z"><div class="rs-zn"><b>${escH(a.id)}</b><span>${escH(NOMBRE_ZONA[a.id] || a.nombre)}</span></div><div class="rs-d">` +
+      dias.map(f => { const v = val(a.id, f); return `<button type="button" class="rs-c tr-${claseP(v)}" data-a="${escH(a.id)}" data-f="${f}" title="${v == null ? '' : v + ' % de los escenarios'}"><small>${escH(diaLargo(f))}</small>${escH(nivel(v))}</button>`; }).join('') + '</div></div>').join('') + '</div>' +
+      `<p class="rs-nota">Estimación automática y experimental con ${d.miembros} escenarios del modelo GFS (NOAA), actualizada el ${escH(fecha(d.generado))}. <b>No es un aviso</b>: los avisos oficiales los emite la Armada en <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">meteoarmada.directemar.cl</a>.</p>`;
+    el.innerHTML = html;
+    if (celdaProb && modelo === 'gfs') el.querySelectorAll('.rs-c').forEach(b => b.classList.toggle('sel', b.dataset.a === celdaProb[0] && b.dataset.f === celdaProb[1]));
+    el.querySelectorAll('.rs-c').forEach(b => b.onclick = () => {
+      pestana('pron');
+      if (modelo === 'gfs' && prob) { elegirProb(b.dataset.a, b.dataset.f, true); mostrarVista('prob'); }
+      if (innerWidth <= 1100) map.getContainer().scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
   function actualizar() {
     capaCampos.clearLayers(); capaFlechas.clearLayers(); camposM = null; polysM = null; indicesM = null; cargandoI = null;   // relee la corrida nueva
-    cargar(); cargarProb(); cargarAvisos(); cargarCampos(); cargarObservadas();
+    cargar(); cargarProb(); cargarAvisos().then(pintarResumen); cargarCampos(); cargarObservadas(); cargarResumen();
   }
-  return { actualizar, pestana, capas: { celdas: grupo, zona: grupoZona, monan: grupoMonan, obs: grupoObs }, get cargado() { return cargado; } };
+  function ponerZonas(features) {
+    zonasGeo = features;
+    if (prob && celdaProb) elegirProb(...celdaProb, true);
+  }
+  return { actualizar, pestana, ponerZonas, capas: { celdas: grupo, zona: grupoZona, monan: grupoMonan, obs: grupoObs }, get cargado() { return cargado; } };
 }

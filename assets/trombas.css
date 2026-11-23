@@ -53,3 +53,27 @@ span.tr-alto,span.tr-bajo{padding:0 4px;border-radius:3px;color:var(--ink)}
 .tr-6b{border-radius:5px;padding:3px 7px;font:12px system-ui,sans-serif;display:flex;gap:6px;align-items:baseline;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
 .tr-6b.sel{outline:2px solid var(--ink);outline-offset:1px}
 .tr-volverp{margin-left:6px;border:1px solid var(--line);border-radius:6px;background:var(--chip);color:var(--ink);font:12px system-ui,sans-serif;padding:2px 8px;cursor:pointer}
+/* Vista simple y técnica */
+.tr-card[data-modo=simple] .tr-tec{display:none!important}
+.tr-card[data-modo=tecnico] .tr-sim{display:none!important}
+.tr-vista{display:flex;align-items:center;gap:6px;margin:0 0 10px}
+.tr-vista span{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-right:4px}
+.tr-vista button{font:600 12.5px system-ui,sans-serif;background:#0b1d31;color:#c9d9ea;border:1px solid var(--line);border-radius:999px;padding:5px 14px;cursor:pointer;min-height:30px}
+.tr-vista button[aria-checked=true]{background:#2f8cff;color:#fff;border-color:#5fb0ff}
+.tr-card[data-modo=simple] .tr-pc{font-size:11.5px;min-width:64px}
+/* Resumen para el público, arriba del mapa */
+.nav{display:none}
+.resumen{margin:0 22px 14px;background:linear-gradient(180deg,#0f243b,#0b1c30);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.rs-tit{font-size:18px;font-weight:700;line-height:1.35;margin:0 0 10px}
+.rs-aviso{background:#4a1010;border:1px solid #c62828;color:#ffe3e3;border-radius:10px;padding:9px 12px;margin:0 0 10px;font-size:14px}
+.rs-aviso a{color:#ffd0d0}
+.rs-zonas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.rs-z{background:#0b1d31;border:1px solid var(--line);border-radius:10px;padding:8px}
+.rs-zn{display:flex;align-items:baseline;gap:6px;margin-bottom:6px;min-width:0}.rs-zn b{font-size:15px}.rs-zn span{font-size:12px;color:#c9d9ea;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rs-d{display:grid;grid-template-columns:repeat(auto-fit,minmax(56px,1fr));gap:4px}
+.rs-c{border:1px solid var(--line);border-radius:7px;padding:4px 2px;font:700 11.5px system-ui,sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.15}
+.rs-c small{font-size:10px;font-weight:500;opacity:.85}
+.rs-nota{font-size:12px;color:var(--muted);margin:10px 0 0}.rs-nota a{color:var(--muted)}
+@media (max-width:1100px){.rs-zonas{grid-template-columns:repeat(2,minmax(0,1fr))}.mapCard{height:52vh;min-height:340px}}
+@media (max-width:760px){.resumen{margin:0 12px 12px;padding:12px}.rs-tit{font-size:16px}.rs-zonas{grid-template-columns:1fr}}
+.rs-c.sel{outline:2px solid #fff;outline-offset:1px}

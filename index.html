@@ -14,8 +14,8 @@
 </head>
 <body>
 <div class="top">
-  <a class="logo" href="https://meteoia.cl" title="Ir a MeteoIA"><span class="mk"><img src="assets/logo-meteoia.png" alt="MeteoIA"></span><span><b>Trombas marinas</b><span class="tx">Perspectiva experimental a 72 h · zonas III a VI</span></span></a>
-  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">GFS e IFS cada 6 h · ensambles 00 y 12 UTC · MONAN diario (48 h)</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button></div>
+  <a class="logo" href="https://meteoia.cl" title="Ir a MeteoIA"><span class="mk"><img src="assets/logo-meteoia.png" alt="MeteoIA"></span><span><b>Trombas marinas</b><span class="tx">¿Condiciones para trombas en los próximos días? · Valparaíso a San Pedro</span></span></a>
+  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">Se actualiza sola varias veces al día</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button></div>
 </div>
 <nav class="nav"><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="gOla" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e88ff"/><stop offset="1" stop-color="#22c3ee"/></linearGradient>
@@ -27,6 +27,7 @@
   <a class="on" href="./" aria-current="page"><svg class="ic" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M13 22h37a8 8 0 0 0-2-15.7A13 13 0 0 0 24.5 5 9 9 0 0 0 13 22Z" stroke="#e8f1fb" stroke-width="2.6"/><path d="M23 22h18c-3.5 8-5.6 17-6.4 28h-5.2C28.6 39 26.5 30 23 22Z" fill="url(#gNub)"/><path d="M27 28h10M28.5 35h7M30 42h4" stroke="#d7f1ff" stroke-width="1.8" opacity=".8"/><path d="M4 56c4-3.5 8-3.5 12 0s8 3.5 12 0M36 56c4-3.5 8-3.5 12 0s8 3.5 12 0" stroke="url(#gOla)" stroke-width="3.4"/><path d="M27 51c-2-2-4-2-6-1M37 51c2-2 4-2 6-1" stroke="#7fd6ff" stroke-width="2"/></svg>Trombas</a>
 </nav>
 
+<section class="resumen" id="resumen" aria-live="polite"><p class="rs-tit">Cargando el pronóstico…</p></section>
 <div class="wrap">
   <section class="mapCard" id="mapa">
     <div id="map" role="application" aria-label="Mapa de celdas y zonas de trombas marinas"></div>
@@ -39,7 +40,7 @@
     <div class="leyMapa"><span><i style="background:#b3149a"></i>STP ≤ −0,1</span><span><i style="background:#f28c00"></i>Alto cizalle, CAPE bajo</span><span><i style="background:#1f6fb2"></i>NST &gt; 1</span></div>
   </section>
   <div class="col">
-    <section class="card" id="panel"><h2>Trombas marinas <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">Avisos oficiales ↗</a></h2><div id="lado"></div></section>
+    <section class="card" id="panel"><h2>Detalle <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">Avisos oficiales ↗</a></h2><div id="lado"></div></section>
   </div>
 </div>
 <footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), ECMWF (IFS y ENS 0,25°, datos abiertos con licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página), modelo comunitario MONAN (INPE/CPTEC), corrido por esta página con condiciones iniciales y de borde del GFS, y avisos del Servicio Meteorológico de la Armada. El catálogo de trombas observadas incorpora datos de Bastías-Curivil et al. (2025), <a href="https://doi.org/10.6084/m9.figshare.25119566" target="_blank" rel="noopener">Tornadoes and Waterspouts in Chile</a>, figshare v5, licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
@@ -98,15 +99,18 @@
   const zonas = L.layerGroup().addTo(map);
 
   // Zonas III a VI del Cuadro "F" (subdivisión nacional de METAREA XV), las mismas que evalúa el ensamble.
-  fetch('data/geo/metarea.json').then(r => r.ok ? r.json() : Promise.reject(r.status)).then(g => {
-    for (const f of g.features.filter(f => ['III', 'IV', 'V', 'VI'].includes(f.properties.id))) {
+  const geoZonas = fetch('data/geo/metarea.json').then(r => r.ok ? r.json() : Promise.reject(r.status)).then(g => {
+    const fs = g.features.filter(f => ['III', 'IV', 'V', 'VI'].includes(f.properties.id));
+    for (const f of fs) {
       const capa = L.geoJSON(f, { interactive: false, style: { color: '#ffffff', weight: 1.4, opacity: 0.85, fill: false, dashArray: '5 5' } }).addTo(zonas);
       const c = capa.getBounds().getCenter();
       L.marker([c.lat, c.lng], { interactive: false, icon: L.divIcon({ className: 'zLbl', html: `<span>${escH(f.properties.id)}</span>`, iconSize: null }) }).addTo(zonas);
     }
-  }).catch(() => {});
+    return fs;
+  }).catch(() => null);
 
-  const tr = crearTrombas(L, map, { escH, contenedor: document.getElementById('lado'), alCambiar: () => {} });
+  const tr = crearTrombas(L, map, { escH, contenedor: document.getElementById('lado'), resumen: document.getElementById('resumen'), alCambiar: () => {} });
+  geoZonas.then(fs => { if (fs) tr.ponerZonas(fs); });
   tr.actualizar();
   let ultima = Date.now();
   const refrescar = () => { if (!document.hidden && Date.now() - ultima > 30 * 60e3) { ultima = Date.now(); tr.actualizar(); } };
@@ -114,7 +118,7 @@
 
   // Capas y mapa base (mismo control que la portada)
   // El tercer elemento marca las capas que parten apagadas (referencia histórica, no vista operativa)
-  const CAPAS = [['Zonas III a VI (Cuadro "F")', zonas], ['Celdas sobre umbral (modelo elegido)', tr.capas.celdas], ['Probabilidad del ensamble (mapa)', tr.capas.zona], ['MONAN 3 km: campos y ficha por punto', tr.capas.monan], ['Trombas observadas (catálogo)', tr.capas.obs, false]];
+  const CAPAS = [['Zonas III a VI (Cuadro "F")', zonas], ['Celdas sobre umbral (modelo elegido)', tr.capas.celdas], ['Probabilidad (zonas o puntos del ensamble)', tr.capas.zona], ['MONAN 3 km: campos y ficha por punto', tr.capas.monan], ['Trombas observadas (catálogo)', tr.capas.obs, false]];
   const pop = document.getElementById('capasPop');
   pop.innerHTML = '<div class="t">Capas</div>' + CAPAS.map(([n, , on], i) => `<label><input type="checkbox" data-i="${i}"${on === false ? '' : ' checked'}> ${escH(n)}</label>`).join('') +
     '<div class="t" style="margin-top:8px">Mapa base</div><label><input type="radio" name="base" value="sat" checked> Imagen satelital</label><label><input type="radio" name="base" value="oc"> Océano (claro)</label>';
