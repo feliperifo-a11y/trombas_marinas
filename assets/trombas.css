@@ -88,3 +88,10 @@ span.tr-alto,span.tr-bajo{padding:0 4px;border-radius:3px;color:var(--ink)}
 .mapCard .uv-panel a{color:#5fb0ff}.mapCard .uv-panel button{background:#12294a;color:var(--ink);border:1px solid var(--line);border-radius:6px;cursor:pointer}
 .mapCard .uv-marcas{color:var(--muted)}.uv-popup .uv-ficha strong{color:#2f8cff}
 @media (max-width:760px){.mapCard .uv-panel{left:8px;right:60px;width:auto;bottom:8px;max-height:46%}}
+/* Gráfico de evolución del viento ECMWF en un punto */
+.uv-popup .uv-ficha{width:300px}
+.ec-evol{margin:6px 0;border-top:1px solid #1d3a58;padding-top:6px}
+.ec-graf{display:block;margin-top:4px}.ec-graf text{font:9px system-ui,sans-serif;fill:#9fb3c8}
+.ec-ley{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:10.5px;color:#9fb3c8;margin-top:2px}.ec-ley i{display:inline-block;width:12px;height:3px;vertical-align:middle;margin-right:4px}
+.ec-carga{color:#9fb3c8;margin:4px 0}
+@media (max-width:760px){.mapCard.ec-ficha .uv-panel,.mapCard.ec-ficha .leyMapa{display:none}.mapCard{min-height:420px}}

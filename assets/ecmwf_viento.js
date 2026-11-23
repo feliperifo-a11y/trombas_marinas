@@ -137,11 +137,64 @@ function crearCapaECMWF(L, map, escapar, contenedor) {
     if (isNaN(vel)) return;
     const p = idx.plazos[indice];
     const nivel = vel > 34 ? ' · <b style="color:#c4162f">sobre 34 kt</b>' : vel > 25 ? ' · <b style="color:#b07d00">sobre 25 kt</b>' : '';
-    L.popup({ className: 'uv-popup', maxWidth: 280 }).setLatLng(e.latlng).setContent(
-      `<div class="uv-ficha"><b>Viento ECMWF 9 km</b> · ${escapar(ww3Fecha(p.valido))}<p>Viento medio a 10 m<br><strong>${Math.round(vel)} kt</strong> ${isNaN(d) ? '' : ww3Rumbo(d) + ' (' + Math.round(d) + '°)'}</p>` +
+    const ficha = evol => `<div class="uv-ficha"><b>Viento ECMWF 9 km</b> · ${escapar(ww3Fecha(p.valido))}<p>Viento medio a 10 m<br><strong>${Math.round(vel)} kt</strong> ${isNaN(d) ? '' : ww3Rumbo(d) + ' (' + Math.round(d) + '°)'}</p>` +
       `<p>Beaufort ${ecmwfBeaufort(vel)}${nivel}<br>Ráfaga máxima del período: <b>${isNaN(raf) ? '–' : Math.round(raf) + ' kt'}</b></p>` +
-      `<small>${Math.abs(lat).toFixed(2)}° S · ${Math.abs(lng).toFixed(2)}° W · celda de 0,1°. Dirección de procedencia.</small></div>`).openOn(map);
+      `<div class="ec-evol"><b>Próximos días</b>${evol}</div>` +
+      `<small>${Math.abs(lat).toFixed(2)}° S · ${Math.abs(lng).toFixed(2)}° W · celda de 0,1°. Dirección de procedencia.</small></div>`;
+    const pop = L.popup({ className: 'uv-popup', maxWidth: 330, autoPanPaddingTopLeft: [10, 10] }).setLatLng(e.latlng)
+      .setContent(ficha('<p class="ec-carga">Cargando la evolución…</p>')).openOn(map);
+    const clave = idx.clave, carga = () => pop.getElement() && pop.getElement().querySelector('.ec-carga');
+    // el avance se escribe directo en el DOM; el resultado final reemplaza el contenido (setContent rehace el popup)
+    serie(i, j, (k, n) => { const c = carga(); if (c && k < n) c.textContent = `Cargando la evolución… ${Math.round(k / n * 100)} %`; })
+      .then(S => { if (map.hasLayer(pop) && idx.clave === clave) pop.setContent(ficha(grafico(S, Date.parse(p.valido)))); })
+      .catch(() => { const c = carga(); if (c) c.textContent = 'No se pudo cargar la evolución del viento.'; });
   }
+  // ---- Evolución del viento en un punto: lee todos los plazos (se guardan en caché) y dibuja un gráfico SVG
+  async function plazoBin(p) {
+    let b = cache.get(p.archivo);
+    if (!b) {
+      const r = await fetch(ECMWF_BASE + p.archivo + '?c=' + idx.clave, { signal: AbortSignal.timeout(60000) });
+      if (!r.ok) throw Error('sin plazo');
+      b = new Uint8Array(await r.arrayBuffer());
+      if (b.length !== idx.nlat * idx.nlon * idx.campos.length) throw Error('tamaño inesperado');
+      cache.set(p.archivo, b);
+    }
+    return b;
+  }
+  async function serie(i, j, avance) {
+    const P = idx.plazos, out = new Array(P.length);
+    let hechos = 0, sig = 0;
+    const leer = (b, nombre) => { const [k, esc] = posicion[nombre], v = b[k * idx.nlat * idx.nlon + i * idx.nlon + j]; return v === idx.sin_dato ? NaN : v / esc; };
+    const trabajador = async () => {
+      while (sig < P.length) {
+        const n = sig++, b = await plazoBin(P[n]);
+        out[n] = { t: Date.parse(P[n].valido), vel: leer(b, 'vel'), dir: leer(b, 'dir'), raf: leer(b, 'raf') };
+        avance(++hechos, P.length);
+      }
+    };
+    await Promise.all([1, 2, 3, 4, 5, 6].map(trabajador));   // seis descargas a la vez
+    return out;
+  }
+  function grafico(S, tSel) {
+    const W = 300, H = 150, iz = 28, de = 6, ar = 18, ab = 20, w = W - iz - de, h = H - ar - ab;
+    const t0 = S[0].t, t1 = S[S.length - 1].t, ymax = Math.max(35, Math.ceil(Math.max(...S.map(s => isNaN(s.raf) ? s.vel : s.raf).filter(v => !isNaN(v))) / 10) * 10);
+    const X = t => iz + (t - t0) / (t1 - t0) * w, Y = v => ar + h - v / ymax * h;
+    const linea = k => S.filter(s => !isNaN(s[k])).map((s, n) => `${n ? 'L' : 'M'}${X(s.t).toFixed(1)},${Y(s[k]).toFixed(1)}`).join('');
+    let g = '';
+    for (let v = 0; v <= ymax; v += 10) g += `<line x1="${iz}" x2="${W - de}" y1="${Y(v)}" y2="${Y(v)}" stroke="#2c4560" stroke-width=".6"/><text x="${iz - 3}" y="${Y(v) + 3}" text-anchor="end">${v}</text>`;
+    for (const [v, c] of [[25, '#b07d00'], [34, '#c4162f']]) if (v <= ymax) g += `<line x1="${iz}" x2="${W - de}" y1="${Y(v)}" y2="${Y(v)}" stroke="${c}" stroke-width=".8" stroke-dasharray="3 3"/>`;
+    // días (medianoche de Chile)
+    const dia = t => new Date(t).toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
+    let d = dia(t0);
+    for (let t = t0; t <= t1; t += 3600e3) { const dd = dia(t); if (dd !== d) { d = dd; g += `<line x1="${X(t)}" x2="${X(t)}" y1="${ar}" y2="${ar + h}" stroke="#5d7a96" stroke-width=".7"/><text x="${X(t) + 2}" y="${H - 6}">${new Date(t).toLocaleDateString('es-CL', { timeZone: 'America/Santiago', weekday: 'short', day: 'numeric' }).replace('.', '')}</text>`; } }
+    // flechas de dirección (hacia dónde sopla) cada 12 h aprox.
+    S.forEach((s, n) => { if (n % 4 || isNaN(s.dir)) return; g += `<g transform="translate(${X(s.t)},9) rotate(${(s.dir + 180) % 360})"><path d="M0 5V-5M-3 -1L0 -5L3 -1" fill="none" stroke="#c9d9ea" stroke-width="1.3" stroke-linecap="round"/></g>`; });
+    if (tSel >= t0 && tSel <= t1) g += `<line x1="${X(tSel)}" x2="${X(tSel)}" y1="${ar}" y2="${ar + h}" stroke="#2f8cff" stroke-width="1.2"/>`;
+    return `<svg class="ec-graf" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Evolución del viento en el punto">${g}` +
+      `<path d="${linea('raf')}" fill="none" stroke="#f29a3b" stroke-width="1.4" stroke-dasharray="4 2"/><path d="${linea('vel')}" fill="none" stroke="#4fb3ff" stroke-width="2"/></svg>` +
+      `<div class="ec-ley"><span><i style="background:#4fb3ff"></i>Viento medio</span><span><i style="background:#f29a3b"></i>Ráfaga</span><span><i style="background:#b07d00"></i>25 kt</span><span><i style="background:#c4162f"></i>34 kt</span> · nudos, hora de Chile</div>`;
+  }
+
   async function mostrar(n) {
     if (!idx || !activo()) return;
     const solicitud = ++token; indice = (n + idx.plazos.length) % idx.plazos.length;
@@ -192,6 +245,9 @@ function crearCapaECMWF(L, map, escapar, contenedor) {
   grupo.on('add', () => { panel.hidden = false; flechas.addTo(map); cargar(); });
   grupo.on('remove', () => { panel.hidden = true; detener(); map.removeLayer(flechas); map.closePopup(); });
   setInterval(() => { if (activo()) cargar(); }, 30 * 60000);
+  // Con la ficha abierta, la página puede ocultar paneles que la tapan (clase en el contenedor del mapa)
+  map.on('popupopen', ev => { if (ev.popup.options.className === 'uv-popup') contenedor.classList.add('ec-ficha'); });
+  map.on('popupclose', ev => { if (ev.popup.options.className === 'uv-popup') contenedor.classList.remove('ec-ficha'); });
   grupo.ponerMascara = fs => { mascara = fs; if (activo() && campos) pintar(); };
   return grupo;
 }
