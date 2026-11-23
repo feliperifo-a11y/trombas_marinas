@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="assets/ios-180.png">
 <link rel="stylesheet" href="assets/leaflet.css">
 <link rel="stylesheet" href="assets/sitio.css">
-<link rel="stylesheet" href="assets/trombas.css?v=20261123c">
+<link rel="stylesheet" href="assets/trombas.css?v=20261123e">
 </head>
 <body>
 <div class="top">
@@ -74,8 +74,8 @@
 </div>
 <div id="firmaAutor">Desarrollada por Felipe Rifo Espósito</div>
 <script src="assets/leaflet.js"></script>
-<script src="assets/trombas.js?v=20261123c"></script>
-<script src="assets/ecmwf_viento.js?v=20261123c"></script>
+<script src="assets/trombas.js?v=20261123e"></script>
+<script src="assets/ecmwf_viento.js?v=20261123e"></script>
 <script>
 (function () {
   const escH = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -134,6 +134,7 @@
   // La casilla sigue a la capa: la tabla de trombas observadas puede encenderla sola al ir a un evento
   const sincronizarCapas = () => pop.querySelectorAll('input[type=checkbox]').forEach(ch => { ch.checked = map.hasLayer(CAPAS[+ch.dataset.i][1]); });
   map.on('layeradd layerremove', sincronizarCapas);
+  sincronizarCapas();
   pop.querySelectorAll('input[name=base]').forEach(r => r.onchange = () => { map.removeLayer(base); base = r.value === 'sat' ? satelite : oceano; base.addTo(map); base.bringToBack(); });
   document.getElementById('btnCapas').onclick = () => { pop.classList.toggle('on'); document.getElementById('btnCapas').classList.toggle('on'); };
   document.getElementById('btnInicio').onclick = () => map.flyToBounds(VISTA, { ...ENCUADRE, duration: 0.8 });

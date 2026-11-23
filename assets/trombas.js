@@ -48,11 +48,14 @@ function crearTrombas(L, map, h) {
   };
   let campoSel = 'viento', camposM = null, polysM = null, cargandoM = false;
   try { const g = localStorage.getItem('trombasCampoMonan'); if (g && CAMPOS_M[g]) campoSel = g; } catch (e) {}
-  if (!map.getPane('camposMonan')) { map.createPane('camposMonan'); map.getPane('camposMonan').style.zIndex = 380; }
+  // Encima del viento ECMWF (404–407) para que el círculo de MONAN se vea aunque esa capa esté encendida
+  if (!map.getPane('camposMonan')) { map.createPane('camposMonan'); map.getPane('camposMonan').style.zIndex = 408; }
   const rendM = L.canvas({ pane: 'camposMonan', padding: 0.3 });
   const capaCampos = L.layerGroup(), capaFlechas = L.layerGroup();
   // Grupo que el usuario enciende o apaga desde "Capas"; el cambio de modelo solo vacía o llena su contenido
-  const grupoMonan = L.layerGroup().addTo(map);
+  // Capa independiente del modelo elegido: se enciende sola con MONAN o a mano desde "Capas" en cualquier vista
+  const grupoMonan = L.layerGroup();
+  if (modelo === 'monan') grupoMonan.addTo(map);
   const NOMBRE_IND = { alguno: 'Cualquiera de los tres', stp: 'STP ≤ −0,1', hslc: 'Alto cizalle y CAPE bajo', nst: 'NST > 1 (sin validar en Chile)' };
   const claseP = v => v == null ? '' : v >= 80 ? 'p4' : v >= 50 ? 'p3' : v >= 20 ? 'p2' : v > 0 ? 'p1' : 'p0';
   // Niveles en palabras para la vista simple (mismos cortes que los colores)
@@ -74,7 +77,7 @@ function crearTrombas(L, map, h) {
     <div class="tr-panel" data-tab="pron">
     <div class="tr-mod tr-tec" role="radiogroup" aria-label="Modelo"><span>Modelo</span>${Object.entries({ gfs: 'GFS · NOAA', ecmwf: 'ECMWF', monan: 'MONAN 3 km' }).map(([k, t]) => `<button type="button" role="radio" data-m="${k}" aria-checked="${k === modelo}">${t}</button>`).join('')}</div>
     <p class="tr-atr tr-tec"></p>
-    <div class="tr-campos tr-tec" style="display:none">
+    <div class="tr-campos" style="display:none">
       <div class="tr-mod" role="radiogroup" aria-label="Campo de MONAN en el mapa"><span>Mapa</span>${Object.entries(CAMPOS_M).map(([k, c]) => `<button type="button" role="radio" data-c="${k}" aria-checked="${k === campoSel}">${c.nombre}</button>`).join('')}</div>
       <div class="tr-cley"></div>
       <p class="mar-ayuda" style="margin:4px 0 0">Toca cualquier punto del dominio de MONAN para ver todos sus parámetros en el plazo elegido.</p>
@@ -357,6 +360,7 @@ function crearTrombas(L, map, h) {
         : `<span class="tr-${claseP(x)}"><b>${escH(hhChile(v))} h</b>${x ?? '–'} %</span>`).join('')}</div>`;
     pdet.querySelectorAll('.tr-6b').forEach(b => b.onclick = () => { plazoProb = b.dataset.k === '' ? null : +b.dataset.k; elegirProb(id, f, true); mostrarVista('prob'); });
     pintarMapaProb(a);
+    pintarCampo();   // MONAN, si está encendido, sigue a la fecha elegida
     if (!silencioso) { mostrarVista('prob'); if (modo !== 'simple') map.fitBounds(L.latLngBounds(a.puntos).pad(0.2), { maxZoom: 7 }); }
     else if (vista === 'prob') mostrarVista('prob');
   }
@@ -492,13 +496,13 @@ function crearTrombas(L, map, h) {
   function leyendaM() {
     const c = CAMPOS_M[campoSel];
     if (!c.esc) { cley.innerHTML = ''; return; }
-    cley.innerHTML = `<div class="mar-ley" style="flex-wrap:wrap;gap:2px 0"><span style="width:100%">${escH(c.nombre)} (${escH(c.uni)}) · MONAN, celdas de 3 a 12 km${camposM && camposM._sinDato ? ' · <b>sin dato en este plazo</b>' : ''}</span>` +
+    cley.innerHTML = `<div class="mar-ley" style="flex-wrap:wrap;gap:2px 0"><span style="width:100%">${escH(c.nombre)} (${escH(c.uni)}) · MONAN, celdas de 3 a 12 km${camposM ? ' · ' + escH(horaChile(camposM.plazos[plazoM()].valida)) : ''}${camposM && camposM._sinDato ? ' · <b>sin dato en este plazo</b>' : ''}</span>` +
       c.esc.map(([v, col]) => `<span><i style="background:${col}"></i>${String(v).replace('.', ',')}</span>`).join('') + '</div>';
   }
   async function cargarCampos() {
-    const url = MODELOS[modelo].campos;
-    cajaCampos.style.display = url ? '' : 'none';
-    if (!url) { grupoMonan.removeLayer(capaCampos); grupoMonan.removeLayer(capaFlechas); map.closePopup(); return; }
+    const url = MODELOS.monan.campos, on = map.hasLayer(grupoMonan);
+    cajaCampos.style.display = on ? '' : 'none';
+    if (!on) return;
     if (!camposM && !cargandoM) {
       cargandoM = true;
       try {
@@ -572,14 +576,22 @@ function crearTrombas(L, map, h) {
     }
     if (map.hasLayer(pop)) pop.setContent(cab2() + '</table>' + serie + '<div style="margin-top:6px"><b>Índices de trombas</b> (' + escH(horaChile(P.valida)) + ')</div><table>' + ind + '</table><p class="mar-ayuda" style="margin:6px 0 0">En naranjo, lo que supera el umbral. Las flechas indican hacia dónde sopla. MONAN, celda de la malla de 3 a 12 km.</p></div>');
   }
+  // Plazo de MONAN por hora válida (no por número de plazo, porque las corridas de cada modelo parten a horas distintas):
+  // el plazo elegido en el detalle por celda con MONAN, la hora o el día elegidos en la probabilidad, o la hora actual.
+  // El plazo 0 se evita: MONAN no trae viento a 10 m en el instante inicial.
   function plazoM() {
     if (!camposM) return 0;
-    const f = sel == null ? camposM.plazos[0].fhr : sel;
-    let k = 0; camposM.plazos.forEach((p, j) => { if (p.fhr <= f) k = j; });
-    return k;
+    let obj = Date.now();
+    const pd = modelo === 'monan' && datos && sel != null ? datos.pasos.find(x => x.fhr === sel) : null;
+    if (pd) obj = Date.parse(pd.valida);
+    else if (prob && plazoProb != null && prob.validas[plazoProb]) obj = Date.parse(prob.validas[plazoProb]);
+    else if (celdaProb) obj = Math.max(Date.now(), Date.parse(celdaProb[1] + 'T15:00:00Z'));   // mediodía de Chile del día elegido
+    let k = -1, dmin = Infinity;
+    camposM.plazos.forEach((p, j) => { if (p.fhr === 0 && camposM.plazos.length > 1) return; const d = Math.abs(Date.parse(p.valida) - obj); if (d < dmin) { dmin = d; k = j; } });
+    return Math.max(k, 0);
   }
   function pintarCampo() {
-    if (!camposM || modelo !== 'monan') return;
+    if (!camposM || !map.hasLayer(grupoMonan)) return;
     const c = CAMPOS_M[campoSel], t = plazoM();
     capaFlechas.clearLayers();
     if (!grupoMonan.hasLayer(capaCampos)) grupoMonan.addLayer(capaCampos);   // celdas siempre tocables (ficha)
@@ -622,7 +634,7 @@ function crearTrombas(L, map, h) {
   let ultPopup = 0;
   map.on('popupopen', () => { ultPopup = Date.now(); });
   map.on('click', ev => {
-    if (modelo !== 'monan' || !camposM || !camposM._centros || !map.hasLayer(grupoMonan)) return;
+    if (!camposM || !camposM._centros || !map.hasLayer(grupoMonan)) return;
     if (Date.now() - ultPopup < 60) return;   // el clic ya abrió la ficha de una celda sobre umbral
     const la = ev.latlng.lat, lo = ev.latlng.lng, cl = Math.cos(la * Math.PI / 180);
     let mejor = -1, dmin = Infinity;
@@ -630,7 +642,9 @@ function crearTrombas(L, map, h) {
     if (mejor < 0 || Math.sqrt(dmin) * 111 > 25) return;   // fuera del dominio
     fichaPunto(mejor, ev.latlng);
   });
-  map.on('moveend', () => { if (campoSel === 'viento' && camposM && modelo === 'monan') pintarCampo(); });
+  map.on('moveend', () => { if (campoSel === 'viento' && camposM && map.hasLayer(grupoMonan)) pintarCampo(); });
+  grupoMonan.on('add', cargarCampos);
+  grupoMonan.on('remove', () => { cajaCampos.style.display = 'none'; map.closePopup(); });
   cajaCampos.querySelectorAll('button').forEach(b => b.onclick = () => {
     campoSel = b.dataset.c;
     try { localStorage.setItem('trombasCampoMonan', campoSel); } catch (e) {}
@@ -655,6 +669,7 @@ function crearTrombas(L, map, h) {
     recargarModelo();
   });
   function recargarModelo() {
+    if (modelo === 'monan') grupoMonan.addTo(map); else map.removeLayer(grupoMonan);
     rotularModelo();
     datos = null; prob = null; sel = null;
     sub.textContent = 'Cargando…'; psub.textContent = 'Cargando…'; tira.innerHTML = ''; ptabla.innerHTML = '';
