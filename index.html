@@ -34,6 +34,7 @@
     <div class="ctrls">
       <button type="button" id="btnCapas" title="Capas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></button>
       <button type="button" id="btnInicio" title="Ver zonas III a VI"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+      <button type="button" id="btnViento" title="Viento ECMWF 9 km (MeteoIA)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/></svg></button>
       <button type="button" id="btnFull" title="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
     <div id="capasPop"></div>
@@ -43,7 +44,7 @@
     <section class="card" id="panel"><h2>Detalle <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">Avisos oficiales ↗</a></h2><div id="lado"></div></section>
   </div>
 </div>
-<footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), ECMWF (IFS y ENS 0,25°, datos abiertos con licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página), modelo comunitario MONAN (INPE/CPTEC), corrido por esta página con condiciones iniciales y de borde del GFS, y avisos del Servicio Meteorológico de la Armada. El catálogo de trombas observadas incorpora datos de Bastías-Curivil et al. (2025), <a href="https://doi.org/10.6084/m9.figshare.25119566" target="_blank" rel="noopener">Tornadoes and Waterspouts in Chile</a>, figshare v5, licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
+<footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), ECMWF (IFS y ENS 0,25°, datos abiertos con licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página), modelo comunitario MONAN (INPE/CPTEC), corrido por esta página con condiciones iniciales y de borde del GFS, viento ECMWF IFS 9 km procesado por <a href="https://meteoia.cl">MeteoIA</a> (botón de viento del mapa), y avisos del Servicio Meteorológico de la Armada. El catálogo de trombas observadas incorpora datos de Bastías-Curivil et al. (2025), <a href="https://doi.org/10.6084/m9.figshare.25119566" target="_blank" rel="noopener">Tornadoes and Waterspouts in Chile</a>, figshare v5, licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
 <div id="info" hidden role="dialog" aria-modal="true" aria-labelledby="infoT">
   <div class="in-caja">
     <button type="button" class="in-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button>
@@ -74,6 +75,7 @@
 <div id="firmaAutor">Desarrollada por Felipe Rifo Espósito</div>
 <script src="assets/leaflet.js"></script>
 <script src="assets/trombas.js"></script>
+<script src="assets/ecmwf_viento.js"></script>
 <script>
 (function () {
   const escH = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -118,7 +120,12 @@
 
   // Capas y mapa base (mismo control que la portada)
   // El tercer elemento marca las capas que parten apagadas (referencia histórica, no vista operativa)
-  const CAPAS = [['Zonas III a VI (Cuadro "F")', zonas], ['Celdas sobre umbral (modelo elegido)', tr.capas.celdas], ['Probabilidad (zonas o puntos del ensamble)', tr.capas.zona], ['MONAN 3 km: campos y ficha por punto', tr.capas.monan], ['Trombas observadas (catálogo)', tr.capas.obs, false]];
+  // Pronóstico de viento ECMWF 9 km de MeteoIA (rapidez, dirección y ráfaga hasta 120 h)
+  const vientoEC = crearCapaECMWF(L, map, escH, document.querySelector('.mapCard'));
+  const btnViento = document.getElementById('btnViento');
+  btnViento.onclick = () => { map.hasLayer(vientoEC) ? map.removeLayer(vientoEC) : vientoEC.addTo(map); };
+  map.on('layeradd layerremove', () => { const on = map.hasLayer(vientoEC); btnViento.classList.toggle('on', on); btnViento.setAttribute('aria-pressed', on); });
+  const CAPAS = [['Zonas III a VI (Cuadro "F")', zonas], ['Celdas sobre umbral (modelo elegido)', tr.capas.celdas], ['Probabilidad (zonas o puntos del ensamble)', tr.capas.zona], ['MONAN 3 km: campos y ficha por punto', tr.capas.monan], ['Trombas observadas (catálogo)', tr.capas.obs, false], ['Viento ECMWF 9 km (MeteoIA)', vientoEC, false]];
   const pop = document.getElementById('capasPop');
   pop.innerHTML = '<div class="t">Capas</div>' + CAPAS.map(([n, , on], i) => `<label><input type="checkbox" data-i="${i}"${on === false ? '' : ' checked'}> ${escH(n)}</label>`).join('') +
     '<div class="t" style="margin-top:8px">Mapa base</div><label><input type="radio" name="base" value="sat" checked> Imagen satelital</label><label><input type="radio" name="base" value="oc"> Océano (claro)</label>';
