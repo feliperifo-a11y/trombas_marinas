@@ -223,7 +223,7 @@ function crearCapaIVT(L, map, escapar, contenedor, base) {
     L.popup({ className: 'uv-popup ivt-popup', maxWidth: 340, autoPanPaddingTopLeft: [10, 10] }).setLatLng(e.latlng).setContent(
       `<div class="uv-ficha ivt-ficha"><b>${nombre ? escapar(nombre) + ' · ' : ''}Río atmosférico</b> · ${escapar(ww3Fecha(idx.plazos[indice].valido))}` +
       `<div class="ivt-datos"><span><small>IVT</small><strong>${Math.round(v)}</strong> kg m⁻¹ s⁻¹${isNaN(d) ? '' : ' hacia el ' + ww3Rumbo(d)}</span>` +
-      dato('IWV', Math.round(w), 'kg m⁻²') + dato('Isoterma 0 °C', isNaN(z0) ? NaN : Math.round(z0 / 50) * 50, 'm') + dato('Lluvia 6 días (GFS)', isNaN(pp) ? NaN : pp.toFixed(pp < 10 ? 1 : 0), 'mm') + '</div>' +
+      dato('IWV', Math.round(w), 'kg m⁻²') + dato('Isoterma 0 °C', isNaN(z0) ? NaN : Math.round(z0 / 50) * 50, 'm') + dato('Lluvia 6 días (GFS)', isNaN(pp) ? NaN : pp.toFixed(pp < 10 ? 1 : 0).replace('.', ','), 'mm') + '</div>' +
       (v >= 250 ? '<p><b>Condiciones de río atmosférico en esta fecha.</b></p>' : '') +
       `<p>${ahora ? 'Evento en curso: ' + txtEv(ahora) : mayor ? 'Mayor evento de los próximos días: ' + txtEv(mayor) : 'Sin condiciones de río atmosférico (IVT ≥ 250) en los próximos 6 días.'}</p>` +
       `<div class="ec-evol"><b>Meteograma</b>${grafIVT(S, ev, tSel)}${grafIso(S, tSel)}</div>` +
