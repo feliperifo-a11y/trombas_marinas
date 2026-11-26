@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 580" width="1120" height="580" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" role="img" aria-labelledby="t d">
+<title id="t">Escala de ríos atmosféricos (Ralph et al., 2019)</title>
+<desc id="d">Matriz de categorías según el IVT máximo del evento y su duración con IVT de 250 o más, y los impactos típicos de cada categoría.</desc>
+<rect width="1120" height="580" rx="18" fill="#0b1c30"/>
+<text x="32" y="48" font-size="24" font-weight="700" fill="#e8f1fa">Escala de ríos atmosféricos</text>
+<text x="32" y="74" font-size="14" fill="#9fb3c8">Categoría según el IVT máximo en la costa y cuánto dura el evento con IVT ≥ 250 kg m⁻¹ s⁻¹</text>
+<g transform="translate(0,24)">
+<text x="465.0" y="86" font-size="13" font-weight="600" fill="#c9d9ea" text-anchor="middle">IVT máximo del evento (kg m⁻¹ s⁻¹)</text>
+<text x="229.0" y="108" font-size="13" fill="#e8f1fa" text-anchor="middle">250 – 500</text>
+<text x="347.0" y="108" font-size="13" fill="#e8f1fa" text-anchor="middle">500 – 750</text>
+<text x="465.0" y="108" font-size="13" fill="#e8f1fa" text-anchor="middle">750 – 1000</text>
+<text x="583.0" y="108" font-size="13" fill="#e8f1fa" text-anchor="middle">1000 – 1250</text>
+<text x="701.0" y="108" font-size="13" fill="#e8f1fa" text-anchor="middle">≥ 1250</text>
+<text transform="translate(40,258.0) rotate(-90)" font-size="13" font-weight="600" fill="#c9d9ea" text-anchor="middle">Duración (IVT ≥ 250)</text>
+<text x="156" y="164.0" font-size="15" font-weight="600" fill="#e8f1fa" text-anchor="end">≥ 48 h</text>
+<text x="156" y="182.0" font-size="11.5" fill="#9fb3c8" text-anchor="end">sube una</text>
+<rect x="173" y="123" width="112" height="86" rx="10" fill="#ff9800"/>
+<text x="229.0" y="162.0" font-size="22" font-weight="800" fill="#0b1d31" text-anchor="middle">2</text>
+<text x="229.0" y="184.0" font-size="12.5" font-weight="600" fill="#0b1d31" text-anchor="middle">Moderado</text>
+<rect x="291" y="123" width="112" height="86" rx="10" fill="#e3001b"/>
+<text x="347.0" y="162.0" font-size="22" font-weight="800" fill="#fff" text-anchor="middle">3</text>
+<text x="347.0" y="184.0" font-size="12.5" font-weight="600" fill="#fff" text-anchor="middle">Fuerte</text>
+<rect x="409" y="123" width="112" height="86" rx="10" fill="#9c1aa3"/>
+<text x="465.0" y="162.0" font-size="22" font-weight="800" fill="#fff" text-anchor="middle">4</text>
+<text x="465.0" y="184.0" font-size="12.5" font-weight="600" fill="#fff" text-anchor="middle">Extremo</text>
+<rect x="527" y="123" width="112" height="86" rx="10" fill="#3b0a6b"/>
+<text x="583.0" y="162.0" font-size="22" font-weight="800" fill="#fff" text-anchor="middle">5</text>
+<text x="583.0" y="184.0" font-size="12.5" font-weight="600" fill="#fff" text-anchor="middle">Excepcional</text>
+<rect x="645" y="123" width="112" height="86" rx="10" fill="#3b0a6b"/>
+<text x="701.0" y="162.0" font-size="22" font-weight="800" fill="#fff" text-anchor="middle">5</text>
+<text x="701.0" y="184.0" font-size="12.5" font-weight="600" fill="#fff" text-anchor="middle">Excepcional</text>
+<text x="156" y="256.0" font-size="15" font-weight="600" fill="#e8f1fa" text-anchor="end">24 – 48 h</text>
+<text x="156" y="274.0" font-size="11.5" fill="#9fb3c8" text-anchor="end">categoría base</text>
+<rect x="173" y="215" width="112" height="86" rx="10" fill="#ffd400"/>
+<text x="229.0" y="254.0" font-size="22" font-weight="800" fill="#0b1d31" text-anchor="middle">1</text>
+<text x="229.0" y="276.0" font-size="12.5" font-weight="600" fill="#0b1d31" text-anchor="middle">Débil</text>
+<rect x="291" y="215" width="112" height="86" rx="10" fill="#ff9800"/>
+<text x="347.0" y="254.0" font-size="22" font-weight="800" fill="#0b1d31" text-anchor="middle">2</text>
+<text x="347.0" y="276.0" font-size="12.5" font-weight="600" fill="#0b1d31" text-anchor="middle">Moderado</text>
+<rect x="409" y="215" width="112" height="86" rx="10" fill="#e3001b"/>
+<text x="465.0" y="254.0" font-size="22" font-weight="800" fill="#fff" text-anchor="middle">3</text>
+<text x="465.0" y="276.0" font-size="12.5" font-weight="600" fill="#fff" text-anchor="middle">Fuerte</text>
+<rect x="527" y="215" width="112" height="86" rx="10" fill="#9c1aa3"/>
+<text x="583.0" y="254.0" font-size="22" font-weight="800" fill="#fff" text-anchor="middle">4</text>
+<text x="583.0" y="276.0" font-size="12.5" font-weight="600" fill="#fff" text-anchor="middle">Extremo</text>
+<rect x="645" y="215" width="112" height="86" rx="10" fill="#3b0a6b"/>
+<text x="701.0" y="254.0" font-size="22" font-weight="800" fill="#fff" text-anchor="middle">5</text>
+<text x="701.0" y="276.0" font-size="12.5" font-weight="600" fill="#fff" text-anchor="middle">Excepcional</text>
+<text x="156" y="348.0" font-size="15" font-weight="600" fill="#e8f1fa" text-anchor="end">&lt; 24 h</text>
+<text x="156" y="366.0" font-size="11.5" fill="#9fb3c8" text-anchor="end">baja una</text>
+<rect x="173" y="307" width="112" height="86" rx="10" fill="#7fa7c9"/>
+<text x="229.0" y="356.0" font-size="12.5" font-weight="600" fill="#0b1d31" text-anchor="middle">Bajo cat. 1</text>
+<rect x="291" y="307" width="112" height="86" rx="10" fill="#ffd400"/>
+<text x="347.0" y="346.0" font-size="22" font-weight="800" fill="#0b1d31" text-anchor="middle">1</text>
+<text x="347.0" y="368.0" font-size="12.5" font-weight="600" fill="#0b1d31" text-anchor="middle">Débil</text>
+<rect x="409" y="307" width="112" height="86" rx="10" fill="#ff9800"/>
+<text x="465.0" y="346.0" font-size="22" font-weight="800" fill="#0b1d31" text-anchor="middle">2</text>
+<text x="465.0" y="368.0" font-size="12.5" font-weight="600" fill="#0b1d31" text-anchor="middle">Moderado</text>
+<rect x="527" y="307" width="112" height="86" rx="10" fill="#e3001b"/>
+<text x="583.0" y="346.0" font-size="22" font-weight="800" fill="#fff" text-anchor="middle">3</text>
+<text x="583.0" y="368.0" font-size="12.5" font-weight="600" fill="#fff" text-anchor="middle">Fuerte</text>
+<rect x="645" y="307" width="112" height="86" rx="10" fill="#9c1aa3"/>
+<text x="701.0" y="346.0" font-size="22" font-weight="800" fill="#fff" text-anchor="middle">4</text>
+<text x="701.0" y="368.0" font-size="12.5" font-weight="600" fill="#fff" text-anchor="middle">Extremo</text>
+<text x="790" y="108" font-size="13" font-weight="600" fill="#c9d9ea">Impacto típico</text>
+<rect x="790" y="124" width="26" height="26" rx="6" fill="#ffd400"/><text x="803" y="142" font-size="14" font-weight="800" fill="#0b1d31" text-anchor="middle">1</text>
+<text x="826" y="135" font-size="13" font-weight="700" fill="#e8f1fa">Débil</text><text x="826" y="152" font-size="11.5" fill="#9fb3c8">Principalmente beneficioso</text>
+<rect x="790" y="179" width="26" height="26" rx="6" fill="#ff9800"/><text x="803" y="197" font-size="14" font-weight="800" fill="#0b1d31" text-anchor="middle">2</text>
+<text x="826" y="190" font-size="13" font-weight="700" fill="#e8f1fa">Moderado</text><text x="826" y="207" font-size="11.5" fill="#9fb3c8">Mayormente beneficioso, con algún peligro</text>
+<rect x="790" y="234" width="26" height="26" rx="6" fill="#e3001b"/><text x="803" y="252" font-size="14" font-weight="800" fill="#fff" text-anchor="middle">3</text>
+<text x="826" y="245" font-size="13" font-weight="700" fill="#e8f1fa">Fuerte</text><text x="826" y="262" font-size="11.5" fill="#9fb3c8">Equilibrio entre beneficio y peligro</text>
+<rect x="790" y="289" width="26" height="26" rx="6" fill="#9c1aa3"/><text x="803" y="307" font-size="14" font-weight="800" fill="#fff" text-anchor="middle">4</text>
+<text x="826" y="300" font-size="13" font-weight="700" fill="#e8f1fa">Extremo</text><text x="826" y="317" font-size="11.5" fill="#9fb3c8">Mayormente peligroso, con algún beneficio</text>
+<rect x="790" y="344" width="26" height="26" rx="6" fill="#3b0a6b"/><text x="803" y="362" font-size="14" font-weight="800" fill="#fff" text-anchor="middle">5</text>
+<text x="826" y="355" font-size="13" font-weight="700" fill="#e8f1fa">Excepcional</text><text x="826" y="372" font-size="11.5" fill="#9fb3c8">Principalmente peligroso</text>
+<defs><linearGradient id="bp" x1="0" x2="1"><stop offset="0" stop-color="#3cc68a"/><stop offset=".5" stop-color="#ffd400"/><stop offset="1" stop-color="#e3001b"/></linearGradient></defs>
+<rect x="173" y="430" width="584" height="10" rx="5" fill="url(#bp)"/>
+<text x="173" y="458" font-size="12.5" fill="#c9d9ea">Beneficioso (recarga de agua)</text><text x="757" y="458" font-size="12.5" fill="#c9d9ea" text-anchor="end">Peligroso (crecidas, aluviones, remociones)</text>
+</g>
+<text x="32" y="532" font-size="11.5" fill="#9fb3c8">El IVT se evalúa en un punto de la costa a lo largo del evento. "Bajo cat. 1": hubo condiciones de río atmosférico, pero débiles y por menos de 24 h.</text>
+<text x="32" y="552" font-size="11.5" fill="#9fb3c8">Fuente: Ralph, F. M., et al. (2019). A scale to characterize the strength and impacts of atmospheric rivers. BAMS 100, 269–289. Elaboración propia.</text>
+</svg>

@@ -123,3 +123,4 @@ span.tr-alto,span.tr-bajo{padding:0 4px;border-radius:3px;color:var(--ink)}
 #ladoRA details{margin-top:14px;font-size:12.5px;line-height:1.5}#ladoRA summary{cursor:pointer;font-weight:600}
 @media (max-width:760px){.pestanas{padding:4px 12px 10px}.pestanas button{flex:1;padding:8px 6px;font-size:13px}.ivt-tabla{overflow-x:auto}}
 @media (max-width:1100px){#mapaRA{height:78vh;min-height:520px}}
+.ra-escala{margin:10px 0 4px}.ra-escala img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
