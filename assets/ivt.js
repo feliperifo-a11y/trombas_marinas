@@ -73,8 +73,10 @@ function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
     '<div class="uv-botones"><button type="button" class="uv-anterior" aria-label="Fecha anterior">◀</button><button type="button" class="uv-play">Reproducir</button><button type="button" class="uv-siguiente" aria-label="Fecha siguiente">▶</button></div>' +
     '<input class="uv-slider" type="range" min="0" step="1" value="0" aria-label="Avance de la corrida GFS"></div>' +
     '<div class="uv-escala ivt-escala"></div><div class="uv-marcas ivt-marcas"></div>' +
-    '<label class="ww3-op"><input type="checkbox" class="ivt-chk-fl" checked> Flechas del transporte (IVT ≥ 250)</label>' +
-    '<label class="ww3-op"><input type="checkbox" class="ivt-chk-co" checked> Escala de Ralph en la costa (próximos 6 días)</label>' +
+    '<label class="ww3-op"><input type="checkbox" class="ivt-chk-fl" checked> Flechas: hacia dónde va el vapor (IVT ≥ 250; más largas y gruesas = más intenso, punta con el color del IVT)</label>' +
+    '<label class="ww3-op"><input type="checkbox" class="ivt-chk-co" checked> Categoría en la costa (próximos 6 días)</label>' +
+    '<div class="ivt-cats">' + IVT_CAT.map(c => `<span><i style="background:${c.col}"></i>${c.n ? c.n + ' ' : ''}${c.nom}</span>`).join('') + '</div>' +
+    '<button type="button" class="ivt-btn-escala">Ver la escala de categorías</button>' +
     '<label class="ivt-ciudad">Meteograma de una ciudad<select aria-label="Ciudad para el meteograma"><option value="">Elegir…</option>' +
     IVT_CIUDADES.map(([n], k) => `<option value="${k}">${n}</option>`).join('') + '</select></label>' +
     '<button type="button" class="ivt-btn-corte" aria-pressed="false">Corte vertical en 77° W</button>' +
@@ -102,6 +104,15 @@ function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
     panel.querySelector('.ivt-ciudad').remove();
   }
   const $ = q => panel.querySelector(q);
+  // Ventana con la escala de categorías (gráfico propio de Ralph et al., 2019)
+  const modal = document.createElement('div'); modal.className = 'ivt-modal'; modal.hidden = true;
+  modal.innerHTML = '<div class="ivt-modal-caja" role="dialog" aria-modal="true" aria-label="Escala de categorías de ríos atmosféricos"><button type="button" class="ivt-cerrar" aria-label="Cerrar">✕</button>' +
+    '<img src="assets/escala_ralph.svg?v=1" alt="Escala de ríos atmosféricos: categoría 1 a 5 según el IVT máximo y la duración del evento."></div>';
+  document.body.appendChild(modal);
+  const cerrarModal = () => { modal.hidden = true; };
+  modal.onclick = ev => { if (ev.target === modal || ev.target.closest('.ivt-cerrar')) cerrarModal(); };
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape') cerrarModal(); });
+  panel.querySelector('.ivt-btn-escala').onclick = () => { modal.hidden = false; modal.querySelector('.ivt-cerrar').focus(); };
   const estado = $('.uv-estado'), selector = $('.ivt-fecha'), slider = $('.uv-slider'), play = $('.uv-play');
   const q2 = sel => panel.querySelector(sel) || (lado && lado.querySelector(sel));
   const chkFl = $('.ivt-chk-fl'), chkCo = $('.ivt-chk-co'), cajaZonas = q2('.ivt-zonas'), selCiudad = $('.ivt-ciudad select') || document.createElement('select'), btnCorte = $('.ivt-btn-corte') || document.createElement('button');
@@ -149,7 +160,9 @@ function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
     $('.uv-cab b').textContent = 'Ríos atmosféricos · ' + c.nom;
   }
   function pintar() {
-    const latN = idx.lat0, latS = idx.lat0 + idx.dlat * (idx.nlat - 1), lonW = idx.lon0, lonE = idx.lon0 + idx.dlon * (idx.nlon - 1);
+    // La grilla puede venir de norte a sur o de sur a norte (depende de cómo entregue NOMADS el recorte)
+    const lA = idx.lat0, lB = idx.lat0 + idx.dlat * (idx.nlat - 1), latN = Math.max(lA, lB), latS = Math.min(lA, lB);
+    const lonW = idx.lon0, lonE = idx.lon0 + idx.dlon * (idx.nlon - 1);
     const merc = la => Math.log(Math.tan(Math.PI / 4 + la * Math.PI / 360)), yN = merc(latN), yS = merc(latS);
     const W = idx.nlon * 6, H = Math.round(W * (yN - yS) / ((lonE - lonW) * Math.PI / 180));
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -170,15 +183,18 @@ function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
   function pintarFlechas() {
     flechas.clearLayers();
     if (!idx || !datos || !activo() || !chkFl.checked || campo === 'pp') return;
-    const b = map.getBounds().pad(0.05), paso = Math.max(1, Math.round(44 / (256 * Math.pow(2, map.getZoom()) * idx.dlon / 360)));
+    const b = map.getBounds().pad(0.05), paso = Math.max(1, Math.round(58 / (256 * Math.pow(2, map.getZoom()) * idx.dlon / 360)));
     for (let i = 0; i < idx.nlat; i += paso) {
       const lat = idx.lat0 + idx.dlat * i; if (lat < b.getSouth() || lat > b.getNorth()) continue;
       for (let j = 0; j < idx.nlon; j += paso) {
         const lon = idx.lon0 + idx.dlon * j; if (lon < b.getWest() || lon > b.getEast()) continue;
         const v = val(indice, 'ivt', i, j), d = val(indice, 'dir', i, j); if (!(v >= 250) || isNaN(d)) continue;
-        const largo = 10 + Math.min(v, 1000) / 1000 * 14;
-        L.marker([lat, lon], { pane: 'ivtFlechaPane', interactive: false, keyboard: false, icon: L.divIcon({ className: 'ww3-flecha ivt-flecha', iconSize: [0, 0],
-          html: `<svg width="30" height="30" viewBox="-15 -15 30 30" style="transform:rotate(${d}deg)"><path d="M0 ${largo / 2}V${-largo / 2}M-4 ${-largo / 2 + 5}L0 ${-largo / 2}L4 ${-largo / 2 + 5}" /></svg>` }) }).addTo(flechas);
+        // Flecha blanca con borde oscuro y punta del color del IVT: largo y grosor crecen con la intensidad
+        const largo = 18 + Math.min(v, 1000) / 1000 * 18, gr = 2.2 + Math.min(v, 1000) / 1000 * 2, c = ivtRgba(v);
+        const col = c ? `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})` : '#ffd400', y0 = largo / 2, y1 = -largo / 2, ph = 4 + gr;
+        const trazo = `M0 ${y0}V${y1 + ph}`, punta = `M0 ${y1}L${-ph} ${y1 + ph * 1.5}L${ph} ${y1 + ph * 1.5}Z`;
+        L.marker([lat, lon], { pane: 'ivtFlechaPane', interactive: false, keyboard: false, icon: L.divIcon({ className: 'ivt-flecha2', iconSize: [0, 0],
+          html: `<svg width="44" height="44" viewBox="-22 -22 44 44" style="transform:rotate(${d}deg)"><path d="${trazo}" stroke="#0b1d31" stroke-width="${gr + 3}" stroke-linecap="round" fill="none"/><path d="${punta}" fill="#0b1d31" stroke="#0b1d31" stroke-width="3" stroke-linejoin="round"/><path d="${trazo}" stroke="#ffffff" stroke-width="${gr}" stroke-linecap="round" fill="none"/><path d="${punta}" fill="${col}" stroke="#ffffff" stroke-width="1.2" stroke-linejoin="round"/></svg>` }) }).addTo(flechas);
       }
     }
   }
@@ -324,7 +340,7 @@ function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
     if (!extra || !C) { caja.innerHTML = '<p>El corte vertical estará disponible con la próxima corrida del GFS.</p>'; return; }
     const nv = C.niveles.length, nl = idx.nlat, off = indice * 2 * nv * nl, j77 = Math.round((C.lon - idx.lon0) / idx.dlon);
     const W = 620, H = 310, iz = 40, de = 10, ar = 86, ab = 26, w = W - iz - de, h = H - ar - ab;
-    const latN = idx.lat0, latS = idx.lat0 + idx.dlat * (nl - 1), X = la => iz + (latN - la) / (latN - latS) * w;
+    const lA = idx.lat0, lB = idx.lat0 + idx.dlat * (nl - 1), latN = Math.max(lA, lB), latS = Math.min(lA, lB), X = la => iz + (latN - la) / (latN - latS) * w;
     const pMax = C.niveles[0], pMin = C.niveles[nv - 1], Y = p => ar + (p - pMin) / (pMax - pMin) * h;
     const cw = w / (nl - 1);
     let g = '';
