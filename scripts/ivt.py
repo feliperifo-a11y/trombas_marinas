@@ -5,7 +5,7 @@ IVT = (1/g) ∫ q·V dp, desde la superficie hasta 300 hPa, con la humedad espec
 17 niveles de presión (1000 a 300 hPa). Se integra por trapecios solo sobre los niveles que están sobre la superficie.
 Además: agua precipitable (IWV, PWAT del GFS), altura de la isoterma de 0 °C (HGT en el nivel 0C_isotherm), precipitación
 acumulada en 6 días (APCP) y un corte vertical del flujo de vapor q·|V| a lo largo de 77° W.
-Dominio: Pacífico suroriental y Chile, 17°–57° S / 110°–66° W. Plazos: 0 a 144 h cada 3 h (filtro NOMADS).
+Dominio: Pacífico suroriental y Chile, 17°–65° S (hasta el paso Drake) / 110°–66° W. Plazos: 0 a 144 h cada 3 h (filtro NOMADS).
 
 Salida (pensada para el navegador), celdas de 0,5°, un byte por valor y 255 = sin dato:
   - ivt.bin: para cada plazo, cuatro capas: IVT/10 (kg m⁻¹ s⁻¹), dirección hacia donde va el transporte/2 (grados),
@@ -32,11 +32,11 @@ import requests
 DATA = Path(__file__).resolve().parent.parent / "data"
 INDICE, BINARIO, EXTRA = DATA / "ivt.json", DATA / "ivt.bin", DATA / "ivt_extra.bin"
 HIST_J, HIST_B = DATA / "ivt_hist.json", DATA / "ivt_hist.bin"
-VERSION = 2
+VERSION = 3
 HORAS_HIST = 48
 LON_CORTE = -77.0
 CAB = {"User-Agent": "dashboard-meteo-publico/1.0 (ivt GFS)"}
-NORTE, SUR, OESTE, ESTE = -17, -57, -110, -66
+NORTE, SUR, OESTE, ESTE = -17, -65, -110, -66
 NIVELES = [1000, 975, 950, 925, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300]
 FHRS = list(range(0, 145, 3))
 G = 9.80665

@@ -359,7 +359,7 @@ function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
       g += `<g transform="translate(${X(idx.lat0 + idx.dlat * i).toFixed(1)},${Y(C.niveles[k]).toFixed(1)}) rotate(${d * 2})"><path d="M0 6V-6M-3 -2L0 -6L3 -2" fill="none" stroke="#0b1d31" stroke-width="1.4" stroke-linecap="round"/></g>`;
     }
     for (const p of [1000, 850, 700, 500, 300]) g += `<line x1="${iz}" x2="${W - de}" y1="${Y(p)}" y2="${Y(p)}" stroke="#ffffff" stroke-opacity=".18"/><text x="${iz - 4}" y="${Y(p) + 3}" text-anchor="end">${p}</text>`;
-    for (let la = -20; la >= -55; la -= 5) g += `<line x1="${X(la)}" x2="${X(la)}" y1="${ar}" y2="${ar + h}" stroke="#ffffff" stroke-opacity=".12"/><text x="${X(la)}" y="${H - 10}" text-anchor="middle">${-la}° S</text>`;
+    for (let la = -20; la >= -65; la -= 5) g += `<line x1="${X(la)}" x2="${X(la)}" y1="${ar}" y2="${ar + h}" stroke="#ffffff" stroke-opacity=".12"/><text x="${X(la)}" y="${H - 10}" text-anchor="middle">${-la}° S</text>`;
     // IVT a lo largo del meridiano, con el umbral de 250
     const top = 16, hb = ar - top - 26, ivts = [];
     for (let i = 0; i < nl; i++) ivts.push(val(indice, 'ivt', i, j77));
