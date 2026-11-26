@@ -42,10 +42,10 @@ function ivtEventos(S) {
   return ev;
 }
 // Puertos y ciudades costeras para el meteograma (se usa la celda costera más cercana)
-const IVT_CIUDADES = [['Arica', -18.48, -70.32], ['Iquique', -20.21, -70.15], ['Antofagasta', -23.65, -70.4], ['Caldera', -27.07, -70.83],
+const IVT_CIUDADES = [['Arica', -18.48, -70.32], ['Iquique', -20.21, -70.15], ['Antofagasta', -23.65, -70.4], ['Chañaral', -26.35, -70.62], ['Caldera', -27.07, -70.83],
   ['Coquimbo', -29.95, -71.34], ['Valparaíso', -33.03, -71.63], ['San Antonio', -33.59, -71.62], ['Constitución', -35.33, -72.42],
   ['Talcahuano', -36.72, -73.12], ['Lebu', -37.61, -73.65], ['Corral', -39.89, -73.43], ['Puerto Montt', -41.47, -72.94],
-  ['Castro', -42.48, -73.76], ['Puerto Aysén', -45.4, -72.7], ['Puerto Natales', -51.73, -72.5], ['Punta Arenas', -53.16, -70.91]];
+  ['Castro', -42.48, -73.76], ['Puerto Aysén', -45.4, -72.7], ['Puerto Natales', -51.73, -72.5], ['Punta Arenas', -53.16, -70.91], ['Puerto Williams', -54.93, -67.61]];
 const IVT_CAMPOS = {
   ivt: { nom: 'IVT', tabla: IVT_COLORES, min: 150, max: 1400, marcas: ['150', '250', '500', '750', '1000', '1250+'], unidad: 'kg m⁻¹ s⁻¹',
     ayuda: 'Transporte integrado de vapor (IVT) en kg m⁻¹ s⁻¹. Desde 250 hay condiciones de río atmosférico.' },
@@ -64,6 +64,8 @@ function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
   // Los puntos costeros van en SVG con el panel transparente a los clics: un lienzo cubriría el mapa y taparía la consulta
   if (!map.getPane('ivtCostaPane')) { const p = map.createPane('ivtCostaPane'); p.style.zIndex = 409; p.style.pointerEvents = 'none'; }
   const rendCosta = L.svg({ pane: 'ivtCostaPane' });
+  if (!map.getPane('ivtCiudadPane')) map.createPane('ivtCiudadPane').style.zIndex = 640;
+  const ciudadesG = L.layerGroup();
   const panel = document.createElement('section'); panel.className = 'uv-panel ivt-panel'; panel.hidden = true;
   panel.setAttribute('aria-label', 'Control de ríos atmosféricos');
   panel.innerHTML = '<div class="uv-cab"><b>Ríos atmosféricos</b><a href="https://www.nco.ncep.noaa.gov/pmb/products/gfs/" target="_blank" rel="noopener noreferrer">Fuente GFS ↗</a></div>' +
@@ -75,6 +77,7 @@ function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
     '<div class="uv-escala ivt-escala"></div><div class="uv-marcas ivt-marcas"></div>' +
     '<label class="ww3-op"><input type="checkbox" class="ivt-chk-fl" checked> Flechas: hacia dónde va el vapor (IVT ≥ 250; más largas y gruesas = más intenso, punta con el color del IVT)</label>' +
     '<label class="ww3-op"><input type="checkbox" class="ivt-chk-co" checked> Categoría en la costa (próximos 6 días)</label>' +
+    '<label class="ww3-op"><input type="checkbox" class="ivt-chk-ci" checked> Ciudades con su categoría</label>' +
     '<div class="ivt-cats">' + IVT_CAT.map(c => `<span><i style="background:${c.col}"></i>${c.n ? c.n + ' ' : ''}${c.nom}</span>`).join('') + '</div>' +
     '<button type="button" class="ivt-btn-escala">Ver la escala de categorías</button>' +
     '<label class="ivt-ciudad">Meteograma de una ciudad<select aria-label="Ciudad para el meteograma"><option value="">Elegir…</option>' +
@@ -115,6 +118,7 @@ function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
   panel.querySelector('.ivt-btn-escala').onclick = () => { modal.hidden = false; modal.querySelector('.ivt-cerrar').focus(); };
   const estado = $('.uv-estado'), selector = $('.ivt-fecha'), slider = $('.uv-slider'), play = $('.uv-play');
   const q2 = sel => panel.querySelector(sel) || (lado && lado.querySelector(sel));
+  const chkCi = $('.ivt-chk-ci');
   const chkFl = $('.ivt-chk-fl'), chkCo = $('.ivt-chk-co'), cajaZonas = q2('.ivt-zonas'), selCiudad = $('.ivt-ciudad select') || document.createElement('select'), btnCorte = $('.ivt-btn-corte') || document.createElement('button');
   let idx = null, datos = null, extra = null, hist = null, indice = 0, timer = null, overlay = null, zonas = null, campo = 'ivt';
   try { campo = localStorage.getItem('ivtCampo') || 'ivt'; if (!IVT_CAMPOS[campo]) campo = 'ivt'; } catch (e) { /* sin almacenamiento */ }
@@ -232,11 +236,28 @@ function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
     consultar({ latlng: ll }, nombre);
     if (lado && innerWidth <= 1100) contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+  function resCiudad(k) {
+    const [, la, lo] = IVT_CIUDADES[k], [i, j] = celdaCiudad(la, lo);
+    return { e: mayorEv(eventosFuturos(serieEn(i, j))), pp: lluvia(i, j) };
+  }
+  // Ciudades en el mapa: rombo con el color de la categoría máxima de los próximos 6 días y su nombre
+  function pintarCiudades() {
+    ciudadesG.clearLayers();
+    if (!idx || !datos || !chkCi.checked) return;
+    IVT_CIUDADES.forEach(([nombre, la, lo], k) => {
+      const { e } = resCiudad(k), col = e ? IVT_CAT[e.cat].col : '#ffffff';
+      const txt = e ? `${nomCat(e.cat)} · máx. ${Math.round(e.max)} kg m⁻¹ s⁻¹ · desde ${fecha(Math.max(e.ini, tPron()))}` : 'Sin condiciones de río atmosférico';
+      L.marker([la, lo], { pane: 'ivtCiudadPane', title: `${nombre}: ${txt}`, keyboard: true, icon: L.divIcon({ className: 'ivt-ciu', iconSize: [16, 16], iconAnchor: [8, 8],
+        html: `<i style="background:${col}"${e ? '' : ' class="sin"'}></i><b>${escapar(nombre)}${e && e.cat ? ' · ' + e.cat : ''}</b>` }) })
+        .on('click', () => irCiudad(k)).addTo(ciudadesG);
+    });
+  }
   function tablaCiudades() {
+    pintarCiudades();
     if (!lado || !idx || !datos) return;
     const filas = IVT_CIUDADES.map(([nombre, la, lo], k) => {
-      const [i, j] = celdaCiudad(la, lo), e = mayorEv(eventosFuturos(serieEn(i, j)));
-      const pp = lluvia(i, j), ppT = isNaN(pp) ? '–' : pp.toFixed(pp < 10 ? 1 : 0).replace('.', ',');
+      const { e, pp } = resCiudad(k);
+      const ppT = isNaN(pp) ? '–' : pp.toFixed(pp < 10 ? 1 : 0).replace('.', ',');
       const cat = e ? `<i style="background:${IVT_CAT[e.cat].col}"></i>${escapar(e.cat ? 'Cat. ' + e.cat : '< 1')}` : '<i class="vacio"></i>Sin RA';
       return `<tr data-k="${k}" tabindex="0"><th>${escapar(nombre)}</th><td>${cat}</td><td>${e ? Math.round(e.max) : '–'}</td><td>${e ? escapar(fecha(Math.max(e.ini, tPron()))) : '–'}</td><td>${ppT}</td></tr>`;
     });
@@ -444,16 +465,17 @@ function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
   };
   chkFl.onchange = pintarFlechas;
   chkCo.onchange = pintarCosta;
+  chkCi.onchange = pintarCiudades;
   map.on('moveend zoomend', () => { if (activo()) pintarFlechas(); });
   map.on('popupclose', () => { ultimaConsulta = null; contenedor.classList.remove('ec-ficha'); });
   leyenda();
   // Al encender la capa se muestra el Pacífico suroriental, desde donde llegan los ríos atmosféricos
   const VISTA = L.latLngBounds([[-50, -100], [-25, -68]]);
   grupo.on('add', () => {
-    panel.hidden = false; flechas.addTo(map); costaG.addTo(map); cargar();
+    panel.hidden = false; flechas.addTo(map); costaG.addTo(map); ciudadesG.addTo(map); cargar();
     if (!lado && map.getBounds().getWest() > -90) map.flyToBounds(VISTA, { duration: 0.6 });
   });
-  grupo.on('remove', () => { panel.hidden = true; cerrarCorte(); detener(); map.removeLayer(flechas); map.removeLayer(costaG); map.closePopup(); });
+  grupo.on('remove', () => { panel.hidden = true; cerrarCorte(); detener(); map.removeLayer(flechas); map.removeLayer(costaG); map.removeLayer(ciudadesG); map.closePopup(); });
   setInterval(() => { if (activo()) cargar(); }, 30 * 60000);
   grupo.ponerZonas = fs => { zonas = fs; resumenZonas(); };
   return grupo;

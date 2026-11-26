@@ -129,3 +129,5 @@ span.tr-alto,span.tr-bajo{padding:0 4px;border-radius:3px;color:var(--ink)}
 .ivt-btn-escala{width:100%;min-height:32px;margin:2px 0 6px;font-size:12px;font-weight:600;background:#16365a;color:#e8f1fa;border:1px solid #2f8cff;border-radius:6px;cursor:pointer}
 .ivt-modal{position:fixed;inset:0;z-index:3000;background:#000b;display:flex;align-items:center;justify-content:center;padding:16px}.ivt-modal[hidden]{display:none}
 .ivt-modal-caja{position:relative;width:min(1120px,96vw)}.ivt-modal-caja img{display:block;width:100%;height:auto;border-radius:14px}.ivt-modal .ivt-cerrar{position:absolute;top:6px;right:8px;color:#fff;font-size:20px;background:transparent;border:0;cursor:pointer;min-width:40px;min-height:40px}
+.ivt-ciu{position:relative}.ivt-ciu i{position:absolute;left:2px;top:2px;width:12px;height:12px;transform:rotate(45deg);border:2px solid #0b1d31;box-shadow:0 0 0 1.5px #fff;box-sizing:border-box}.ivt-ciu i.sin{background:#fff!important;opacity:.85}
+.ivt-ciu b{position:absolute;left:20px;top:-1px;white-space:nowrap;font:600 11.5px system-ui,sans-serif;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000,0 1px 2px #000;cursor:pointer}
