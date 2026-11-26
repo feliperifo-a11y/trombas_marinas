@@ -108,3 +108,18 @@ span.tr-alto,span.tr-bajo{padding:0 4px;border-radius:3px;color:var(--ink)}
 .ivt-datos{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:6px 0}.ivt-datos span{display:block}.ivt-datos small{display:block;color:#9fb3c8;font-size:10.5px}.ivt-datos strong{font-size:20px}
 .ivt-ficha{width:300px}
 .ivt-corte .ec-graf text{font-size:10px}
+.pestanas{display:flex;gap:6px;padding:4px 22px 12px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.pestanas button{min-height:40px;padding:8px 20px;font:600 14px system-ui,sans-serif;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:10px 10px 0 0;border-bottom:3px solid transparent;cursor:pointer}
+.pestanas button:hover{color:var(--ink)}.pestanas button[aria-selected="true"]{color:#fff;background:linear-gradient(180deg,#16365a,#0e2540);border-color:#5fb0ff;border-bottom-color:#2f8cff}
+.mapaRA{position:absolute;inset:0;background:#0b2033}
+.ra-intro{margin:6px 0;line-height:1.5}.ra-nota{color:var(--muted);font-size:12.5px;margin:4px 0 10px}
+.ra-h{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:16px 0 6px;border-top:1px solid var(--line);padding-top:12px}
+.ivt-tabla table{width:100%;border-collapse:collapse;font-size:12.5px}.ivt-tabla th,.ivt-tabla td{padding:5px 6px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+.ivt-tabla thead th{font-size:11px;color:var(--muted);font-weight:600}.ivt-tabla tbody tr{cursor:pointer}.ivt-tabla tbody tr:hover,.ivt-tabla tbody tr:focus{background:#16365a;outline:none}
+.ivt-tabla i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}.ivt-tabla i.vacio{border:1px solid #5d7a96}
+.ivt-tabla td:nth-child(3),.ivt-tabla td:nth-child(5){text-align:right}.ra-pie{font-size:11.5px;color:var(--muted);margin:6px 0}
+#ladoRA .ivt-zonas ul{list-style:none;margin:0;padding:0}#ladoRA .ivt-zonas li{padding:4px 0;font-size:13px}#ladoRA .ivt-zonas i{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 6px}#ladoRA .ivt-zt{display:none}
+.ivt-corte.en-linea{position:static;transform:none;width:auto;max-height:none;box-shadow:none;padding:0;background:transparent;border:0;z-index:auto}
+#ladoRA details{margin-top:14px;font-size:12.5px;line-height:1.5}#ladoRA summary{cursor:pointer;font-weight:600}
+@media (max-width:760px){.pestanas{padding:4px 12px 10px}.pestanas button{flex:1;padding:8px 6px;font-size:13px}.ivt-tabla{overflow-x:auto}}
+@media (max-width:1100px){#mapaRA{height:78vh;min-height:520px}}

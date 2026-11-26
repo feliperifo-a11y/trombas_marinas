@@ -54,8 +54,10 @@ const IVT_CAMPOS = {
   pp: { nom: 'Lluvia 6 días', tabla: PP_COLORES, min: 2, max: 400, marcas: ['2', '10', '25', '50', '100', '200', '400 mm'], unidad: 'mm',
     ayuda: 'Precipitación acumulada del GFS en toda la corrida (6 días), en mm. No cambia con la fecha elegida.' }
 };
-function crearCapaIVT(L, map, escapar, contenedor, base) {
-  base = base || 'data/';
+// opc.lado: si se entrega, el resumen por zona, la tabla de ciudades, el corte vertical y la explicación van ahí (pestaña propia)
+function crearCapaIVT(L, map, escapar, contenedor, base, opc) {
+  base = base || 'data/'; opc = opc || {};
+  const lado = opc.lado || null;
   const grupo = L.layerGroup(), flechas = L.layerGroup(), costaG = L.layerGroup();
   if (!map.getPane('ivtPane')) map.createPane('ivtPane').style.zIndex = 403;
   if (!map.getPane('ivtFlechaPane')) { const p = map.createPane('ivtFlechaPane'); p.style.zIndex = 406; p.style.pointerEvents = 'none'; }
@@ -87,9 +89,22 @@ function crearCapaIVT(L, map, escapar, contenedor, base) {
   const caja = document.createElement('section'); caja.className = 'ivt-corte'; caja.hidden = true; caja.setAttribute('aria-label', 'Corte vertical del flujo de vapor');
   contenedor.appendChild(caja);
   for (const el of [panel, caja]) { L.DomEvent.disableClickPropagation(el); L.DomEvent.disableScrollPropagation(el); }
+  // Con columna lateral: la tabla de ciudades, el resumen por zona, el corte (fijo, no en ventana) y la explicación salen del panel del mapa
+  const tablaC = document.createElement('div'); tablaC.className = 'ivt-tabla';
+  if (lado) {
+    const sec = (tit, ...els) => { const h = document.createElement('h3'); h.className = 'ra-h'; h.textContent = tit; lado.append(h, ...els); };
+    sec('Ciudades de la costa · próximos 6 días', tablaC);
+    sec('Por zona (III a VI)', panel.querySelector('.ivt-zonas'));
+    caja.classList.add('en-linea'); caja.hidden = false;
+    sec('Corte vertical en 77° W', caja);
+    const det = panel.querySelector('details'); det.open = false; lado.append(det);
+    panel.querySelector('.ivt-btn-corte').remove();
+    panel.querySelector('.ivt-ciudad').remove();
+  }
   const $ = q => panel.querySelector(q);
   const estado = $('.uv-estado'), selector = $('.ivt-fecha'), slider = $('.uv-slider'), play = $('.uv-play');
-  const chkFl = $('.ivt-chk-fl'), chkCo = $('.ivt-chk-co'), cajaZonas = $('.ivt-zonas'), selCiudad = $('.ivt-ciudad select'), btnCorte = $('.ivt-btn-corte');
+  const q2 = sel => panel.querySelector(sel) || (lado && lado.querySelector(sel));
+  const chkFl = $('.ivt-chk-fl'), chkCo = $('.ivt-chk-co'), cajaZonas = q2('.ivt-zonas'), selCiudad = $('.ivt-ciudad select') || document.createElement('select'), btnCorte = $('.ivt-btn-corte') || document.createElement('button');
   let idx = null, datos = null, extra = null, hist = null, indice = 0, timer = null, overlay = null, zonas = null, campo = 'ivt';
   try { campo = localStorage.getItem('ivtCampo') || 'ivt'; if (!IVT_CAMPOS[campo]) campo = 'ivt'; } catch (e) { /* sin almacenamiento */ }
   const activo = () => map.hasLayer(grupo);
@@ -129,7 +144,7 @@ function crearCapaIVT(L, map, escapar, contenedor, base) {
     $('.ivt-escala').style.background = `linear-gradient(90deg,${tabla.map(([v, col]) => `${col} ${Math.round(Math.max(0, Math.min(1, pos(v))) * 100)}%`).join(',')})`;
     $('.ivt-escala').setAttribute('aria-label', `Escala de ${c.nom} en ${c.unidad}`);
     $('.ivt-marcas').innerHTML = c.marcas.map(m => `<span>${m}</span>`).join('');
-    $('.ivt-ayuda').textContent = c.ayuda + ' Toca el mapa, un punto de la costa o elige una ciudad para ver el meteograma.';
+    $('.ivt-ayuda').textContent = c.ayuda + (lado ? ' Toca el mapa o un punto de la costa para ver el meteograma.' : ' Toca el mapa, un punto de la costa o elige una ciudad para ver el meteograma.');
     panel.querySelectorAll('.ivt-campos button').forEach(b => { const on = b.dataset.campo === campo; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
     $('.uv-cab b').textContent = 'Ríos atmosféricos · ' + c.nom;
   }
@@ -186,7 +201,32 @@ function crearCapaIVT(L, map, escapar, contenedor, base) {
         .bindTooltip(`${escapar(nomCat(e.cat))} · máx. ${Math.round(e.max)} · ${e.dur} h${e.abierto ? '+' : ''}`, { direction: 'left' })
         .on('click', ev2 => { L.DomEvent.stop(ev2); consultar({ latlng: L.latLng(lat, lon) }); }).addTo(costaG);
     }
-    resumenZonas();
+    resumenZonas(); tablaCiudades();
+  }
+  // Celda costera más cercana a una ciudad (o la celda de la grilla si no hay costa a menos de ~2°)
+  function celdaCiudad(la, lo) {
+    let mejor = null, dm = Infinity;
+    for (const [i, j] of idx.costa || []) { const lat = idx.lat0 + idx.dlat * i, lon = idx.lon0 + idx.dlon * j, d = (lat - la) ** 2 + ((lon - lo) * Math.cos(la * Math.PI / 180)) ** 2; if (d < dm) { dm = d; mejor = [i, j]; } }
+    return mejor && dm <= 4 ? mejor : celda(la, lo);
+  }
+  function irCiudad(k) {
+    const [nombre, la, lo] = IVT_CIUDADES[k], [i, j] = celdaCiudad(la, lo);
+    const ll = L.latLng(idx.lat0 + idx.dlat * i, idx.lon0 + idx.dlon * j);
+    map.setView(ll, Math.max(map.getZoom(), 5));
+    consultar({ latlng: ll }, nombre);
+    if (lado && innerWidth <= 1100) contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function tablaCiudades() {
+    if (!lado || !idx || !datos) return;
+    const filas = IVT_CIUDADES.map(([nombre, la, lo], k) => {
+      const [i, j] = celdaCiudad(la, lo), e = mayorEv(eventosFuturos(serieEn(i, j)));
+      const pp = lluvia(i, j), ppT = isNaN(pp) ? '–' : pp.toFixed(pp < 10 ? 1 : 0).replace('.', ',');
+      const cat = e ? `<i style="background:${IVT_CAT[e.cat].col}"></i>${escapar(e.cat ? 'Cat. ' + e.cat : '< 1')}` : '<i class="vacio"></i>Sin RA';
+      return `<tr data-k="${k}" tabindex="0"><th>${escapar(nombre)}</th><td>${cat}</td><td>${e ? Math.round(e.max) : '–'}</td><td>${e ? escapar(fecha(Math.max(e.ini, tPron()))) : '–'}</td><td>${ppT}</td></tr>`;
+    });
+    tablaC.innerHTML = '<table><thead><tr><th>Ciudad</th><th>Categoría</th><th>IVT máx.</th><th>Desde</th><th>Lluvia 6 d (mm)</th></tr></thead><tbody>' + filas.join('') + '</tbody></table>' +
+      '<p class="ra-pie">Celda costera de 0,5° más cercana. Toca una ciudad para ver su meteograma. La lluvia es la del GFS en esa celda (sobre el mar), solo como referencia.</p>';
+    tablaC.querySelectorAll('tbody tr').forEach(tr => { tr.onclick = () => irCiudad(+tr.dataset.k); tr.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); irCiudad(+tr.dataset.k); } }; });
   }
   const anillos = g => g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
   function enPoligono(f, lat, lon) {
@@ -281,7 +321,7 @@ function crearCapaIVT(L, map, escapar, contenedor, base) {
   function pintarCorte() {
     if (caja.hidden || !idx) return;
     const C = idx.extra && idx.extra.corte;
-    if (!extra || !C) { caja.innerHTML = '<div class="ivt-corte-cab"><b>Corte vertical en 77° W</b><button type="button" class="ivt-cerrar" aria-label="Cerrar">✕</button></div><p>El corte vertical estará disponible con la próxima corrida del GFS.</p>'; caja.querySelector('.ivt-cerrar').onclick = cerrarCorte; return; }
+    if (!extra || !C) { caja.innerHTML = '<p>El corte vertical estará disponible con la próxima corrida del GFS.</p>'; return; }
     const nv = C.niveles.length, nl = idx.nlat, off = indice * 2 * nv * nl, j77 = Math.round((C.lon - idx.lon0) / idx.dlon);
     const W = 620, H = 310, iz = 40, de = 10, ar = 86, ab = 26, w = W - iz - de, h = H - ar - ab;
     const latN = idx.lat0, latS = idx.lat0 + idx.dlat * (nl - 1), X = la => iz + (latN - la) / (latN - latS) * w;
@@ -310,13 +350,13 @@ function crearCapaIVT(L, map, escapar, contenedor, base) {
     const imax = Math.max(500, Math.ceil(Math.max(0, ...ivts.filter(x => !isNaN(x))) / 250) * 250), YI = v => top + hb - v / imax * hb;
     g += `<line x1="${iz}" x2="${W - de}" y1="${YI(250)}" y2="${YI(250)}" stroke="#ffd400" stroke-dasharray="3 3"/><text x="${iz - 4}" y="${YI(250) + 3}" text-anchor="end">250</text><text x="${iz - 4}" y="${top + 3}" text-anchor="end">${imax}</text>`;
     g += `<path d="${ivts.map((v, i) => isNaN(v) ? '' : `${i ? 'L' : 'M'}${X(idx.lat0 + idx.dlat * i).toFixed(1)},${YI(v).toFixed(1)}`).join('')}" fill="none" stroke="#4fb3ff" stroke-width="2"/>`;
-    caja.innerHTML = `<div class="ivt-corte-cab"><b>Corte vertical en 77° W · ${escapar(ww3Fecha(idx.plazos[indice].valido))}</b><button type="button" class="ivt-cerrar" aria-label="Cerrar el corte vertical">✕</button></div>` +
+    caja.innerHTML = `<div class="ivt-corte-cab"><b>${lado ? '' : 'Corte vertical en 77° W · '}${escapar(ww3Fecha(idx.plazos[indice].valido))}</b>${lado ? '' : '<button type="button" class="ivt-cerrar" aria-label="Cerrar el corte vertical">✕</button>'}</div>` +
       `<svg class="ec-graf" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Flujo de vapor por nivel y latitud en 77 grados oeste">${g}<text x="${W - de}" y="${top - 3}" text-anchor="end">IVT (kg m⁻¹ s⁻¹)</text><text x="${iz}" y="${ar - 3}">hPa</text></svg>` +
       `<div class="ec-ley"><span><i style="background:linear-gradient(90deg,#4fa3d8,#3cc68a,#ffd400,#ff7a00,#d7191c,#7a0f7a)"></i>Flujo de vapor q·|V| (g kg⁻¹ m s⁻¹): 40 a 400</span><span><i style="background:#4fb3ff"></i>IVT en el meridiano</span><span>Flechas: hacia dónde va el flujo (arriba = norte)</span><span><i style="background:#3a4b5c"></i>bajo la superficie</span></div>`;
-    caja.querySelector('.ivt-cerrar').onclick = cerrarCorte;
+    const x = caja.querySelector('.ivt-cerrar'); if (x) x.onclick = cerrarCorte;
   }
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !caja.hidden) cerrarCorte(); });
-  function cerrarCorte() { caja.hidden = true; btnCorte.setAttribute('aria-pressed', 'false'); btnCorte.classList.remove('on'); }
+  function cerrarCorte() { if (lado) return; caja.hidden = true; btnCorte.setAttribute('aria-pressed', 'false'); btnCorte.classList.remove('on'); }
   btnCorte.onclick = () => { if (!caja.hidden) return cerrarCorte(); caja.hidden = false; btnCorte.setAttribute('aria-pressed', 'true'); btnCorte.classList.add('on'); pintarCorte(); };
   function mostrar(n) {
     if (!idx || !datos || !activo()) return;
@@ -362,7 +402,7 @@ function crearCapaIVT(L, map, escapar, contenedor, base) {
       panel.querySelector('[data-campo="pp"]').hidden = !extra; if (!extra && campo === 'pp') campo = 'ivt';
       btnCorte.hidden = !extra;
       leyenda();
-      $('.uv-info').textContent = `Corrida GFS ${ww3Fecha(idx.corrida.replace(/Z$/, ':00Z'))} (hora de Chile), ${idx.plazos.length} fechas cada 3 horas hasta +${idx.plazos.at(-1).paso} h` +
+      q2('.uv-info').textContent = `Corrida GFS ${ww3Fecha(idx.corrida.replace(/Z$/, ':00Z'))} (hora de Chile), ${idx.plazos.length} fechas cada 3 horas hasta +${idx.plazos.at(-1).paso} h` +
         (hist ? `, más ${hist.validos.filter(v => Date.parse(v) < tPron()).length} análisis anteriores.` : '.');
       const ahora = Date.now(); let k = 0;
       idx.plazos.forEach((p, n) => { if (Math.abs(Date.parse(p.valido) - ahora) < Math.abs(Date.parse(idx.plazos[k].valido) - ahora)) k = n; });
@@ -375,14 +415,7 @@ function crearCapaIVT(L, map, escapar, contenedor, base) {
   });
   selCiudad.onchange = () => {
     if (!idx || !datos || selCiudad.value === '') return;
-    const [nombre, la, lo] = IVT_CIUDADES[+selCiudad.value];
-    let mejor = null, dm = Infinity;
-    for (const [i, j] of idx.costa || []) { const lat = idx.lat0 + idx.dlat * i, lon = idx.lon0 + idx.dlon * j, d = (lat - la) ** 2 + ((lon - lo) * Math.cos(la * Math.PI / 180)) ** 2; if (d < dm) { dm = d; mejor = [lat, lon]; } }
-    if (!mejor || dm > 4) { const [i, j] = celda(la, lo); mejor = [idx.lat0 + idx.dlat * i, idx.lon0 + idx.dlon * j]; }
-    const ll = L.latLng(mejor[0], mejor[1]);
-    map.setView(ll, Math.max(map.getZoom(), 5));
-    consultar({ latlng: ll }, nombre);
-    selCiudad.value = '';
+    irCiudad(+selCiudad.value); selCiudad.value = '';
   };
   selector.onchange = () => { detener(); mostrar(+selector.value); };
   slider.oninput = () => { detener(); mostrar(+slider.value); };
@@ -402,7 +435,7 @@ function crearCapaIVT(L, map, escapar, contenedor, base) {
   const VISTA = L.latLngBounds([[-50, -100], [-25, -68]]);
   grupo.on('add', () => {
     panel.hidden = false; flechas.addTo(map); costaG.addTo(map); cargar();
-    if (map.getBounds().getWest() > -90) map.flyToBounds(VISTA, { duration: 0.6 });
+    if (!lado && map.getBounds().getWest() > -90) map.flyToBounds(VISTA, { duration: 0.6 });
   });
   grupo.on('remove', () => { panel.hidden = true; cerrarCorte(); detener(); map.removeLayer(flechas); map.removeLayer(costaG); map.closePopup(); });
   setInterval(() => { if (activo()) cargar(); }, 30 * 60000);

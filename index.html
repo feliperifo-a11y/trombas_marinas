@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="assets/ios-180.png">
 <link rel="stylesheet" href="assets/leaflet.css">
 <link rel="stylesheet" href="assets/sitio.css">
-<link rel="stylesheet" href="assets/trombas.css?v=20261126a">
+<link rel="stylesheet" href="assets/trombas.css?v=20261126b">
 </head>
 <body>
 <div class="top">
@@ -27,6 +27,11 @@
   <a class="on" href="./" aria-current="page"><svg class="ic" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M13 22h37a8 8 0 0 0-2-15.7A13 13 0 0 0 24.5 5 9 9 0 0 0 13 22Z" stroke="#e8f1fb" stroke-width="2.6"/><path d="M23 22h18c-3.5 8-5.6 17-6.4 28h-5.2C28.6 39 26.5 30 23 22Z" fill="url(#gNub)"/><path d="M27 28h10M28.5 35h7M30 42h4" stroke="#d7f1ff" stroke-width="1.8" opacity=".8"/><path d="M4 56c4-3.5 8-3.5 12 0s8 3.5 12 0M36 56c4-3.5 8-3.5 12 0s8 3.5 12 0" stroke="url(#gOla)" stroke-width="3.4"/><path d="M27 51c-2-2-4-2-6-1M37 51c2-2 4-2 6-1" stroke="#7fd6ff" stroke-width="2"/></svg>Trombas</a>
 </nav>
 
+<div class="pestanas" role="tablist" aria-label="Secciones">
+  <button type="button" role="tab" id="tabTr" aria-controls="vistaTr" aria-selected="true">Trombas</button>
+  <button type="button" role="tab" id="tabRA" aria-controls="vistaRA" aria-selected="false" tabindex="-1">Ríos atmosféricos</button>
+</div>
+<div id="vistaTr" role="tabpanel" aria-labelledby="tabTr">
 <section class="resumen" id="resumen" aria-live="polite"><p class="rs-tit">Cargando el pronóstico…</p></section>
 <div class="wrap">
   <section class="mapCard" id="mapa">
@@ -35,7 +40,6 @@
       <button type="button" id="btnCapas" title="Capas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></button>
       <button type="button" id="btnInicio" title="Ver zonas III a VI"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
       <button type="button" id="btnViento" title="Viento ECMWF 9 km en las zonas III a VI (MeteoIA)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/></svg></button>
-      <button type="button" id="btnIVT" title="Ríos atmosféricos (IVT del GFS)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7c3-2 5 2 8 0s5-2 8 0M3 12c3-2 5 2 8 0s5-2 8 0M3 17c3-2 5 2 8 0s5-2 8 0"/></svg></button>
       <button type="button" id="btnFull" title="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
     <div id="capasPop"></div>
@@ -44,6 +48,25 @@
   <div class="col">
     <section class="card" id="panel"><h2>Detalle <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">Avisos oficiales ↗</a></h2><div id="lado"></div></section>
   </div>
+</div>
+</div>
+<div id="vistaRA" role="tabpanel" aria-labelledby="tabRA" hidden>
+<div class="wrap">
+  <section class="mapCard" id="mapaRA">
+    <div id="mapRA" class="mapaRA" role="application" aria-label="Mapa de ríos atmosféricos"></div>
+    <div class="ctrls">
+      <button type="button" id="btnInicioRA" title="Ver el Pacífico suroriental y Chile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+      <button type="button" id="btnFullRA" title="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+  </section>
+  <div class="col">
+    <section class="card"><h2>Ríos atmosféricos</h2>
+      <p class="ra-intro">Un río atmosférico es una franja larga y angosta de la atmósfera que transporta mucho vapor de agua desde el trópico o el Pacífico. Al chocar con la costa y la cordillera deja lluvias intensas y puede subir la isoterma de 0 °C. En el centro y sur de Chile aportan cerca de la mitad de la lluvia anual entre 32° y 47° S (Viale et al., 2018). Hay condiciones de río atmosférico cuando el transporte integrado de vapor (IVT) llega a 250 kg m⁻¹ s⁻¹ o más.</p>
+      <p class="ra-nota">Estimación automática con el GFS de NOAA. <b>No constituye aviso.</b></p>
+      <div id="ladoRA"></div>
+    </section>
+  </div>
+</div>
 </div>
 <footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), ECMWF (IFS y ENS 0,25°, datos abiertos con licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página), modelo comunitario MONAN (INPE/CPTEC), corrido por esta página con condiciones iniciales y de borde del GFS, productos de ríos atmosféricos (IVT, IWV, isoterma de 0 °C, lluvia y corte en 77° W) calculados por esta página con el GFS 0,25°, la escala de Ralph et al. (2019, BAMS 100), viento ECMWF IFS 9 km procesado por <a href="https://meteoia.cl">MeteoIA</a> (botón de viento del mapa), y avisos del Servicio Meteorológico de la Armada. El catálogo de trombas observadas incorpora datos de Bastías-Curivil et al. (2025), <a href="https://doi.org/10.6084/m9.figshare.25119566" target="_blank" rel="noopener">Tornadoes and Waterspouts in Chile</a>, figshare v5, licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
 <div id="info" hidden role="dialog" aria-modal="true" aria-labelledby="infoT">
@@ -77,7 +100,7 @@
 <script src="assets/leaflet.js"></script>
 <script src="assets/trombas.js?v=20261123g"></script>
 <script src="assets/ecmwf_viento.js?v=20261123g"></script>
-<script src="assets/ivt.js?v=20261126c"></script>
+<script src="assets/ivt.js?v=20261126d"></script>
 <script>
 (function () {
   const escH = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -126,17 +149,9 @@
   const vientoEC = crearCapaECMWF(L, map, escH, document.querySelector('.mapCard'));
   const btnViento = document.getElementById('btnViento');
   btnViento.onclick = () => { map.hasLayer(vientoEC) ? map.removeLayer(vientoEC) : vientoEC.addTo(map); };
-  // Ríos atmosféricos (IVT del GFS, scripts/ivt.py) con la escala de Ralph en la costa; comparte el lugar del panel con el viento,
-  // así que encender una capa apaga la otra
-  const capaIVT = crearCapaIVT(L, map, escH, document.querySelector('.mapCard'));
-  const btnIVT = document.getElementById('btnIVT');
-  btnIVT.onclick = () => { map.hasLayer(capaIVT) ? map.removeLayer(capaIVT) : capaIVT.addTo(map); };
-  capaIVT.on('add', () => map.removeLayer(vientoEC)); vientoEC.on('add', () => map.removeLayer(capaIVT));
-  map.on('layeradd layerremove', () => {
-    for (const [b, c] of [[btnViento, vientoEC], [btnIVT, capaIVT]]) { const on = map.hasLayer(c); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }
-  });
-  geoZonas.then(fs => { if (fs) { tr.ponerZonas(fs); vientoEC.ponerMascara(fs); capaIVT.ponerZonas(fs); } });   // el viento se muestra solo en las zonas III a VI
-  const CAPAS = [['Zonas III a VI (Cuadro "F")', zonas], ['Celdas sobre umbral (modelo elegido)', tr.capas.celdas], ['Probabilidad (zonas o puntos del ensamble)', tr.capas.zona], ['MONAN 3 km: campos y ficha por punto', tr.capas.monan], ['Trombas observadas (catálogo)', tr.capas.obs, false], ['Viento ECMWF 9 km (MeteoIA)', vientoEC, false], ['Ríos atmosféricos (IVT, GFS)', capaIVT, false]];
+  map.on('layeradd layerremove', () => { const on = map.hasLayer(vientoEC); btnViento.classList.toggle('on', on); btnViento.setAttribute('aria-pressed', on); });
+  geoZonas.then(fs => { if (fs) { tr.ponerZonas(fs); vientoEC.ponerMascara(fs); } });   // el viento se muestra solo en las zonas III a VI
+  const CAPAS = [['Zonas III a VI (Cuadro "F")', zonas], ['Celdas sobre umbral (modelo elegido)', tr.capas.celdas], ['Probabilidad (zonas o puntos del ensamble)', tr.capas.zona], ['MONAN 3 km: campos y ficha por punto', tr.capas.monan], ['Trombas observadas (catálogo)', tr.capas.obs, false], ['Viento ECMWF 9 km (MeteoIA)', vientoEC, false]];
   const pop = document.getElementById('capasPop');
   pop.innerHTML = '<div class="t">Capas</div>' + CAPAS.map(([n, , on], i) => `<label><input type="checkbox" data-i="${i}"${on === false ? '' : ' checked'}> ${escH(n)}</label>`).join('') +
     '<div class="t" style="margin-top:8px">Mapa base</div><label><input type="radio" name="base" value="sat" checked> Imagen satelital</label><label><input type="radio" name="base" value="oc"> Océano (claro)</label>';
@@ -149,7 +164,7 @@
   document.getElementById('btnCapas').onclick = () => { pop.classList.toggle('on'); document.getElementById('btnCapas').classList.toggle('on'); };
   document.getElementById('btnInicio').onclick = () => map.flyToBounds(VISTA, { ...ENCUADRE, duration: 0.8 });
   document.getElementById('btnFull').onclick = () => { document.querySelector('.mapCard').classList.toggle('full'); document.getElementById('btnFull').classList.toggle('on'); setTimeout(() => map.invalidateSize(), 60); };
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.mapCard.full')) document.getElementById('btnFull').click(); });
+  document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (document.querySelector('#mapa.full')) document.getElementById('btnFull').click(); if (document.querySelector('#mapaRA.full')) document.getElementById('btnFullRA').click(); });
   // Mientras no se haya movido el mapa, cualquier cambio de tamaño vuelve a encuadrar las cuatro zonas
   try { new ResizeObserver(() => { if (movido) map.invalidateSize(); else encuadrar(); }).observe(document.querySelector('.mapCard')); } catch (e) {}
   // Ventana "Cómo funciona"
@@ -161,6 +176,47 @@
   info.querySelector('.in-cerrar').onclick = cerrarInfo;
   info.addEventListener('click', e => { if (e.target === info) cerrarInfo(); });
   if (new URLSearchParams(location.search).has('info')) abrirInfo();
+
+  // Pestaña "Ríos atmosféricos": mapa propio, creado la primera vez que se abre (necesita su tamaño visible)
+  let mapRA = null;
+  const VISTA_RA = [[-56, -100], [-18, -66]];
+  function iniciarRA() {
+    mapRA = L.map('mapRA', { minZoom: 3, maxZoom: 10, zoomSnap: 0.25, zoomControl: false, preferCanvas: true });
+    L.control.zoom({ position: 'bottomright' }).addTo(mapRA);
+    L.control.scale({ imperial: false, position: 'bottomright' }).addTo(mapRA);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Imagen © Esri', maxZoom: 17, maxNativeZoom: 13 }).addTo(mapRA);
+    const enc = innerWidth <= 760 ? { paddingTopLeft: [8, 8], paddingBottomRight: [60, 8] } : { paddingTopLeft: [330, 16], paddingBottomRight: [64, 16] };
+    const encuadrarRA = () => mapRA.fitBounds(VISTA_RA, { ...enc, animate: false });
+    encuadrarRA();
+    const zonasRA = L.layerGroup().addTo(mapRA);
+    const capa = crearCapaIVT(L, mapRA, escH, document.getElementById('mapaRA'), 'data/', { lado: document.getElementById('ladoRA') });
+    capa.addTo(mapRA);
+    geoZonas.then(fs => {
+      if (!fs) return;
+      for (const f of fs) {
+        const g = L.geoJSON(f, { interactive: false, style: { color: '#ffffff', weight: 1.2, opacity: 0.7, fill: false, dashArray: '5 5' } }).addTo(zonasRA);
+        const c = g.getBounds().getCenter();
+        L.marker([c.lat, c.lng], { interactive: false, icon: L.divIcon({ className: 'zLbl', html: `<span>${escH(f.properties.id)}</span>`, iconSize: null }) }).addTo(zonasRA);
+      }
+      capa.ponerZonas(fs);
+    });
+    document.getElementById('btnInicioRA').onclick = () => mapRA.flyToBounds(VISTA_RA, { ...enc, duration: 0.8 });
+    document.getElementById('btnFullRA').onclick = () => { document.getElementById('mapaRA').classList.toggle('full'); document.getElementById('btnFullRA').classList.toggle('on'); setTimeout(() => mapRA.invalidateSize(), 60); };
+    try { new ResizeObserver(() => mapRA.invalidateSize()).observe(document.getElementById('mapaRA')); } catch (e) {}
+  }
+  const tabs = { tr: [document.getElementById('tabTr'), document.getElementById('vistaTr')], ra: [document.getElementById('tabRA'), document.getElementById('vistaRA')] };
+  function abrirPestana(k, foco) {
+    for (const [n, [t, v]] of Object.entries(tabs)) { const on = n === k; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; t.classList.toggle('on', on); v.hidden = !on; }
+    if (k === 'ra') { if (!mapRA) iniciarRA(); else mapRA.invalidateSize(); } else map.invalidateSize();
+    document.title = (k === 'ra' ? 'Ríos atmosféricos' : 'Trombas marinas') + ' · MeteoIA';
+    document.querySelector('.logo b').textContent = k === 'ra' ? 'Ríos atmosféricos' : 'Trombas marinas';
+    document.querySelector('.logo .tx').textContent = k === 'ra' ? 'Transporte de vapor hacia Chile en los próximos 6 días · escala de Ralph en la costa' : '¿Condiciones para trombas en los próximos días? · Valparaíso a San Pedro';
+    history.replaceState(null, '', k === 'ra' ? '#rios' : location.pathname + location.search);
+    if (foco) tabs[k][0].focus();
+  }
+  tabs.tr[0].onclick = () => abrirPestana('tr'); tabs.ra[0].onclick = () => abrirPestana('ra');
+  for (const [t] of Object.values(tabs)) t.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') abrirPestana(tabs.tr[0].getAttribute('aria-selected') === 'true' ? 'ra' : 'tr', true); });
+  if (location.hash === '#rios') abrirPestana('ra');
 })();
 </script>
 </body>
