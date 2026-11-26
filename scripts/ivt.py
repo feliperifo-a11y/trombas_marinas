@@ -194,8 +194,11 @@ def main():
                     costa.append([i, j])
                     break                                      # la primera costa desde el oeste (deja fuera lagos e islas interiores)
     pp, horas_pp = acumular(apcp, FHRS[-1])
-    pp_b = np.where(np.isfinite(pp), np.clip(np.rint(pp[::SUB, ::SUB] * 10), 0, 65534), 65535).astype("<u2") if pp is not None \
-        else np.full((nlat, nlon), 65535, "<u2")
+    if pp is not None:
+        pp = pp[::SUB, ::SUB]
+        pp_b = np.where(np.isfinite(pp), np.clip(np.rint(pp * 10), 0, 65534), 65535).astype("<u2")
+    else:
+        pp_b = np.full((nlat, nlon), 65535, "<u2")
     gen = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     BINARIO.write_bytes(np.stack(capas).tobytes())
     EXTRA.write_bytes(pp_b.tobytes() + np.stack(corte).tobytes())
