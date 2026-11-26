@@ -4,8 +4,7 @@
 IVT = (1/g) ∫ q·V dp, desde la superficie hasta 300 hPa, con la humedad específica (SPFH) y el viento (UGRD, VGRD) en
 17 niveles de presión (1000 a 300 hPa). Se integra por trapecios solo sobre los niveles que están sobre la superficie.
 Además: agua precipitable (IWV, PWAT del GFS), altura de la isoterma de 0 °C (HGT en el nivel 0C_isotherm), precipitación
-acumulada en 6 días (APCP) y un corte vertical del flujo de vapor q·|V| a lo largo de 77° W, como los productos del
-IANIGLA-CONICET (https://ianigla.net/rios_atmosfericos/).
+acumulada en 6 días (APCP) y un corte vertical del flujo de vapor q·|V| a lo largo de 77° W.
 Dominio: Pacífico suroriental y Chile, 17°–57° S / 110°–66° W. Plazos: 0 a 144 h cada 3 h (filtro NOMADS).
 
 Salida (pensada para el navegador), celdas de 0,5°, un byte por valor y 255 = sin dato:

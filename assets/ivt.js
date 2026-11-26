@@ -1,7 +1,7 @@
 // Ríos atmosféricos con el GFS 0,25° (data/ivt.json, ivt.bin, ivt_extra.bin e ivt_hist.*, scripts/ivt.py).
 // Mapas de IVT, agua precipitable (IWV) y lluvia acumulada en 6 días; escala de Ralph et al. (2019, BAMS 100) en las celdas
 // costeras; meteograma por punto o ciudad (IVT, dirección, isoterma de 0 °C, con los análisis de las últimas 48 h) y corte
-// vertical del flujo de vapor en 77° W. Productos inspirados en los del IANIGLA-CONICET (ianigla.net/rios_atmosfericos).
+// vertical del flujo de vapor en 77° W.
 // Escala de Ralph: categoría según el IVT máximo del evento (250, 500, 750, 1000 y 1250 kg m⁻¹ s⁻¹) y su duración con
 // IVT ≥ 250: baja una categoría si dura menos de 24 h y sube una si dura más de 48 h. Aquí se usa el IVT cada 3 h del GFS
 // (no el promedio de 3 h del artículo) y la duración se corta al final del pronóstico (144 h).
@@ -82,7 +82,7 @@ function crearCapaIVT(L, map, escapar, contenedor, base) {
     'IWV, isoterma de 0 °C y lluvia salen directo del GFS. Escala de Ralph et al. (2019, BAMS 100): categoría 1 a 5 según el IVT máximo del evento (250, 500, 750, 1000 y 1250) y su duración con IVT ≥ 250; ' +
     'baja una categoría si dura menos de 24 h y sube una si dura más de 48 h. Aquí se usa el IVT cada 3 h, se suman los análisis de las últimas 48 h y la duración se corta al final del pronóstico. ' +
     'En Chile los ríos atmosféricos aportan cerca de la mitad de la lluvia anual entre 32° y 47° S (Viale et al., 2018, J. Hydrometeor. 19). ' +
-    'Productos inspirados en los del <a href="https://ianigla.net/rios_atmosfericos/" target="_blank" rel="noopener noreferrer">IANIGLA-CONICET</a>. Estimación automática: no constituye aviso.</p></details>';
+    'Estimación automática: no constituye aviso.</p></details>';
   contenedor.appendChild(panel);
   const caja = document.createElement('section'); caja.className = 'ivt-corte'; caja.hidden = true; caja.setAttribute('aria-label', 'Corte vertical del flujo de vapor');
   contenedor.appendChild(caja);
