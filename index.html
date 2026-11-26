@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="assets/ios-180.png">
 <link rel="stylesheet" href="assets/leaflet.css">
 <link rel="stylesheet" href="assets/sitio.css">
-<link rel="stylesheet" href="assets/trombas.css?v=20261123g">
+<link rel="stylesheet" href="assets/trombas.css?v=20261126a">
 </head>
 <body>
 <div class="top">
@@ -45,7 +45,7 @@
     <section class="card" id="panel"><h2>Detalle <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">Avisos oficiales ↗</a></h2><div id="lado"></div></section>
   </div>
 </div>
-<footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), ECMWF (IFS y ENS 0,25°, datos abiertos con licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página), modelo comunitario MONAN (INPE/CPTEC), corrido por esta página con condiciones iniciales y de borde del GFS, transporte integrado de vapor (IVT) calculado por esta página con el GFS 0,25° y la escala de ríos atmosféricos de Ralph et al. (2019, BAMS 100), viento ECMWF IFS 9 km procesado por <a href="https://meteoia.cl">MeteoIA</a> (botón de viento del mapa), y avisos del Servicio Meteorológico de la Armada. El catálogo de trombas observadas incorpora datos de Bastías-Curivil et al. (2025), <a href="https://doi.org/10.6084/m9.figshare.25119566" target="_blank" rel="noopener">Tornadoes and Waterspouts in Chile</a>, figshare v5, licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
+<footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), ECMWF (IFS y ENS 0,25°, datos abiertos con licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página), modelo comunitario MONAN (INPE/CPTEC), corrido por esta página con condiciones iniciales y de borde del GFS, productos de ríos atmosféricos (IVT, IWV, isoterma de 0 °C, lluvia y corte en 77° W) calculados por esta página con el GFS 0,25°, la escala de Ralph et al. (2019, BAMS 100) y siguiendo los productos del <a href="https://ianigla.net/rios_atmosfericos/" target="_blank" rel="noopener">IANIGLA-CONICET</a>, viento ECMWF IFS 9 km procesado por <a href="https://meteoia.cl">MeteoIA</a> (botón de viento del mapa), y avisos del Servicio Meteorológico de la Armada. El catálogo de trombas observadas incorpora datos de Bastías-Curivil et al. (2025), <a href="https://doi.org/10.6084/m9.figshare.25119566" target="_blank" rel="noopener">Tornadoes and Waterspouts in Chile</a>, figshare v5, licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
 <div id="info" hidden role="dialog" aria-modal="true" aria-labelledby="infoT">
   <div class="in-caja">
     <button type="button" class="in-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button>
@@ -77,7 +77,7 @@
 <script src="assets/leaflet.js"></script>
 <script src="assets/trombas.js?v=20261123g"></script>
 <script src="assets/ecmwf_viento.js?v=20261123g"></script>
-<script src="assets/ivt.js?v=20261125a"></script>
+<script src="assets/ivt.js?v=20261126a"></script>
 <script>
 (function () {
   const escH = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
