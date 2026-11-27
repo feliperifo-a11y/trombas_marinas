@@ -15,7 +15,7 @@
 <body>
 <div class="top">
   <a class="logo" href="https://meteoia.cl" title="Ir a MeteoIA"><span class="mk"><img src="assets/logo-meteoia.png" alt="MeteoIA"></span><span><b>Trombas marinas</b><span class="tx">¿Condiciones para trombas en los próximos días? · Valparaíso a San Pedro</span></span></a>
-  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">Se actualiza sola varias veces al día</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button> <button type="button" class="btnInfo btnAlertas" id="btnAlertas" aria-haspopup="dialog" title="Redactar un aviso de tromba marina por correo o suscribirse a las alertas">🔔 Alertas por correo y SMS</button></div>
+  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">Se actualiza sola varias veces al día</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button> <button type="button" class="btnInfo btnAlertas" id="btnAlertas" aria-haspopup="dialog" hidden title="Redactar un aviso de tromba marina por correo o suscribirse a las alertas">🔔 Alertas por correo y SMS</button></div>
 </div>
 <nav class="nav"><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="gOla" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e88ff"/><stop offset="1" stop-color="#22c3ee"/></linearGradient>
@@ -219,9 +219,11 @@
   const ALERTAS_URL = '';
   const dlgA = document.getElementById('alertas'), btnA = document.getElementById('btnAlertas'), fA = document.getElementById('fAlertas');
   const teclaA = e => { if (e.key === 'Escape') cerrarA(); };
-  const cerrarA = () => { dlgA.hidden = true; document.removeEventListener('keydown', teclaA); btnA.focus(); };
+  const cerrarA = () => { dlgA.hidden = true; document.removeEventListener('keydown', teclaA); if (!btnA.hidden) btnA.focus(); };
   const abrirA = () => { dlgA.hidden = false; document.addEventListener('keydown', teclaA); dlgA.querySelector('.in-cerrar').focus(); };
+  // Botón oculto al público: la ventana solo se abre con los enlaces directos ?aviso, ?sms o ?alertas, que además lo muestran
   btnA.onclick = () => { abrirA(); armarAviso(); };
+  if (['aviso', 'sms', 'alertas'].some(k => new URLSearchParams(location.search).has(k))) btnA.hidden = false;
   dlgA.querySelector('.in-cerrar').onclick = cerrarA;
   dlgA.addEventListener('click', e => { if (e.target === dlgA) cerrarA(); });
   // Borrador de aviso: toma la zona y el día de mayor probabilidad del ensamble GEFS publicado
