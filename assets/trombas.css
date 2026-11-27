@@ -150,3 +150,4 @@ span.tr-alto,span.tr-bajo{padding:0 4px;border-radius:3px;color:var(--ink)}
 @media (max-width:760px){.al-campos{grid-template-columns:1fr}}
 .al-prueba{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:6px;background:#8a6a10;color:#ffe6a3;font-size:10.5px;letter-spacing:.5px;vertical-align:1px}
 .al-chk{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px}#smsAbrir{background:#2f8cff}
+.btnAlertas[hidden]{display:none!important}
