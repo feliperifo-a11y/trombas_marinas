@@ -131,3 +131,14 @@ span.tr-alto,span.tr-bajo{padding:0 4px;border-radius:3px;color:var(--ink)}
 .ivt-modal-caja{position:relative;width:min(1120px,96vw)}.ivt-modal-caja img{display:block;width:100%;height:auto;border-radius:14px}.ivt-modal .ivt-cerrar{position:absolute;top:6px;right:8px;color:#fff;font-size:20px;background:transparent;border:0;cursor:pointer;min-width:40px;min-height:40px}
 .ivt-ciu{position:relative}.ivt-ciu i{position:absolute;left:2px;top:2px;width:12px;height:12px;transform:rotate(45deg);border:2px solid #0b1d31;box-shadow:0 0 0 1.5px #fff;box-sizing:border-box}.ivt-ciu i.sin{background:#fff!important;opacity:.85}
 .ivt-ciu b{position:absolute;left:20px;top:-1px;white-space:nowrap;font:600 11.5px system-ui,sans-serif;color:#fff;text-shadow:0 0 3px #000,0 0 3px #000,0 1px 2px #000;cursor:pointer}
+#alertas{position:fixed;inset:0;z-index:5000;background:rgba(3,10,20,.82);display:flex;align-items:center;justify-content:center;padding:16px}#alertas[hidden]{display:none}
+#alertas .in-caja{position:relative;width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto;background:linear-gradient(180deg,#0f243b,#0b1c30);border:1px solid var(--line);border-radius:14px;padding:22px 24px 18px;box-shadow:0 20px 60px rgba(0,0,0,.6);font-size:13.5px;line-height:1.55}
+#alertas h2{margin:0 36px 10px 0;font-size:17px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}#alertas p{margin:8px 0}
+#alertas .in-cerrar{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:#0b1d31;color:var(--ink);font-size:16px;cursor:pointer}
+#alertas .in-nota{background:#3a2c05;border:1px solid #8a6a10;color:#ffe6a3;border-radius:10px;padding:7px 12px}#alertas .in-nota a{color:#ffe6a3}
+#fAlertas{margin:14px 0 6px}#fAlertas label{display:block;font-weight:600;margin-bottom:5px}.al-fila{display:flex;gap:8px}
+.al-fila input{flex:1;min-width:0;min-height:42px;padding:0 12px;font-size:15px;border-radius:9px;border:1px solid #39618b;background:#08182a;color:var(--ink)}
+.al-fila button{min-height:42px;padding:0 18px;border-radius:9px;border:0;background:#2f8cff;color:#fff;font:700 14px system-ui,sans-serif;cursor:pointer}.al-fila button:disabled{opacity:.6}
+.al-trampa{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}.al-estado{min-height:1.4em}.al-estado.bien{color:#5be3a0}.al-estado.mal{color:#ff8a8a}.al-pie{color:var(--muted);font-size:12.5px}
+.btnAlertas{margin-left:6px;border-color:#2f8cff;color:#fff;background:#16365a}
+@media (max-width:760px){.al-fila{flex-direction:column}}

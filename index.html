@@ -10,12 +10,12 @@
 <link rel="apple-touch-icon" href="assets/ios-180.png">
 <link rel="stylesheet" href="assets/leaflet.css">
 <link rel="stylesheet" href="assets/sitio.css">
-<link rel="stylesheet" href="assets/trombas.css?v=20261126e">
+<link rel="stylesheet" href="assets/trombas.css?v=20261127a">
 </head>
 <body>
 <div class="top">
   <a class="logo" href="https://meteoia.cl" title="Ir a MeteoIA"><span class="mk"><img src="assets/logo-meteoia.png" alt="MeteoIA"></span><span><b>Trombas marinas</b><span class="tx">¿Condiciones para trombas en los próximos días? · Valparaíso a San Pedro</span></span></a>
-  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">Se actualiza sola varias veces al día</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button></div>
+  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">Se actualiza sola varias veces al día</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button> <button type="button" class="btnInfo btnAlertas" id="btnAlertas" aria-haspopup="dialog" hidden title="Recibe un correo cuando haya probabilidad alta de trombas marinas">🔔 Alertas por correo</button></div>
 </div>
 <nav class="nav"><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="gOla" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e88ff"/><stop offset="1" stop-color="#22c3ee"/></linearGradient>
@@ -70,6 +70,21 @@
 </div>
 </div>
 <footer class="pie"><p>Datos: NOAA/NCEP (GFS 0,25° y GEFS 0,5°), ECMWF (IFS y ENS 0,25°, datos abiertos con licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC-BY-4.0</a>; los índices los calcula esta página), modelo comunitario MONAN (INPE/CPTEC), corrido por esta página con condiciones iniciales y de borde del GFS, productos de ríos atmosféricos (IVT, IWV, isoterma de 0 °C, lluvia y corte en 77° W) calculados por esta página con el GFS 0,25°, la escala de Ralph et al. (2019, BAMS 100), viento ECMWF IFS 9 km procesado por <a href="https://meteoia.cl">MeteoIA</a> (botón de viento del mapa), y avisos del Servicio Meteorológico de la Armada. El catálogo de trombas observadas incorpora datos de Bastías-Curivil et al. (2025), <a href="https://doi.org/10.6084/m9.figshare.25119566" target="_blank" rel="noopener">Tornadoes and Waterspouts in Chile</a>, figshare v5, licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Se actualiza solo con cada corrida nueva. Proyecto sin fines de lucro asociado a <a href="https://meteoia.cl">MeteoIA</a>.</p><a href="mailto:meteoiachile@gmail.com?subject=Sugerencia%20Trombas%20MeteoIA">¿Sugerencias o comentarios? Escríbenos</a></footer>
+<div id="alertas" hidden role="dialog" aria-modal="true" aria-labelledby="alertasT">
+  <div class="in-caja">
+    <button type="button" class="in-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button>
+    <h2 id="alertasT">Alertas de trombas por correo</h2>
+    <p>Te enviamos un correo cuando alguna zona entre Valparaíso y San Pedro (III a VI) llegue a probabilidad <b>alta</b> (50 % o más de los escenarios del ensamble GFS) o <b>muy alta</b> (80 % o más) de condiciones propicias para trombas marinas en los próximos días.</p>
+    <form id="fAlertas" novalidate>
+      <label for="aCorreo">Correo electrónico</label>
+      <div class="al-fila"><input id="aCorreo" name="correo" type="email" autocomplete="email" required maxlength="120" placeholder="nombre@correo.cl"><button type="submit">Suscribirme</button></div>
+      <input class="al-trampa" name="web" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <p class="al-estado" role="status" aria-live="polite"></p>
+    </form>
+    <p class="al-pie">Te llegará un correo para confirmar la suscripción. Tu correo solo se usa para estas alertas y cada mensaje trae un enlace para darte de baja, que lo borra de la lista.</p>
+    <p class="in-nota">Es una estimación automática y experimental: <b>no constituye aviso</b>. Los avisos oficiales los emite la Armada de Chile en <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">meteoarmada.directemar.cl</a>.</p>
+  </div>
+</div>
 <div id="info" hidden role="dialog" aria-modal="true" aria-labelledby="infoT">
   <div class="in-caja">
     <button type="button" class="in-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button>
@@ -177,6 +192,32 @@
   info.querySelector('.in-cerrar').onclick = cerrarInfo;
   info.addEventListener('click', e => { if (e.target === info) cerrarInfo(); });
   if (new URLSearchParams(location.search).has('info')) abrirInfo();
+
+  // Alertas por correo (Google Apps Script del autor: planilla de suscriptores y envío desde Gmail; ver apps_script/)
+  const ALERTAS_URL = '';
+  const dlgA = document.getElementById('alertas'), btnA = document.getElementById('btnAlertas'), fA = document.getElementById('fAlertas');
+  const teclaA = e => { if (e.key === 'Escape') cerrarA(); };
+  const cerrarA = () => { dlgA.hidden = true; document.removeEventListener('keydown', teclaA); btnA.focus(); };
+  const abrirA = () => { dlgA.hidden = false; document.addEventListener('keydown', teclaA); document.getElementById('aCorreo').focus(); };
+  if (ALERTAS_URL) {
+    btnA.hidden = false; btnA.onclick = abrirA;
+    dlgA.querySelector('.in-cerrar').onclick = cerrarA;
+    dlgA.addEventListener('click', e => { if (e.target === dlgA) cerrarA(); });
+    fA.onsubmit = async e => {
+      e.preventDefault();
+      const est = fA.querySelector('.al-estado'), btn = fA.querySelector('button'), correo = fA.correo.value.trim();
+      if (!fA.correo.checkValidity() || !correo) { est.textContent = 'Escribe un correo válido.'; est.className = 'al-estado mal'; return; }
+      btn.disabled = true; est.textContent = 'Enviando…'; est.className = 'al-estado';
+      try {
+        const r = await fetch(`${ALERTAS_URL}?accion=suscribir&correo=${encodeURIComponent(correo)}&web=${encodeURIComponent(fA.web.value)}`, { signal: AbortSignal.timeout(30000) });
+        const d = await r.json();
+        est.textContent = d.msg; est.className = 'al-estado ' + (d.ok ? 'bien' : 'mal');
+        if (d.ok) fA.correo.value = '';
+      } catch (err) { est.textContent = 'No se pudo enviar. Intenta de nuevo en unos minutos.'; est.className = 'al-estado mal'; }
+      btn.disabled = false;
+    };
+    if (new URLSearchParams(location.search).has('alertas')) abrirA();
+  }
 
   // Pestaña "Ríos atmosféricos": mapa propio, creado la primera vez que se abre (necesita su tamaño visible)
   let mapRA = null;
