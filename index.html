@@ -10,12 +10,12 @@
 <link rel="apple-touch-icon" href="assets/ios-180.png">
 <link rel="stylesheet" href="assets/leaflet.css">
 <link rel="stylesheet" href="assets/sitio.css">
-<link rel="stylesheet" href="assets/trombas.css?v=20261127b">
+<link rel="stylesheet" href="assets/trombas.css?v=20261127c">
 </head>
 <body>
 <div class="top">
   <a class="logo" href="https://meteoia.cl" title="Ir a MeteoIA"><span class="mk"><img src="assets/logo-meteoia.png" alt="MeteoIA"></span><span><b>Trombas marinas</b><span class="tx">¿Condiciones para trombas en los próximos días? · Valparaíso a San Pedro</span></span></a>
-  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">Se actualiza sola varias veces al día</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button> <button type="button" class="btnInfo btnAlertas" id="btnAlertas" aria-haspopup="dialog" title="Redactar un aviso de tromba marina por correo o suscribirse a las alertas">🔔 Alertas por correo</button></div>
+  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">Se actualiza sola varias veces al día</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button> <button type="button" class="btnInfo btnAlertas" id="btnAlertas" aria-haspopup="dialog" title="Redactar un aviso de tromba marina por correo o suscribirse a las alertas">🔔 Alertas por correo y SMS</button></div>
 </div>
 <nav class="nav"><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="gOla" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e88ff"/><stop offset="1" stop-color="#22c3ee"/></linearGradient>
@@ -73,7 +73,7 @@
 <div id="alertas" hidden role="dialog" aria-modal="true" aria-labelledby="alertasT">
   <div class="in-caja">
     <button type="button" class="in-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button>
-    <h2 id="alertasT">Alertas de trombas por correo</h2>
+    <h2 id="alertasT">Alertas de trombas por correo y mensaje</h2>
     <section class="al-sec" aria-labelledby="redT">
       <h3 id="redT">Redactar un aviso</h3>
       <p class="al-pie">Se arma con el pronóstico vigente. Revisa y ajusta el texto, y ábrelo en tu correo para agregar los destinatarios y enviarlo.</p>
@@ -84,6 +84,14 @@
       <label class="al-txt">Texto del aviso<textarea id="redTexto" rows="14"></textarea></label>
       <div class="al-acc"><button type="button" id="redAbrir">✉️ Abrir en mi correo</button><button type="button" id="redCopiar" class="sec">Copiar texto</button></div>
       <p class="al-estado" id="redEstado" role="status" aria-live="polite"></p>
+    </section>
+    <section class="al-sec" aria-labelledby="smsT">
+      <h3 id="smsT">Mensaje de texto <span class="al-prueba">PRUEBA</span></h3>
+      <p class="al-pie">Abre la aplicación de mensajes del teléfono con el texto listo; tú eliges los destinatarios. En el computador, usa "Copiar mensaje".</p>
+      <label class="al-txt">Mensaje<textarea id="smsTexto" rows="3" maxlength="300"></textarea></label>
+      <label class="al-chk"><input type="checkbox" id="smsPrueba" checked> Marcar el mensaje como prueba</label>
+      <div class="al-acc"><button type="button" id="smsAbrir">📱 Abrir en mensajes</button><button type="button" id="smsCopiar" class="sec">Copiar mensaje</button></div>
+      <p class="al-estado" id="smsEstado" role="status" aria-live="polite"></p>
     </section>
     <section class="al-sec" id="alSus" aria-labelledby="susT" hidden>
     <h3 id="susT">Recibir alertas automáticas</h3>
@@ -259,7 +267,21 @@
     try { await navigator.clipboard.writeText(document.getElementById('redTexto').value); est.textContent = 'Texto copiado. El asunto es: ' + ASUNTO_AVISO; }
     catch (e) { document.getElementById('redTexto').select(); est.textContent = 'Selecciona el texto y cópialo con Ctrl+C.'; }
   };
+  // Mensaje de texto (prueba): enlace sms: con el texto; "sms:?&body=" lo abren tanto iPhone como Android
+  const SMS_BASE = 'Alerta por tromba marina en tu área, por favor acusa mensaje recibido.';
+  const smsT = document.getElementById('smsTexto'), smsP = document.getElementById('smsPrueba');
+  const armarSMS = () => { smsT.value = (smsP.checked ? 'PRUEBA: ' : '') + SMS_BASE; };
+  armarSMS(); smsP.onchange = armarSMS;
+  document.getElementById('smsAbrir').onclick = () => {
+    location.href = 'sms:?&body=' + encodeURIComponent(smsT.value);
+    document.getElementById('smsEstado').textContent = 'Se abrió la aplicación de mensajes. Si no se abrió (computador), usa "Copiar mensaje".';
+  };
+  document.getElementById('smsCopiar').onclick = async () => {
+    const est = document.getElementById('smsEstado');
+    try { await navigator.clipboard.writeText(smsT.value); est.textContent = 'Mensaje copiado.'; } catch (e) { smsT.select(); est.textContent = 'Selecciona el texto y cópialo.'; }
+  };
   if (new URLSearchParams(location.search).has('aviso')) { abrirA(); armarAviso(); }
+  if (new URLSearchParams(location.search).has('sms')) { abrirA(); armarAviso(); setTimeout(() => document.getElementById('smsT').scrollIntoView({ block: 'start' }), 50); }
   if (ALERTAS_URL) {
     document.getElementById('alSus').hidden = false;
     fA.onsubmit = async e => {
