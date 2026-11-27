@@ -142,3 +142,9 @@ span.tr-alto,span.tr-bajo{padding:0 4px;border-radius:3px;color:var(--ink)}
 .al-trampa{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}.al-estado{min-height:1.4em}.al-estado.bien{color:#5be3a0}.al-estado.mal{color:#ff8a8a}.al-pie{color:var(--muted);font-size:12.5px}
 .btnAlertas{margin-left:6px;border-color:#2f8cff;color:#fff;background:#16365a}
 @media (max-width:760px){.al-fila{flex-direction:column}}
+#alertas .in-caja{width:min(680px,100%)}#alertas h3{margin:14px 0 6px;font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--acc2,#7cc4ff)}
+.al-sec{border-top:1px solid var(--line);padding-top:6px;margin-top:10px}.al-campos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.al-campos label,.al-txt{display:block;font-weight:600;font-size:12.5px}.al-campos input,.al-txt textarea{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:8px 10px;font:13px system-ui,sans-serif;border-radius:8px;border:1px solid #39618b;background:#08182a;color:var(--ink)}
+.al-txt{margin-top:8px}.al-txt textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.45;resize:vertical}
+.al-acc{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.al-acc button{min-height:40px;padding:0 16px;border-radius:9px;border:0;background:#d7191c;color:#fff;font:700 14px system-ui,sans-serif;cursor:pointer}.al-acc button.sec{background:transparent;border:1px solid #39618b;color:var(--ink)}
+@media (max-width:760px){.al-campos{grid-template-columns:1fr}}

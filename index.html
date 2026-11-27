@@ -10,12 +10,12 @@
 <link rel="apple-touch-icon" href="assets/ios-180.png">
 <link rel="stylesheet" href="assets/leaflet.css">
 <link rel="stylesheet" href="assets/sitio.css">
-<link rel="stylesheet" href="assets/trombas.css?v=20261127a">
+<link rel="stylesheet" href="assets/trombas.css?v=20261127b">
 </head>
 <body>
 <div class="top">
   <a class="logo" href="https://meteoia.cl" title="Ir a MeteoIA"><span class="mk"><img src="assets/logo-meteoia.png" alt="MeteoIA"></span><span><b>Trombas marinas</b><span class="tx">¿Condiciones para trombas en los próximos días? · Valparaíso a San Pedro</span></span></a>
-  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">Se actualiza sola varias veces al día</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button> <button type="button" class="btnInfo btnAlertas" id="btnAlertas" aria-haspopup="dialog" hidden title="Recibe un correo cuando haya probabilidad alta de trombas marinas">🔔 Alertas por correo</button></div>
+  <div class="reloj"><div class="h"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="hora">–</span></div><div class="s">Se actualiza sola varias veces al día</div><button type="button" class="btnInfo" id="btnInfo" aria-haspopup="dialog" title="Qué hace esta página, cómo trabaja y cuál es el aporte de la IA">ⓘ Cómo funciona</button> <button type="button" class="btnInfo btnAlertas" id="btnAlertas" aria-haspopup="dialog" title="Redactar un aviso de tromba marina por correo o suscribirse a las alertas">🔔 Alertas por correo</button></div>
 </div>
 <nav class="nav"><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="gOla" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e88ff"/><stop offset="1" stop-color="#22c3ee"/></linearGradient>
@@ -74,6 +74,19 @@
   <div class="in-caja">
     <button type="button" class="in-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button>
     <h2 id="alertasT">Alertas de trombas por correo</h2>
+    <section class="al-sec" aria-labelledby="redT">
+      <h3 id="redT">Redactar un aviso</h3>
+      <p class="al-pie">Se arma con el pronóstico vigente. Revisa y ajusta el texto, y ábrelo en tu correo para agregar los destinatarios y enviarlo.</p>
+      <div class="al-campos">
+        <label>Sector<input id="redSector" maxlength="120"></label>
+        <label>Vigencia<input id="redVig" maxlength="120"></label>
+      </div>
+      <label class="al-txt">Texto del aviso<textarea id="redTexto" rows="14"></textarea></label>
+      <div class="al-acc"><button type="button" id="redAbrir">✉️ Abrir en mi correo</button><button type="button" id="redCopiar" class="sec">Copiar texto</button></div>
+      <p class="al-estado" id="redEstado" role="status" aria-live="polite"></p>
+    </section>
+    <section class="al-sec" id="alSus" aria-labelledby="susT" hidden>
+    <h3 id="susT">Recibir alertas automáticas</h3>
     <p>Te enviamos un correo cuando alguna zona entre Valparaíso y San Pedro (III a VI) llegue a probabilidad <b>alta</b> (50 % o más de los escenarios del ensamble GFS) o <b>muy alta</b> (80 % o más) de condiciones propicias para trombas marinas en los próximos días.</p>
     <form id="fAlertas" novalidate>
       <label for="aCorreo">Correo electrónico</label>
@@ -82,6 +95,7 @@
       <p class="al-estado" role="status" aria-live="polite"></p>
     </form>
     <p class="al-pie">Te llegará un correo para confirmar la suscripción. Tu correo solo se usa para estas alertas y cada mensaje trae un enlace para darte de baja, que lo borra de la lista.</p>
+    </section>
     <p class="in-nota">Es una estimación automática y experimental: <b>no constituye aviso</b>. Los avisos oficiales los emite la Armada de Chile en <a href="https://meteoarmada.directemar.cl" target="_blank" rel="noopener">meteoarmada.directemar.cl</a>.</p>
   </div>
 </div>
@@ -198,11 +212,56 @@
   const dlgA = document.getElementById('alertas'), btnA = document.getElementById('btnAlertas'), fA = document.getElementById('fAlertas');
   const teclaA = e => { if (e.key === 'Escape') cerrarA(); };
   const cerrarA = () => { dlgA.hidden = true; document.removeEventListener('keydown', teclaA); btnA.focus(); };
-  const abrirA = () => { dlgA.hidden = false; document.addEventListener('keydown', teclaA); document.getElementById('aCorreo').focus(); };
+  const abrirA = () => { dlgA.hidden = false; document.addEventListener('keydown', teclaA); dlgA.querySelector('.in-cerrar').focus(); };
+  btnA.onclick = () => { abrirA(); armarAviso(); };
+  dlgA.querySelector('.in-cerrar').onclick = cerrarA;
+  dlgA.addEventListener('click', e => { if (e.target === dlgA) cerrarA(); });
+  // Borrador de aviso: toma la zona y el día de mayor probabilidad del ensamble GEFS publicado
+  const ASUNTO_AVISO = 'ALERTA DE TROMBA MARINA EN TU ÁREA';
+  const NIV_TXT = v => v >= 80 ? 'muy alta' : v >= 50 ? 'alta' : v >= 20 ? 'moderada' : v > 0 ? 'baja' : null;
+  const ZN = { III: 'Valparaíso a Constitución', IV: 'Constitución a Isla Mocha', V: 'Isla Mocha a Puerto Montt', VI: 'Puerto Montt a San Pedro' };
+  let pronAviso = null;
+  const textoAviso = () => {
+    const sector = document.getElementById('redSector').value.trim() || '[sector]', vig = document.getElementById('redVig').value.trim() || '[fecha y hora]';
+    return `${ASUNTO_AVISO}\n\nSe informa ALERTA POR TROMBAS MARINAS en ${sector}.\nVigencia: ${vig}.\n` +
+      (pronAviso ? `Probabilidad ${pronAviso.nivel} de condiciones propicias (${pronAviso.v} % de los escenarios del ensamble GFS).\n` : '') +
+      `\nRECOMENDACIONES\n- Se sugiere evacuar playas, muelles, caletas y zonas costeras expuestas.\n- Embarcaciones menores: no zarpar y regresar a puerto o a un fondeadero abrigado.\n` +
+      `- Asegurar objetos sueltos en cubierta y en la costa.\n- Si observa una tromba, aléjese en dirección perpendicular a su desplazamiento y busque refugio bajo techo.\n` +
+      `- Manténgase atento a los avisos oficiales de la Armada (meteoarmada.directemar.cl) y a las instrucciones de la Autoridad Marítima local.\n\n` +
+      `FAVOR ACUSAR RECIBO DE ESTE MENSAJE.\n\nMapa y detalle del pronóstico: https://trombasmarinas.cl\n`;
+  };
+  async function armarAviso() {
+    const ta = document.getElementById('redTexto');
+    if (!ta.dataset.editado) {
+      try {
+        const d = await fetch('data/trombas_prob.json?t=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(15000) }).then(r => r.json());
+        const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
+        let m = null;
+        for (const f of d.dias.filter(x => x >= hoy)) for (const z of d.areas.map(a => a.id)) { const v = d.prob_dia?.[z]?.alguno?.[f] ?? 0; if (!m || v > m.v) m = { z, f, v }; }
+        if (m && m.v > 0) {
+          pronAviso = { nivel: NIV_TXT(m.v), v: m.v };
+          if (!document.getElementById('redSector').value) document.getElementById('redSector').value = `zona ${m.z} (${ZN[m.z]})`;
+          if (!document.getElementById('redVig').value) document.getElementById('redVig').value = new Date(m.f + 'T12:00:00Z').toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+        }
+      } catch (e) { /* sin pronóstico: queda el formato con campos a completar */ }
+      ta.value = textoAviso();
+    }
+  }
+  for (const id of ['redSector', 'redVig']) document.getElementById(id).addEventListener('input', () => { if (!document.getElementById('redTexto').dataset.editado) document.getElementById('redTexto').value = textoAviso(); });
+  document.getElementById('redTexto').addEventListener('input', e => { e.target.dataset.editado = '1'; });
+  document.getElementById('redAbrir').onclick = () => {
+    const cuerpo = document.getElementById('redTexto').value;
+    location.href = `mailto:?subject=${encodeURIComponent(ASUNTO_AVISO)}&body=${encodeURIComponent(cuerpo)}`;
+    document.getElementById('redEstado').textContent = 'Se abrió tu programa de correo. Si no se abrió, usa "Copiar texto" y pégalo en un correo nuevo.';
+  };
+  document.getElementById('redCopiar').onclick = async () => {
+    const est = document.getElementById('redEstado');
+    try { await navigator.clipboard.writeText(document.getElementById('redTexto').value); est.textContent = 'Texto copiado. El asunto es: ' + ASUNTO_AVISO; }
+    catch (e) { document.getElementById('redTexto').select(); est.textContent = 'Selecciona el texto y cópialo con Ctrl+C.'; }
+  };
+  if (new URLSearchParams(location.search).has('aviso')) { abrirA(); armarAviso(); }
   if (ALERTAS_URL) {
-    btnA.hidden = false; btnA.onclick = abrirA;
-    dlgA.querySelector('.in-cerrar').onclick = cerrarA;
-    dlgA.addEventListener('click', e => { if (e.target === dlgA) cerrarA(); });
+    document.getElementById('alSus').hidden = false;
     fA.onsubmit = async e => {
       e.preventDefault();
       const est = fA.querySelector('.al-estado'), btn = fA.querySelector('button'), correo = fA.correo.value.trim();
@@ -216,7 +275,7 @@
       } catch (err) { est.textContent = 'No se pudo enviar. Intenta de nuevo en unos minutos.'; est.className = 'al-estado mal'; }
       btn.disabled = false;
     };
-    if (new URLSearchParams(location.search).has('alertas')) abrirA();
+    if (new URLSearchParams(location.search).has('alertas')) { abrirA(); armarAviso(); document.getElementById('aCorreo').focus(); }
   }
 
   // Pestaña "Ríos atmosféricos": mapa propio, creado la primera vez que se abre (necesita su tamaño visible)
